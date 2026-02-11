@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oliver Dougherty</title>
+  <meta name="description" content="Engineer, photographer, and creator. Welcome to my corner of the internet.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+  <!-- Ambient background effects -->
+  <div class="ambient-bg">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="gradient-orb orb-3"></div>
+  </div>
+  <div class="noise-overlay"></div>
+
+  <!-- Navigation -->
+  <nav class="nav" id="nav">
+    <div class="nav-inner container">
+      <a href="/" class="nav-logo">
+        <span class="logo-text">OD</span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="pages/resume/index.html" class="nav-link">Resume</a>
+        <a href="pages/gallery/index.html" class="nav-link">Gallery</a>
+        <a href="pages/archive/index.html" class="nav-link">Archive</a>
+        <a href="pages/dashboard/index.html" class="nav-link">Services</a>
+      </div>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="hero-content container">
+      <div class="hero-intro">
+        <span class="hero-tag">Welcome</span>
+      </div>
+      <h1 class="hero-title">
+        <span class="title-line">
+          <span class="text-display">Oliver</span>
+        </span>
+        <span class="title-line">
+          <span class="text-display text-gradient">Dougherty</span>
+        </span>
+      </h1>
+      <p class="hero-subtitle">
+        Engineer. Photographer. Creator.
+      </p>
+      <div class="hero-cta">
+        <a href="#work" class="btn btn-primary">Explore My Work</a>
+        <a href="pages/resume/index.html" class="btn btn-secondary">View Resume</a>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <span class="scroll-text">Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </header>
+
+  <!-- About Section -->
+  <section class="about section" id="about">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-content" data-animate="fade-up">
+          <span class="section-tag">About</span>
+          <h2 class="section-title text-display">Building at the intersection of hardware and software</h2>
+          <p class="about-text">
+            I'm a Computer Engineering student at Oregon State University with a passion for
+            understanding systems from the ground up. From FPGAs to neural networks, from
+            signal processing to full-stack development, I'm driven by curiosity and a desire
+            to create meaningful technology.
+          </p>
+          <p class="about-text">
+            When I'm not writing code or soldering circuits, you'll find me behind a camera,
+            capturing moments and exploring the world through a different lens.
+          </p>
+          <div class="about-stats">
+            <div class="stat">
+              <span class="stat-value">2028</span>
+              <span class="stat-label">Expected Graduation</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">OSU</span>
+              <span class="stat-label">Oregon State</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">ECE</span>
+              <span class="stat-label">B.S. + Math Minor</span>
+            </div>
+          </div>
+        </div>
+        <div class="about-visual" data-animate="fade-up">
+          <div class="visual-card">
+            <div class="visual-pattern"></div>
+            <div class="visual-accent"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Work / Portal Section -->
+  <section class="work section-lg" id="work">
+    <div class="container">
+      <div class="section-header" data-animate="fade-up">
+        <span class="section-tag">Explore</span>
+        <h2 class="section-title text-display">My corner of the internet</h2>
+        <p class="section-desc">Different facets of what I create, learn, and share.</p>
+      </div>
+
+      <div class="portal-grid">
+        <!-- Gallery Portal -->
+        <a href="pages/gallery/index.html" class="portal-card portal-gallery" data-animate="fade-up">
+          <div class="portal-bg"></div>
+          <div class="portal-content">
+            <div class="portal-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </div>
+            <h3 class="portal-title">Photography</h3>
+            <p class="portal-desc">A visual journal of moments captured through my lens</p>
+            <span class="portal-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Archive Portal -->
+        <a href="pages/archive/index.html" class="portal-card portal-archive" data-animate="fade-up">
+          <div class="portal-bg"></div>
+          <div class="portal-content">
+            <div class="portal-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                <line x1="8" y1="6" x2="16" y2="6"/>
+                <line x1="8" y1="10" x2="14" y2="10"/>
+              </svg>
+            </div>
+            <h3 class="portal-title">Neurophasia Archive</h3>
+            <p class="portal-desc">Technical reports and deep dives into complex topics</p>
+            <span class="portal-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Resume Portal -->
+        <a href="pages/resume/index.html" class="portal-card portal-resume" data-animate="fade-up">
+          <div class="portal-bg"></div>
+          <div class="portal-content">
+            <div class="portal-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <h3 class="portal-title">Resume</h3>
+            <p class="portal-desc">Professional experience, skills, and qualifications</p>
+            <span class="portal-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Dashboard Portal -->
+        <a href="pages/dashboard/index.html" class="portal-card portal-dashboard" data-animate="fade-up">
+          <div class="portal-bg"></div>
+          <div class="portal-content">
+            <div class="portal-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+              </svg>
+            </div>
+            <h3 class="portal-title">Services</h3>
+            <p class="portal-desc">Self-hosted applications and public-facing tools</p>
+            <span class="portal-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Projects Preview -->
+  <section class="projects section" id="projects">
+    <div class="container">
+      <div class="section-header" data-animate="fade-up">
+        <span class="section-tag">Featured</span>
+        <h2 class="section-title text-display">Recent Projects</h2>
+      </div>
+
+      <div class="projects-list">
+        <article class="project-item" data-animate="fade-up">
+          <div class="project-number">01</div>
+          <div class="project-content">
+            <h3 class="project-title">NatGen</h3>
+            <p class="project-desc">A generative AI model using diffusion architecture in PyTorch to synthesize nature sounds. Produced in collaboration with SoundTrip LLC.</p>
+            <div class="project-tags">
+              <span class="tag">PyTorch</span>
+              <span class="tag">AI/ML</span>
+              <span class="tag">Audio</span>
+            </div>
+          </div>
+          <div class="project-meta">
+            <span class="project-date">2025 - Present</span>
+          </div>
+        </article>
+
+        <article class="project-item" data-animate="fade-up">
+          <div class="project-number">02</div>
+          <div class="project-content">
+            <h3 class="project-title">Encoding DB</h3>
+            <p class="project-desc">Public FFmpeg-based video encoding database. RESTful backend built with Node.js, Express, and Prisma with PostgreSQL.</p>
+            <div class="project-tags">
+              <span class="tag">Node.js</span>
+              <span class="tag">PostgreSQL</span>
+              <span class="tag">FFmpeg</span>
+            </div>
+          </div>
+          <div class="project-meta">
+            <span class="project-date">2025 - Present</span>
+            <a href="https://encodingdb.platinumlabs.dev" class="project-link" target="_blank" rel="noopener">
+              Visit
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </a>
+          </div>
+        </article>
+
+        <article class="project-item" data-animate="fade-up">
+          <div class="project-number">03</div>
+          <div class="project-content">
+            <h3 class="project-title">Computer Hardware Club</h3>
+            <p class="project-desc">Founded and lead OSU's Computer Hardware Club. Building Dell PowerEdge R620 infrastructure, teaching Docker and CUDA workshops to 20+ members.</p>
+            <div class="project-tags">
+              <span class="tag">Leadership</span>
+              <span class="tag">Docker</span>
+              <span class="tag">CUDA</span>
+            </div>
+          </div>
+          <div class="project-meta">
+            <span class="project-date">2024 - Present</span>
+            <a href="https://computerhardwareclub.org" class="project-link" target="_blank" rel="noopener">
+              Visit
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section class="contact section" id="contact">
+    <div class="container">
+      <div class="contact-inner" data-animate="fade-up">
+        <span class="section-tag">Connect</span>
+        <h2 class="contact-title text-display">Let's build something together</h2>
+        <div class="contact-links">
+          <a href="mailto:oliverfdougherty@gmail.com" class="contact-link">
+            <span class="contact-link-label">Email</span>
+            <span class="contact-link-value">oliverfdougherty@gmail.com</span>
+          </a>
+          <a href="https://github.com/oliverdougherC" class="contact-link" target="_blank" rel="noopener">
+            <span class="contact-link-label">GitHub</span>
+            <span class="contact-link-value">oliverdougherC</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <p class="footer-text">&copy; 2026 Oliver Dougherty</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js" defer></script>
+</body>
+</html>

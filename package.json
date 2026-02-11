@@ -1,0 +1,13 @@
+{
+  "name": "oliver-unified-v2",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Oliver Dougherty - Portfolio Website",
+  "scripts": {
+    "optimize-images": "node scripts/optimize-images.js"
+  },
+  "devDependencies": {
+    "exifr": "^7.1.3",
+    "sharp": "^0.33.0"
+  }
+}

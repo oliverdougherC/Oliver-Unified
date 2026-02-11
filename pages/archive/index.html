@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="archive">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neurophasia Archive - Oliver Dougherty</title>
+  <meta name="description" content="Technical reports and deep dives into complex topics in computing, engineering, and science.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="../../css/design-system.css">
+  <link rel="stylesheet" href="../../css/archive.css">
+</head>
+<body>
+  <div class="noise-overlay"></div>
+
+  <!-- Navigation -->
+  <nav class="nav" id="nav">
+    <div class="nav-inner container">
+      <a href="../../index.html" class="nav-logo">
+        <span class="logo-text">OD</span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="../../index.html" class="nav-link">Home</a>
+        <a href="../resume/index.html" class="nav-link">Resume</a>
+        <a href="../gallery/index.html" class="nav-link">Gallery</a>
+        <a href="../dashboard/index.html" class="nav-link">Services</a>
+      </div>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="archive-main">
+    <!-- Hero -->
+    <header class="archive-hero">
+      <div class="container">
+        <div class="hero-content" data-animate="fade-up">
+          <div class="hero-badge">
+            <span class="badge-icon">N</span>
+            <span class="badge-text">Neurophasia</span>
+          </div>
+          <h1 class="hero-title">Technical Archive</h1>
+          <p class="hero-subtitle">
+            In-depth explorations of computing, engineering, and scientific concepts.
+            Each report provides comprehensive analysis with practical applications.
+          </p>
+        </div>
+      </div>
+      <div class="hero-pattern"></div>
+    </header>
+
+    <!-- Search & Filter -->
+    <section class="filter-section">
+      <div class="container">
+        <div class="filter-bar">
+          <div class="search-wrapper">
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              type="text"
+              id="searchInput"
+              class="search-input"
+              placeholder="Search reports..."
+              autocomplete="off"
+            >
+          </div>
+          <div class="filter-tags">
+            <button class="filter-tag active" data-filter="all">All</button>
+            <button class="filter-tag" data-filter="video">Video</button>
+            <button class="filter-tag" data-filter="audio">Audio</button>
+            <button class="filter-tag" data-filter="networking">Networking</button>
+            <button class="filter-tag" data-filter="math">Mathematics</button>
+            <button class="filter-tag" data-filter="hardware">Hardware</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reports Grid -->
+    <section class="reports-section section">
+      <div class="container">
+        <div class="reports-grid" id="reportsGrid">
+
+          <!-- AV1 -->
+          <article class="report-card" data-category="video" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <polygon points="23 7 16 12 23 17 23 7"/>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
+              </div>
+              <span class="report-category">Video Codec</span>
+            </div>
+            <h2 class="report-title">AV1</h2>
+            <p class="report-desc">Next-generation royalty-free video codec. Analysis of intra/inter prediction techniques, entropy coding, and performance benchmarks.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="av1/av1.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="av1/av1.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- Video Codecs -->
+          <article class="report-card" data-category="video" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>
+                  <line x1="7" y1="2" x2="7" y2="22"/>
+                  <line x1="17" y1="2" x2="17" y2="22"/>
+                  <line x1="2" y1="12" x2="22" y2="12"/>
+                </svg>
+              </div>
+              <span class="report-category">Video</span>
+            </div>
+            <h2 class="report-title">Video Codecs</h2>
+            <p class="report-desc">Comprehensive overview of video compression standards from H.264 to modern codecs. Includes motion estimation and transform coding analysis.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="videocodecs/videocodecs.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="videocodecs/videocodecs.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- HDR -->
+          <article class="report-card" data-category="video" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="23"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="1" y1="12" x2="3" y2="12"/>
+                  <line x1="21" y1="12" x2="23" y2="12"/>
+                </svg>
+              </div>
+              <span class="report-category">Video</span>
+            </div>
+            <h2 class="report-title">HDR</h2>
+            <p class="report-desc">High Dynamic Range imaging. Covers PQ/HLG transfer functions, color volume mapping, and HDR10/Dolby Vision implementation.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="hdr/hdr.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="hdr/hdr.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- Color in Video -->
+          <article class="report-card" data-category="video" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="13.5" cy="6.5" r="2.5"/>
+                  <circle cx="6.5" cy="17.5" r="2.5"/>
+                  <circle cx="17.5" cy="17.5" r="2.5"/>
+                  <path d="M13.5 9a6 6 0 0 1 0 11M6.5 15a6 6 0 0 1 7-5.9M17.5 15a6 6 0 0 0-7-5.9"/>
+                </svg>
+              </div>
+              <span class="report-category">Video</span>
+            </div>
+            <h2 class="report-title">Color in Video</h2>
+            <p class="report-desc">Color science fundamentals for video. Color spaces, gamut mapping, chroma subsampling, and color grading pipelines.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="color/color.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="color/color.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- Audio Codecs -->
+          <article class="report-card" data-category="audio" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M9 18V5l12-2v13"/>
+                  <circle cx="6" cy="18" r="3"/>
+                  <circle cx="18" cy="16" r="3"/>
+                </svg>
+              </div>
+              <span class="report-category">Audio</span>
+            </div>
+            <h2 class="report-title">Audio Codecs</h2>
+            <p class="report-desc">Audio compression algorithms from MP3 to Opus. Psychoacoustic modeling, transform coding, and codec comparison.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="audiocodecs/audiocodecs.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="audiocodecs/audiocodecs.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- PCM -->
+          <article class="report-card" data-category="audio" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+              </div>
+              <span class="report-category">Audio</span>
+            </div>
+            <h2 class="report-title">PCM</h2>
+            <p class="report-desc">Pulse Code Modulation fundamentals. Sampling theory, quantization, bit depth, and digital audio representation.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="pcm/pcm.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="pcm/pcm.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- Fourier Transforms -->
+          <article class="report-card" data-category="math" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <line x1="12" y1="20" x2="12" y2="10"/>
+                  <line x1="18" y1="20" x2="18" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="16"/>
+                </svg>
+              </div>
+              <span class="report-category">Mathematics</span>
+            </div>
+            <h2 class="report-title">Fourier Transforms & FFT</h2>
+            <p class="report-desc">Frequency domain analysis. DFT, FFT algorithms, spectral analysis, and applications in signal processing.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="ft_fft/ft_fft.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="ft_fft/ft_fft.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- Pi -->
+          <article class="report-card" data-category="math" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon pi-icon">
+                <span>&pi;</span>
+              </div>
+              <span class="report-category">Mathematics</span>
+            </div>
+            <h2 class="report-title">Pi</h2>
+            <p class="report-desc">The mathematical constant. Historical computation methods, infinite series, and applications across mathematics and physics.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="pi/pi.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="pi/pi.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- VPN -->
+          <article class="report-card" data-category="networking" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
+              <span class="report-category">Networking</span>
+            </div>
+            <h2 class="report-title">VPN</h2>
+            <p class="report-desc">Virtual Private Networks. Tunneling protocols, encryption methods, and implementation architectures for secure networking.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="vpn/vpn.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="vpn/vpn.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- iSCSI -->
+          <article class="report-card" data-category="networking" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                </svg>
+              </div>
+              <span class="report-category">Networking</span>
+            </div>
+            <h2 class="report-title">iSCSI</h2>
+            <p class="report-desc">Internet Small Computer Systems Interface. Block-level storage over IP networks, initiator/target architecture, and SAN implementation.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="iscsi/iscsi.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="iscsi/iscsi.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- Kubernetes -->
+          <article class="report-card" data-category="networking" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+              </div>
+              <span class="report-category">Infrastructure</span>
+            </div>
+            <h2 class="report-title">Kubernetes</h2>
+            <p class="report-desc">Container orchestration platform. Pods, services, deployments, and cluster architecture for scalable applications.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="kubernetes/kubernetes.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="kubernetes/kubernetes.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- ZFS -->
+          <article class="report-card" data-category="hardware" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="report-category">Storage</span>
+            </div>
+            <h2 class="report-title">ZFS</h2>
+            <p class="report-desc">Zettabyte File System. Copy-on-write, RAID-Z, snapshots, and enterprise storage features for data integrity.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="zfs/zfs.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="zfs/zfs.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- Lasers -->
+          <article class="report-card" data-category="hardware" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M2 12h6"/>
+                  <path d="M22 12h-6"/>
+                  <circle cx="12" cy="12" r="4"/>
+                  <path d="M12 2v6"/>
+                  <path d="M12 16v6"/>
+                </svg>
+              </div>
+              <span class="report-category">Physics</span>
+            </div>
+            <h2 class="report-title">Lasers</h2>
+            <p class="report-desc">Light Amplification by Stimulated Emission of Radiation. Optical physics, laser types, and applications in technology.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="lasers/lasers.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="lasers/lasers.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+          <!-- PWM -->
+          <article class="report-card" data-category="hardware" data-animate="fade-up">
+            <div class="report-header">
+              <div class="report-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <polyline points="4 17 10 11 4 5"/>
+                  <line x1="12" y1="19" x2="20" y2="19"/>
+                </svg>
+              </div>
+              <span class="report-category">Hardware</span>
+            </div>
+            <h2 class="report-title">PWM</h2>
+            <p class="report-desc">Pulse-Width Modulation. Digital-to-analog conversion technique, motor control, LED dimming, and embedded applications.</p>
+            <div class="report-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Full Report
+              </span>
+            </div>
+            <div class="report-actions">
+              <a href="pwm/pwm.html" class="btn-report btn-primary-report">Read Abstract</a>
+              <a href="pwm/pwm.pdf" class="btn-report btn-secondary-report" target="_blank">PDF</a>
+            </div>
+          </article>
+
+        </div>
+
+        <!-- No Results Message -->
+        <div class="no-results" id="noResults" style="display: none;">
+          <p>No reports found matching your search.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <p class="footer-text">&copy; 2026 Oliver Dougherty</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../../js/main.js" defer></script>
+  <script src="../../js/archive.js" defer></script>
+</body>
+</html>
