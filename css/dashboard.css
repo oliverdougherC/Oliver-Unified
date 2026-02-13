@@ -131,43 +131,8 @@
   height: 28px;
 }
 
-/* Icon Colors */
-.jellyfin-icon {
-  background: linear-gradient(135deg, #00a4dc 0%, #aa5cc3 100%);
-  color: white;
-}
-
-.jellyseerr-icon {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  color: white;
-}
-
-.nextcloud-icon {
-  background: linear-gradient(135deg, #0082c9 0%, #00618a 100%);
-  color: white;
-}
-
-.immich-icon {
-  background: linear-gradient(135deg, #4250af 0%, #1e83d6 100%);
-  color: white;
-}
-
-.openwebui-icon {
-  background: linear-gradient(135deg, #10a37f 0%, #1a7f64 100%);
-  color: white;
-}
-
-.encodingdb-icon {
-  background: var(--color-accent-subtle);
-  color: var(--color-accent);
-}
-
-.github-icon {
-  background: linear-gradient(135deg, #333 0%, #24292e 100%);
-  color: white;
-}
-
-.chc-icon {
+/* Monochrome icons (same as archive report icons) */
+.service-icon {
   background: var(--color-accent-subtle);
   color: var(--color-accent);
 }

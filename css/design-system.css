@@ -566,6 +566,10 @@ a:hover {
   color: var(--color-text-primary);
 }
 
+.logo-text .logo-d {
+  color: var(--color-accent);
+}
+
 .nav-links {
   display: flex;
   align-items: center;

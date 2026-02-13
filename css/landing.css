@@ -357,19 +357,17 @@
 
 /* Cursor-following glow - position set via JS */
 .portal-gallery .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(138, 180, 122, 0.15) 0%, transparent 40%);
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(74, 158, 110, 0.15) 0%, transparent 40%);
 }
 
-.portal-archive .portal-bg {
+/* Archive & Services share the same warm accent (amber) */
+.portal-archive .portal-bg,
+.portal-dashboard .portal-bg {
   background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(196, 147, 90, 0.15) 0%, transparent 40%);
 }
 
 .portal-resume .portal-bg {
   background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(74, 158, 110, 0.15) 0%, transparent 40%);
-}
-
-.portal-dashboard .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(196, 147, 90, 0.15) 0%, transparent 40%);
 }
 
 .portal-content {
@@ -392,10 +390,10 @@
   height: 32px;
 }
 
-.portal-gallery .portal-icon { color: #8ab47a; }
-.portal-archive .portal-icon { color: #c4935a; }
-.portal-resume .portal-icon { color: #4a9e6e; }
-.portal-dashboard .portal-icon { color: #c4935a; }
+.portal-gallery .portal-icon,
+.portal-resume .portal-icon { color: var(--color-accent); }
+.portal-archive .portal-icon,
+.portal-dashboard .portal-icon { color: var(--color-accent-warm); }
 
 .portal-title {
   font-size: var(--text-2xl);
