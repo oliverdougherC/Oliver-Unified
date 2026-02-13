@@ -27,8 +27,8 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(196, 147, 90, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(196, 147, 90, 0.02) 1px, transparent 1px);
+    linear-gradient(rgba(138, 61, 71, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(138, 61, 71, 0.03) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
 }
@@ -46,7 +46,7 @@
   margin-bottom: var(--space-6);
   padding: var(--space-2) var(--space-4);
   background: var(--color-accent-subtle);
-  border: 1px solid rgba(196, 147, 90, 0.2);
+  border: 1px solid rgba(138, 61, 71, 0.25);
   border-radius: var(--radius-md);
 }
 
@@ -210,7 +210,7 @@
   transform: translateY(-2px);
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(196, 147, 90, 0.1);
+    0 0 0 1px rgba(138, 61, 71, 0.15);
 }
 
 .report-card.hidden {
@@ -310,7 +310,7 @@
 .btn-primary-report:hover {
   background: var(--color-accent-hover);
   color: var(--color-bg-primary);
-  box-shadow: 0 4px 12px rgba(196, 147, 90, 0.2);
+  box-shadow: 0 4px 12px rgba(138, 61, 71, 0.25);
 }
 
 .btn-secondary-report {

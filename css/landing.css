@@ -29,7 +29,7 @@
 .orb-1 {
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(74, 158, 110, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(5, 72, 51, 0.25) 0%, transparent 70%);
   top: -200px;
   right: -100px;
   animation-delay: 0s;
@@ -38,7 +38,7 @@
 .orb-2 {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(196, 147, 90, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(10, 122, 86, 0.18) 0%, transparent 70%);
   bottom: -150px;
   left: -100px;
   animation-delay: -7s;
@@ -47,7 +47,7 @@
 .orb-3 {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(107, 143, 94, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(6, 90, 64, 0.15) 0%, transparent 70%);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -291,28 +291,16 @@
   background: var(--color-surface);
   border-radius: var(--radius-2xl);
   overflow: hidden;
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-accent);
 }
 
-.visual-pattern {
+.visual-image {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(74, 158, 110, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(74, 158, 110, 0.03) 1px, transparent 1px);
-  background-size: 30px 30px;
-}
-
-.visual-accent {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 200px;
-  height: 200px;
-  background: var(--gradient-accent);
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.35;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 /* ========================================
@@ -355,24 +343,28 @@
   opacity: 1;
 }
 
-/* Cursor-following glow - position set via JS */
+/* Cursor-following glow - each portal glows with its destination page's accent color */
 .portal-gallery .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(74, 158, 110, 0.15) 0%, transparent 40%);
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(165, 131, 252, 0.15) 0%, transparent 40%);
 }
 
-/* Archive & Services share the same warm accent (amber) */
-.portal-archive .portal-bg,
+.portal-archive .portal-bg {
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(138, 61, 71, 0.18) 0%, transparent 40%);
+}
+
 .portal-dashboard .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(196, 147, 90, 0.15) 0%, transparent 40%);
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(250, 178, 181, 0.12) 0%, transparent 40%);
 }
 
 .portal-resume .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(74, 158, 110, 0.15) 0%, transparent 40%);
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(91, 136, 251, 0.15) 0%, transparent 40%);
 }
 
 .portal-content {
   position: relative;
   z-index: 1;
+  padding-right: 3.5rem;
+  padding-bottom: 0.5rem;
 }
 
 .portal-icon {
@@ -390,10 +382,10 @@
   height: 32px;
 }
 
-.portal-gallery .portal-icon,
-.portal-resume .portal-icon { color: var(--color-accent); }
-.portal-archive .portal-icon,
-.portal-dashboard .portal-icon { color: var(--color-accent-warm); }
+.portal-gallery .portal-icon { color: #A583FC; }
+.portal-resume .portal-icon { color: #5B88FB; }
+.portal-archive .portal-icon { color: #B05060; }
+.portal-dashboard .portal-icon { color: #FAB2B5; }
 
 .portal-title {
   font-size: var(--text-2xl);
@@ -555,7 +547,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(74, 158, 110, 0.06) 0%, rgba(196, 147, 90, 0.06) 100%);
+  background: linear-gradient(135deg, rgba(5, 72, 51, 0.1) 0%, rgba(10, 122, 86, 0.08) 100%);
   opacity: 0;
   transition: opacity var(--duration-base) var(--ease-smooth);
 }
@@ -576,7 +568,7 @@
   border-color: var(--color-accent);
   background: var(--color-surface-hover);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(74, 158, 110, 0.1);
+  box-shadow: 0 8px 24px rgba(5, 72, 51, 0.2);
 }
 
 .contact-link:hover::before {
@@ -692,6 +684,11 @@
 
   .portal-card {
     padding: var(--space-6);
+  }
+
+  .portal-content {
+    padding-right: 4rem;
+    padding-bottom: 0.75rem;
   }
 
   .portal-title {

@@ -23,7 +23,7 @@
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
-  color: var(--color-accent-warm);
+  color: var(--color-accent);
   margin-bottom: var(--space-4);
 }
 
@@ -169,8 +169,8 @@
 }
 
 .service-status.online {
-  color: #4a9e6e;
-  background: rgba(74, 158, 110, 0.1);
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
 }
 
 .service-status.offline {

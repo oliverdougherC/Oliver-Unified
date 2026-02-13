@@ -27,29 +27,29 @@
   --color-text-tertiary: #78725e;
   --color-text-muted: #5a5545;
 
-  /* Accent - Forest green */
-  --color-accent: #4a9e6e;
-  --color-accent-hover: #6ab88a;
-  --color-accent-muted: #2d7a4d;
-  --color-accent-subtle: rgba(74, 158, 110, 0.1);
+  /* Accent - Deep forest green */
+  --color-accent: #054833;
+  --color-accent-hover: #0a7a56;
+  --color-accent-muted: #033624;
+  --color-accent-subtle: rgba(5, 72, 51, 0.2);
 
   /* Secondary accents */
-  --color-accent-warm: #c4935a;
-  --color-accent-cool: #6b8f5e;
-  --color-accent-neutral: #8a7a5c;
+  --color-accent-warm: #0a7a56;
+  --color-accent-cool: #054833;
+  --color-accent-neutral: #065a40;
 
   /* Borders and dividers - warm tinted */
   --color-border: rgba(245, 240, 232, 0.06);
   --color-border-subtle: rgba(245, 240, 232, 0.03);
   --color-border-emphasis: rgba(245, 240, 232, 0.12);
 
-  /* Gradients - green to caramel transitions */
+  /* Gradients - forest green transitions */
   --gradient-subtle: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 100%);
-  --gradient-accent: linear-gradient(135deg, #4a9e6e 0%, #6b8f5e 50%, #c4935a 100%);
-  --gradient-warm: linear-gradient(135deg, #c4935a 0%, #a87a3e 100%);
-  --gradient-mesh: radial-gradient(at 40% 20%, rgba(74, 158, 110, 0.08) 0px, transparent 50%),
-                   radial-gradient(at 80% 0%, rgba(107, 143, 94, 0.06) 0px, transparent 50%),
-                   radial-gradient(at 0% 50%, rgba(196, 147, 90, 0.04) 0px, transparent 50%);
+  --gradient-accent: linear-gradient(135deg, #0da06e 0%, #054833 50%, #0a7a56 100%);
+  --gradient-warm: linear-gradient(135deg, #0a7a56 0%, #054833 100%);
+  --gradient-mesh: radial-gradient(at 40% 20%, rgba(5, 72, 51, 0.12) 0px, transparent 50%),
+                   radial-gradient(at 80% 0%, rgba(10, 122, 86, 0.08) 0px, transparent 50%),
+                   radial-gradient(at 0% 50%, rgba(6, 90, 64, 0.06) 0px, transparent 50%);
 
   /* === Typography === */
 
@@ -121,8 +121,8 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 20px rgba(74, 158, 110, 0.15);
-  --shadow-glow-lg: 0 0 40px rgba(74, 158, 110, 0.2);
+  --shadow-glow: 0 0 20px rgba(5, 72, 51, 0.25);
+  --shadow-glow-lg: 0 0 40px rgba(5, 72, 51, 0.3);
 
   /* === Transitions === */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
@@ -146,41 +146,61 @@
    Theme Variations
    ======================================== */
 
-/* Gallery Theme - Moody, dramatic, curved */
+/* Gallery Theme - Moody, dramatic, curved (#A583FC purple) */
 [data-theme="gallery"] {
-  --color-bg-primary: #060804;
-  --color-bg-secondary: #0c0f0a;
-  --color-surface: #121610;
-  --color-accent: #8ab47a;
-  --color-accent-hover: #a5cc96;
-  --color-accent-subtle: rgba(138, 180, 122, 0.1);
+  --color-bg-primary: #07060a;
+  --color-bg-secondary: #0d0c12;
+  --color-surface: #131218;
+  --color-accent: #A583FC;
+  --color-accent-hover: #BDA3FD;
+  --color-accent-muted: #8A63E0;
+  --color-accent-subtle: rgba(165, 131, 252, 0.1);
+  --shadow-glow: 0 0 20px rgba(165, 131, 252, 0.15);
+  --shadow-glow-lg: 0 0 40px rgba(165, 131, 252, 0.2);
+  --gradient-accent: linear-gradient(135deg, #BDA3FD 0%, #A583FC 50%, #8A63E0 100%);
   --radius-lg: 1.25rem;
   --radius-xl: 1.75rem;
   --radius-2xl: 2.5rem;
 }
 
-/* Archive Theme - Rigid, academic, structured */
+/* Archive Theme - Rigid, academic, structured (#8A3D47 burgundy) */
 [data-theme="archive"] {
-  --color-accent: #c4935a;
-  --color-accent-hover: #d4a870;
-  --color-accent-muted: #a07840;
-  --color-accent-subtle: rgba(196, 147, 90, 0.08);
+  --color-accent: #8A3D47;
+  --color-accent-hover: #B05060;
+  --color-accent-muted: #6E2F38;
+  --color-accent-subtle: rgba(138, 61, 71, 0.12);
+  --shadow-glow: 0 0 20px rgba(138, 61, 71, 0.2);
+  --shadow-glow-lg: 0 0 40px rgba(138, 61, 71, 0.25);
+  --gradient-accent: linear-gradient(135deg, #B05060 0%, #8A3D47 50%, #6E2F38 100%);
   --radius-sm: 0.125rem;
   --radius-md: 0.25rem;
   --radius-lg: 0.375rem;
   --radius-xl: 0.5rem;
 }
 
-/* Resume Theme - Professional, clean */
+/* Resume Theme - Professional, clean (#5B88FB blue) */
 [data-theme="resume"] {
-  --color-accent: #4a9e6e;
-  --color-accent-warm: #4a9e6e;
+  --color-accent: #5B88FB;
+  --color-accent-hover: #7EA3FC;
+  --color-accent-muted: #4068D4;
+  --color-accent-subtle: rgba(91, 136, 251, 0.1);
+  --color-accent-warm: #5B88FB;
+  --shadow-glow: 0 0 20px rgba(91, 136, 251, 0.15);
+  --shadow-glow-lg: 0 0 40px rgba(91, 136, 251, 0.2);
+  --gradient-accent: linear-gradient(135deg, #7EA3FC 0%, #5B88FB 50%, #4068D4 100%);
 }
 
-/* Dashboard Theme - Functional, grid-based */
+/* Dashboard Theme - Functional, grid-based (#FAB2B5 pink) */
 [data-theme="dashboard"] {
   --color-surface: #111510;
   --color-border: rgba(245, 240, 232, 0.08);
+  --color-accent: #FAB2B5;
+  --color-accent-hover: #FCC8CA;
+  --color-accent-muted: #D48E91;
+  --color-accent-subtle: rgba(250, 178, 181, 0.1);
+  --shadow-glow: 0 0 20px rgba(250, 178, 181, 0.15);
+  --shadow-glow-lg: 0 0 40px rgba(250, 178, 181, 0.2);
+  --gradient-accent: linear-gradient(135deg, #FCC8CA 0%, #FAB2B5 50%, #D48E91 100%);
 }
 
 /* ========================================
@@ -213,7 +233,7 @@ body {
 /* Selection styling */
 ::selection {
   background-color: var(--color-accent);
-  color: var(--color-bg-primary);
+  color: white;
 }
 
 /* Scrollbar styling */
@@ -590,6 +610,22 @@ a:hover {
   background: var(--color-surface);
 }
 
+.nav-link.active {
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+
+/* Brighter active nav text for dark accent colors */
+html:not([data-theme]) .nav-link.active {
+  color: #2BBF8A;
+  background: rgba(5, 72, 51, 0.2);
+}
+
+[data-theme="archive"] .nav-link.active {
+  color: #C96B76;
+  background: rgba(138, 61, 71, 0.12);
+}
+
 .nav-toggle {
   display: none;
   flex-direction: column;
@@ -761,7 +797,7 @@ a:hover {
   position: fixed;
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, rgba(74, 158, 110, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(5, 72, 51, 0.12) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   z-index: -1;
