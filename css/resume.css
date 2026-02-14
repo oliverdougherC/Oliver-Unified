@@ -413,9 +413,16 @@ a.contact-item:hover {
   transition: all var(--duration-fast) var(--ease-smooth);
 }
 
-.skill-tag:hover {
+a.skill-tag {
+  text-decoration: none;
+  color: var(--color-text-primary);
+}
+
+.skill-tag:hover,
+a.skill-tag:hover {
   border-color: var(--color-accent);
   background: var(--color-accent-subtle);
+  color: var(--color-text-primary);
 }
 
 /* Involvement */

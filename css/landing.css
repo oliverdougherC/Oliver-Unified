@@ -29,7 +29,7 @@
 .orb-1 {
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(5, 72, 51, 0.25) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(23, 59, 52, 0.25) 0%, transparent 70%);
   top: -200px;
   right: -100px;
   animation-delay: 0s;
@@ -38,7 +38,7 @@
 .orb-2 {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(10, 122, 86, 0.18) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(42, 99, 86, 0.18) 0%, transparent 70%);
   bottom: -150px;
   left: -100px;
   animation-delay: -7s;
@@ -47,7 +47,7 @@
 .orb-3 {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(6, 90, 64, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(30, 79, 68, 0.15) 0%, transparent 70%);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -82,7 +82,7 @@
 }
 
 .nav.scrolled {
-  background: rgba(10, 12, 10, 0.8);
+  background: rgba(10, 10, 10, 0.8);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--color-border);
@@ -345,19 +345,19 @@
 
 /* Cursor-following glow - each portal glows with its destination page's accent color */
 .portal-gallery .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(165, 131, 252, 0.15) 0%, transparent 40%);
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(150, 147, 204, 0.15) 0%, transparent 40%);
 }
 
 .portal-archive .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(138, 61, 71, 0.18) 0%, transparent 40%);
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(205, 219, 205, 0.12) 0%, transparent 40%);
 }
 
 .portal-dashboard .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(250, 178, 181, 0.12) 0%, transparent 40%);
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(235, 228, 179, 0.1) 0%, transparent 40%);
 }
 
 .portal-resume .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(91, 136, 251, 0.15) 0%, transparent 40%);
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(108, 143, 213, 0.15) 0%, transparent 40%);
 }
 
 .portal-content {
@@ -382,10 +382,10 @@
   height: 32px;
 }
 
-.portal-gallery .portal-icon { color: #A583FC; }
-.portal-resume .portal-icon { color: #5B88FB; }
-.portal-archive .portal-icon { color: #B05060; }
-.portal-dashboard .portal-icon { color: #FAB2B5; }
+.portal-gallery .portal-icon { color: #9693CC; }
+.portal-resume .portal-icon { color: #6C8FD5; }
+.portal-archive .portal-icon { color: #CDDBCD; }
+.portal-dashboard .portal-icon { color: #EBE4B3; }
 
 .portal-title {
   font-size: var(--text-2xl);
@@ -547,7 +547,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(5, 72, 51, 0.1) 0%, rgba(10, 122, 86, 0.08) 100%);
+  background: linear-gradient(135deg, rgba(23, 59, 52, 0.1) 0%, rgba(42, 99, 86, 0.08) 100%);
   opacity: 0;
   transition: opacity var(--duration-base) var(--ease-smooth);
 }
@@ -568,7 +568,7 @@
   border-color: var(--color-accent);
   background: var(--color-surface-hover);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(5, 72, 51, 0.2);
+  box-shadow: 0 8px 24px rgba(23, 59, 52, 0.2);
 }
 
 .contact-link:hover::before {
