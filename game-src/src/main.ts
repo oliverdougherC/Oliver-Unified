@@ -1,12 +1,20 @@
 import { FixedStepLoop, type LoopStats } from './core/loop';
 import { AudioManager } from './audio/audioManager';
-import { parseSeedFromQuery } from './core/rng';
 import { GameWorld } from './core/world';
 import { CATALYST_DEFINITIONS } from './data/catalysts';
 import { getRunEventDescription, getRunEventLabel } from './data/events';
 import { WEAPON_ARCHETYPES } from './data/weapons';
 import { PixiRenderAdapter } from './render/pixiRenderAdapter';
-import type { ISystem, LevelUpChoice, QualityTier, QueryOptions, RendererPreference } from './types';
+import {
+  clamp,
+  loadSettings,
+  parseColorVisionMode,
+  parseOptions,
+  parseRendererPreference,
+  saveSettings,
+  type RuntimeSettingsPayload
+} from './runtime/settings';
+import type { ISystem, LevelUpChoice, QualityTier } from './types';
 import { AutoAttackSystem } from './systems/autoAttackSystem';
 import { CleanupSystem } from './systems/cleanupSystem';
 import { CollisionSystem } from './systems/collisionSystem';
@@ -19,101 +27,10 @@ import { RuntimeSystem } from './systems/runtimeSystem';
 import { SpawnSystem } from './systems/spawnSystem';
 import { XpSystem } from './systems/xpSystem';
 
-const SETTINGS_KEY = 'forestArcana.settings.v2';
-const DEBUG_KEY = 'forestArcana.debug.v1';
-
-interface SettingsPayload {
-  rendererPreference: RendererPreference;
-  quality: QualityTier;
-  audioEnabled: boolean;
-  audioVolume: number;
-  motionScale: number;
-}
-
-function parseRendererPreference(value: string | null): RendererPreference {
-  if (value === 'webgpu' || value === 'webgl' || value === 'auto') return value;
-  return 'auto';
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function loadSettings(): SettingsPayload {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') as Partial<SettingsPayload>;
-    const parsedVolume = Number(parsed.audioVolume);
-    const parsedMotion = Number(parsed.motionScale);
-    return {
-      rendererPreference: parseRendererPreference(parsed.rendererPreference || 'auto'),
-      quality: parsed.quality === 'low' || parsed.quality === 'medium' || parsed.quality === 'high'
-        ? parsed.quality
-        : 'high',
-      audioEnabled: parsed.audioEnabled !== false,
-      audioVolume: Number.isFinite(parsedVolume) ? clamp(parsedVolume, 0, 1) : 0.7,
-      motionScale: Number.isFinite(parsedMotion) ? clamp(parsedMotion, 0, 1) : 1
-    };
-  } catch {
-    return {
-      rendererPreference: 'auto',
-      quality: 'high',
-      audioEnabled: true,
-      audioVolume: 0.7,
-      motionScale: 1
-    };
-  }
-}
-
-function saveSettings(next: SettingsPayload): void {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
-}
-
-function parseAudioFlag(value: string | null): boolean | null {
-  if (value === '1') return true;
-  if (value === '0') return false;
-  return null;
-}
-
-function parsePercentFlag(value: string | null): number | null {
-  if (value === null) return null;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return null;
-  if (parsed > 1 || parsed < 0) {
-    return clamp(parsed / 100, 0, 1);
-  }
-  return clamp(parsed, 0, 1);
-}
-
-function parseOptions(): QueryOptions {
-  const url = new URL(window.location.href);
-  const settings = loadSettings();
-  const rendererPreference = parseRendererPreference(
-    url.searchParams.get('renderer') || settings.rendererPreference
-  );
-  const debugFromQuery = url.searchParams.get('debug');
-  const seed = parseSeedFromQuery(url.searchParams.get('seed'));
-  const audioFlagFromQuery = parseAudioFlag(url.searchParams.get('audio'));
-  const volumeFromQuery = parsePercentFlag(url.searchParams.get('volume'));
-  const motionFromQuery = parsePercentFlag(url.searchParams.get('motion'));
-
-  const debugMode =
-    debugFromQuery === '1' ||
-    (debugFromQuery !== '0' && localStorage.getItem(DEBUG_KEY) === '1');
-
-  const audioEnabled = audioFlagFromQuery ?? settings.audioEnabled;
-  const audioVolume = volumeFromQuery ?? settings.audioVolume;
-  const motionScale = motionFromQuery ?? settings.motionScale;
-
-  localStorage.setItem(DEBUG_KEY, debugMode ? '1' : '0');
-
-  return {
-    rendererPreference,
-    debugMode,
-    seed,
-    audioEnabled,
-    audioVolume,
-    motionScale
-  };
+interface InventoryTileRefs {
+  root: HTMLDivElement;
+  title: HTMLElement;
+  subtitle: HTMLElement;
 }
 
 function formatRunTime(seconds: number): string {
@@ -160,8 +77,18 @@ function choiceRarity(choice: LevelUpChoice): 'common' | 'rare' | 'epic' | 'lege
   return choice.rarity ?? 'common';
 }
 
+function createBuildSlotTile(): InventoryTileRefs {
+  const root = document.createElement('div');
+  root.className = 'build-slot empty';
+  const title = document.createElement('strong');
+  const subtitle = document.createElement('em');
+  root.append(title, subtitle);
+  return { root, title, subtitle };
+}
+
 async function main(): Promise<void> {
-  const options = parseOptions();
+  const options = parseOptions(window.location.href, localStorage);
+  const bootSettings = loadSettings(localStorage);
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const world = new GameWorld(options.seed, prefersReducedMotion);
@@ -192,10 +119,22 @@ async function main(): Promise<void> {
   const settingsMotionIntensity = requireElement<HTMLInputElement>('settingsMotionIntensity');
   const settingsMotionIntensityValue = requireElement<HTMLElement>('settingsMotionIntensityValue');
   const settingsRendererPreference = requireElement<HTMLSelectElement>('settingsRendererPreference');
+  const settingsColorVision = requireElement<HTMLSelectElement>('settingsColorVision');
+  const settingsUiScale = requireElement<HTMLInputElement>('settingsUiScale');
+  const settingsUiScaleValue = requireElement<HTMLElement>('settingsUiScaleValue');
+  const settingsScreenShake = requireElement<HTMLInputElement>('settingsScreenShake');
+  const settingsScreenShakeValue = requireElement<HTMLElement>('settingsScreenShakeValue');
+  const settingsHazardOpacity = requireElement<HTMLInputElement>('settingsHazardOpacity');
+  const settingsHazardOpacityValue = requireElement<HTMLElement>('settingsHazardOpacityValue');
+  const settingsHitFlashStrength = requireElement<HTMLInputElement>('settingsHitFlashStrength');
+  const settingsHitFlashStrengthValue = requireElement<HTMLElement>('settingsHitFlashStrengthValue');
+  const settingsDamageNumbers = requireElement<HTMLInputElement>('settingsDamageNumbers');
+  const settingsDirectionalIndicators = requireElement<HTMLInputElement>('settingsDirectionalIndicators');
   const restartRunBtn = requireElement<HTMLButtonElement>('restartRunBtn');
   const runSummary = requireElement<HTMLElement>('runSummary');
   const debugPanel = requireElement<HTMLElement>('debugPanel');
 
+  const hudHpChip = requireElement<HTMLElement>('hudHpChip');
   const hudHp = requireElement<HTMLElement>('hudHp');
   const hudLevel = requireElement<HTMLElement>('hudLevel');
   const hudEnemies = requireElement<HTMLElement>('hudEnemies');
@@ -204,7 +143,30 @@ async function main(): Promise<void> {
   const hudEvent = requireElement<HTMLElement>('hudEvent');
   const hudAudio = requireElement<HTMLElement>('hudAudio');
   const hudRenderer = requireElement<HTMLElement>('hudRenderer');
+  const hudEvolutionReady = requireElement<HTMLElement>('hudEvolutionReady');
   const xpFill = requireElement<HTMLElement>('xpFill');
+
+  const inventoryTiles: InventoryTileRefs[] = [];
+  for (let i = 0; i < 4; i += 1) {
+    const tile = createBuildSlotTile();
+    inventoryBar.appendChild(tile.root);
+    inventoryTiles.push(tile);
+  }
+
+  const hudCache = {
+    hp: '',
+    level: '',
+    enemies: '',
+    time: '',
+    event: '',
+    audio: '',
+    xpWidth: '',
+    eventDescription: '',
+    evolutionReady: '',
+    inventory: Array.from({ length: 4 }, () => ''),
+    catalysts: ''
+  };
+  type HudStringCacheKey = 'hp' | 'level' | 'enemies' | 'time' | 'event' | 'audio';
 
   let pausedByVisibility = false;
   let pausedBySettings = false;
@@ -214,13 +176,64 @@ async function main(): Promise<void> {
   let preferredRenderer = options.rendererPreference;
   let audioEnabled = options.audioEnabled;
   let audioVolume = options.audioVolume;
-  let motionScale = prefersReducedMotion ? Math.min(options.motionScale, 0.35) : options.motionScale;
+  let motionScale = options.motionScale;
+  let colorVisionMode = options.colorVisionMode;
+  let uiScale = options.uiScale;
+  let screenShake = options.screenShake;
+  let hazardOpacity = options.hazardOpacity;
+  let hitFlashStrength = options.hitFlashStrength;
+  let showDamageNumbers = options.showDamageNumbers;
+  let showDirectionalIndicators = options.showDirectionalIndicators;
   let previousShotsFired = 0;
   let previousPlayerHitCount = 0;
   let previousLevelUpOfferedCount = 0;
   let previousEliteKills = 0;
   let previousEventId: string | null = null;
   let previousUiState = world.uiState;
+  let lastHeavyHudSyncAt = 0;
+  let hudSyncMs = 0;
+
+  world.setQuality(bootSettings.quality);
+
+  function persistSettings(quality: QualityTier): void {
+    const next: RuntimeSettingsPayload = {
+      rendererPreference: preferredRenderer,
+      quality,
+      audioEnabled,
+      audioVolume,
+      motionScale,
+      visualPreset: 'bioluminescent',
+      colorVisionMode,
+      uiScale,
+      screenShake,
+      hazardOpacity,
+      hitFlashStrength,
+      showDamageNumbers,
+      showDirectionalIndicators
+    };
+    saveSettings(localStorage, next);
+  }
+
+  function applyVisualSettings(): void {
+    const effectiveMotionScale = prefersReducedMotion ? Math.min(motionScale, 0.35) : motionScale;
+    const effectiveScreenShake = prefersReducedMotion ? Math.min(screenShake, 0.2) : screenShake;
+
+    renderer.setMotionScale(effectiveMotionScale);
+    renderer.setVisualSettings({
+      visualPreset: 'bioluminescent',
+      colorVisionMode,
+      motionScale: effectiveMotionScale,
+      uiScale,
+      screenShake: effectiveScreenShake,
+      hazardOpacity,
+      hitFlashStrength,
+      showDamageNumbers,
+      showDirectionalIndicators
+    });
+
+    gameShell.style.setProperty('--hud-scale', uiScale.toFixed(2));
+    gameShell.dataset.colorVisionMode = colorVisionMode;
+  }
 
   function syncTopChromeOffsets(): void {
     const shellRect = gameShell.getBoundingClientRect();
@@ -231,6 +244,29 @@ async function main(): Promise<void> {
     gameShell.style.setProperty('--hud-stack-bottom', `${topAnchor}px`);
   }
 
+  function syncSettingsControls(): void {
+    settingsAudioEnabled.checked = audioEnabled;
+    settingsAudioVolume.value = String(Math.round(audioVolume * 100));
+    settingsAudioVolumeValue.textContent = `${Math.round(audioVolume * 100)}%`;
+    settingsAudioVolume.disabled = !audioEnabled;
+
+    settingsMotionIntensity.value = String(Math.round(motionScale * 100));
+    settingsMotionIntensityValue.textContent = `${Math.round(motionScale * 100)}%`;
+
+    settingsRendererPreference.value = preferredRenderer;
+    settingsColorVision.value = colorVisionMode;
+    settingsUiScale.value = String(Math.round(uiScale * 100));
+    settingsUiScaleValue.textContent = `${Math.round(uiScale * 100)}%`;
+    settingsScreenShake.value = String(Math.round(screenShake * 100));
+    settingsScreenShakeValue.textContent = `${Math.round(screenShake * 100)}%`;
+    settingsHazardOpacity.value = String(Math.round(hazardOpacity * 100));
+    settingsHazardOpacityValue.textContent = `${Math.round(hazardOpacity * 100)}%`;
+    settingsHitFlashStrength.value = String(Math.round(hitFlashStrength * 100));
+    settingsHitFlashStrengthValue.textContent = `${Math.round(hitFlashStrength * 100)}%`;
+    settingsDamageNumbers.checked = showDamageNumbers;
+    settingsDirectionalIndicators.checked = showDirectionalIndicators;
+  }
+
   try {
     const rendererKind = await renderer.init({
       mount: gameRoot,
@@ -239,19 +275,12 @@ async function main(): Promise<void> {
     });
 
     world.setRendererKind(rendererKind);
-
-    const settings = loadSettings();
-    saveSettings({
-      rendererPreference: preferredRenderer,
-      quality: settings.quality,
-      audioEnabled,
-      audioVolume,
-      motionScale
-    });
+    renderer.setQuality(world.quality);
+    applyVisualSettings();
+    persistSettings(world.quality);
 
     audio.setEnabled(audioEnabled);
     audio.setVolume(audioVolume);
-    renderer.setMotionScale(motionScale);
     hudRenderer.textContent = rendererKind;
   } catch (error) {
     console.error(error);
@@ -260,9 +289,6 @@ async function main(): Promise<void> {
     hud.classList.add('hidden');
     return;
   }
-
-  world.setQuality(loadSettings().quality);
-  renderer.setQuality(world.quality);
 
   if (options.debugMode) {
     debugPanel.classList.remove('hidden');
@@ -337,7 +363,6 @@ async function main(): Promise<void> {
     if (world.uiState !== 'levelup') return;
     const choice = world.pendingLevelChoices[index];
     if (!choice) return;
-
     world.applyLevelChoice(choice.id);
     levelUpModal.classList.add('hidden');
   }
@@ -346,7 +371,6 @@ async function main(): Promise<void> {
     if (world.uiState !== 'chest') return;
     const choice = world.pendingChestChoices[index];
     if (!choice) return;
-
     world.applyChestChoice(choice.id);
     chestModal.classList.add('hidden');
   }
@@ -356,26 +380,6 @@ async function main(): Promise<void> {
     world.input.down = false;
     world.input.left = false;
     world.input.right = false;
-  }
-
-  function persistSettings(quality: QualityTier): void {
-    saveSettings({
-      rendererPreference: preferredRenderer,
-      quality,
-      audioEnabled,
-      audioVolume,
-      motionScale
-    });
-  }
-
-  function syncSettingsControls(): void {
-    settingsAudioEnabled.checked = audioEnabled;
-    settingsAudioVolume.value = String(Math.round(audioVolume * 100));
-    settingsAudioVolumeValue.textContent = `${Math.round(audioVolume * 100)}%`;
-    settingsAudioVolume.disabled = !audioEnabled;
-    settingsMotionIntensity.value = String(Math.round(motionScale * 100));
-    settingsMotionIntensityValue.textContent = `${Math.round(motionScale * 100)}%`;
-    settingsRendererPreference.value = preferredRenderer;
   }
 
   function openSettings(): void {
@@ -406,46 +410,96 @@ async function main(): Promise<void> {
     }
   }
 
-  function syncHud(): void {
-    hudHp.textContent = `${Math.ceil(world.playerStats.hp)} / ${Math.ceil(world.playerStats.maxHp)}`;
-    hudLevel.textContent = String(world.level);
-    hudEnemies.textContent = String(world.getEnemyCount());
-    hudTime.textContent = formatRunTime(world.runTime);
-    hudEvent.textContent = getRunEventLabel(world.activeEventId);
-    hudAudio.textContent = audioEnabled ? 'On' : 'Off';
+  function setIfChanged(element: HTMLElement, next: string, key: HudStringCacheKey): void {
+    if (hudCache[key] === next) return;
+    hudCache[key] = next;
+    element.textContent = next;
+  }
+
+  function syncHud(forceHeavy = false): void {
+    const hudStart = performance.now();
+
+    setIfChanged(
+      hudHp,
+      `${Math.ceil(world.playerStats.hp)} / ${Math.ceil(world.playerStats.maxHp)}`,
+      'hp'
+    );
+    setIfChanged(hudLevel, String(world.level), 'level');
+    setIfChanged(hudEnemies, String(world.getEnemyCount()), 'enemies');
+    setIfChanged(hudTime, formatRunTime(world.runTime), 'time');
+    setIfChanged(hudEvent, getRunEventLabel(world.activeEventId), 'event');
+    setIfChanged(hudAudio, audioEnabled ? 'On' : 'Off', 'audio');
     hudEventChip.classList.toggle('event-active', world.activeEventId !== null);
-    hudEventChip.title = getRunEventDescription(world.activeEventId);
+
+    const nextEventDescription = getRunEventDescription(world.activeEventId);
+    if (hudCache.eventDescription !== nextEventDescription) {
+      hudCache.eventDescription = nextEventDescription;
+      hudEventChip.title = nextEventDescription;
+    }
+
+    const hpRatio = world.playerStats.maxHp > 0 ? world.playerStats.hp / world.playerStats.maxHp : 1;
+    hudHpChip.classList.toggle('danger', hpRatio <= 0.3);
     const ratio = world.xpToNext > 0 ? Math.min(1, world.xp / world.xpToNext) : 0;
-    xpFill.style.width = `${ratio * 100}%`;
-
-    inventoryBar.innerHTML = '';
-    for (const slot of world.inventorySlots) {
-      const tile = document.createElement('div');
-      const empty = !slot.itemId;
-      const weapon = slot.itemId ? WEAPON_ARCHETYPES[slot.itemId] : null;
-      tile.className = `build-slot ${empty ? 'empty' : ''} ${weapon?.rarity === 'legendary' ? 'legendary' : ''}`;
-      tile.innerHTML = empty
-        ? `<strong>Slot ${slot.slotIndex + 1}</strong><em>Empty</em>`
-        : `<strong>S${slot.slotIndex + 1}: ${weapon?.name ?? slot.itemId}</strong><em>Rank ${slot.rank}${slot.isEvolved ? ' • Evolved' : ''}</em>`;
-      inventoryBar.appendChild(tile);
+    const nextXpWidth = `${ratio * 100}%`;
+    if (hudCache.xpWidth !== nextXpWidth) {
+      hudCache.xpWidth = nextXpWidth;
+      xpFill.style.width = nextXpWidth;
     }
 
-    catalystBar.innerHTML = '';
-    const catalystEntries = Array.from(world.catalystRanks.entries());
-    if (catalystEntries.length === 0) {
-      const tile = document.createElement('div');
-      tile.className = 'build-slot empty';
-      tile.innerHTML = '<strong>Catalysts</strong><em>None yet</em>';
-      catalystBar.appendChild(tile);
-    } else {
-      for (const [id, rank] of catalystEntries) {
-        const catalyst = CATALYST_DEFINITIONS[id];
-        const tile = document.createElement('div');
-        tile.className = `build-slot ${catalyst?.rarity === 'epic' ? 'legendary' : ''}`;
-        tile.innerHTML = `<strong>${catalyst?.name ?? id}</strong><em>Rank ${rank}</em>`;
-        catalystBar.appendChild(tile);
+    const now = performance.now();
+    const shouldSyncHeavy = forceHeavy || now - lastHeavyHudSyncAt >= 100;
+    if (shouldSyncHeavy) {
+      lastHeavyHudSyncAt = now;
+
+      for (const slot of world.inventorySlots) {
+        const weapon = slot.itemId ? WEAPON_ARCHETYPES[slot.itemId] : null;
+        const rarityClass = weapon?.rarity ?? 'common';
+        const signature = `${slot.itemId ?? '-'}|${slot.rank}|${slot.isEvolved ? 1 : 0}|${rarityClass}`;
+        if (hudCache.inventory[slot.slotIndex] === signature) continue;
+        hudCache.inventory[slot.slotIndex] = signature;
+
+        const tile = inventoryTiles[slot.slotIndex];
+        const empty = !slot.itemId;
+        tile.root.className = `build-slot ${empty ? 'empty' : ''} rarity-${rarityClass}`;
+        tile.title.textContent = empty ? `Slot ${slot.slotIndex + 1}` : `S${slot.slotIndex + 1}: ${weapon?.name ?? slot.itemId}`;
+        tile.subtitle.textContent = empty ? 'Empty' : `Rank ${slot.rank}${slot.isEvolved ? ' • Evolved' : ''}`;
       }
+
+      const catalystEntries = Array.from(world.catalystRanks.entries()).sort(([a], [b]) => a.localeCompare(b));
+      const catalystSignature = catalystEntries.map(([id, rank]) => `${id}:${rank}`).join('|');
+      if (hudCache.catalysts !== catalystSignature) {
+        hudCache.catalysts = catalystSignature;
+        catalystBar.replaceChildren();
+        if (catalystEntries.length === 0) {
+          const tile = createBuildSlotTile();
+          tile.root.className = 'build-slot empty';
+          tile.title.textContent = 'Catalysts';
+          tile.subtitle.textContent = 'None yet';
+          catalystBar.appendChild(tile.root);
+        } else {
+          for (const [id, rank] of catalystEntries) {
+            const catalyst = CATALYST_DEFINITIONS[id];
+            const tile = createBuildSlotTile();
+            const rarityClass = catalyst?.rarity === 'epic' ? 'legendary' : catalyst?.rarity ?? 'common';
+            tile.root.className = `build-slot rarity-${rarityClass}`;
+            tile.title.textContent = catalyst?.name ?? id;
+            tile.subtitle.textContent = `Rank ${rank}`;
+            catalystBar.appendChild(tile.root);
+          }
+        }
+      }
+
+      const readyCount = world.getEvolutionCandidates().length;
+      const evolutionLabel = readyCount > 0 ? `${readyCount} Ready` : 'None';
+      if (hudCache.evolutionReady !== evolutionLabel) {
+        hudCache.evolutionReady = evolutionLabel;
+        hudEvolutionReady.textContent = evolutionLabel;
+      }
+      hudEvolutionReady.classList.toggle('active', readyCount > 0);
     }
+
+    hudSyncMs = performance.now() - hudStart;
+    renderer.setHudSyncTime(hudSyncMs);
   }
 
   function syncAudioCues(): void {
@@ -521,8 +575,8 @@ async function main(): Promise<void> {
     const hazardPoolStats = world.hazardPool.getStats();
     const chestPoolStats = world.chestPool.getStats();
     const xpPoolStats = world.xpPool.getStats();
-
     const evolutionsReady = world.getEvolutionCandidates();
+    const perf = renderer.getPerformanceSnapshot();
 
     debugPanel.textContent = [
       `seed: ${world.seed}`,
@@ -534,6 +588,13 @@ async function main(): Promise<void> {
       `fps: ${stats.fps.toFixed(1)}`,
       `frame: ${stats.smoothedFrameTimeMs.toFixed(2)}ms`,
       `quality: ${world.quality}`,
+      `budget tier: ${perf.budgetTier}`,
+      `render p50/p95: ${perf.rolling.p50FrameMs.toFixed(2)} / ${perf.rolling.p95FrameMs.toFixed(2)}ms`,
+      `render timings: b${perf.timings.backdropMs.toFixed(2)} e${perf.timings.entitiesMs.toFixed(2)} o${perf.timings.overlaysMs.toFixed(2)} h${perf.timings.hudSyncMs.toFixed(2)} t${perf.timings.totalMs.toFixed(2)}`,
+      `visible/culled: ${perf.visibleEntities}/${perf.culledEntities}`,
+      `draw calls est: ${perf.drawCallsEstimate}`,
+      `hud sync: ${hudSyncMs.toFixed(2)}ms`,
+      `visual: ${colorVisionMode}, ui ${Math.round(uiScale * 100)}%, shake ${Math.round(screenShake * 100)}%, hazard ${Math.round(hazardOpacity * 100)}%`,
       `event: ${world.activeEventId ?? 'none'}`,
       `phase: ${world.director.phaseId}`,
       `intensity: ${world.director.intensity.toFixed(2)}`,
@@ -569,12 +630,14 @@ async function main(): Promise<void> {
     previousEliteKills = world.eliteKills;
     previousEventId = world.activeEventId;
     previousUiState = world.uiState;
+    lastHeavyHudSyncAt = 0;
     bootScreen.classList.add('hidden');
     gameOverModal.classList.add('hidden');
     levelUpModal.classList.add('hidden');
     chestModal.classList.add('hidden');
     pauseBanner.classList.add('hidden');
     hud.classList.remove('hidden');
+    syncHud(true);
     syncTopChromeOffsets();
     loop.resetAccumulator();
   }
@@ -712,6 +775,7 @@ async function main(): Promise<void> {
     }));
 
     const catalysts = Array.from(world.catalystRanks.entries()).map(([id, rank]) => ({ id, rank }));
+    const renderPerf = renderer.getPerformanceSnapshot();
 
     return JSON.stringify({
       coordinateSystem: 'World space with origin at player spawn (0,0), +x right, +y down.',
@@ -735,6 +799,15 @@ async function main(): Promise<void> {
         targetEnemies: world.director.targetEnemies,
         targetThreat: Number(world.director.targetThreat.toFixed(1))
       },
+      visualSettings: {
+        colorVisionMode,
+        uiScale: Number(uiScale.toFixed(2)),
+        screenShake: Number(screenShake.toFixed(2)),
+        hazardOpacity: Number(hazardOpacity.toFixed(2)),
+        hitFlashStrength: Number(hitFlashStrength.toFixed(2)),
+        showDirectionalIndicators
+      },
+      renderPerf,
       inventory,
       catalysts,
       evolutionCandidates: world.getEvolutionCandidates(),
@@ -827,7 +900,57 @@ async function main(): Promise<void> {
 
   settingsMotionIntensity.addEventListener('input', () => {
     motionScale = clamp(Number(settingsMotionIntensity.value) / 100, 0, 1);
-    renderer.setMotionScale(motionScale);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsColorVision.addEventListener('change', () => {
+    colorVisionMode = parseColorVisionMode(settingsColorVision.value);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsUiScale.addEventListener('input', () => {
+    uiScale = clamp(Number(settingsUiScale.value) / 100, 0.9, 1.25);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+    syncTopChromeOffsets();
+  });
+
+  settingsScreenShake.addEventListener('input', () => {
+    screenShake = clamp(Number(settingsScreenShake.value) / 100, 0, 1);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsHazardOpacity.addEventListener('input', () => {
+    hazardOpacity = clamp(Number(settingsHazardOpacity.value) / 100, 0.45, 1);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsHitFlashStrength.addEventListener('input', () => {
+    hitFlashStrength = clamp(Number(settingsHitFlashStrength.value) / 100, 0, 1);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsDamageNumbers.addEventListener('change', () => {
+    showDamageNumbers = settingsDamageNumbers.checked;
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsDirectionalIndicators.addEventListener('change', () => {
+    showDirectionalIndicators = settingsDirectionalIndicators.checked;
+    applyVisualSettings();
     syncSettingsControls();
     persistSettings(world.quality);
   });
@@ -845,6 +968,8 @@ async function main(): Promise<void> {
   });
 
   syncSettingsControls();
+  applyVisualSettings();
+  syncHud(true);
 
   window.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();

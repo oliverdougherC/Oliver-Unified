@@ -2,6 +2,9 @@ export type RendererKind = 'webgpu' | 'webgl';
 export type RendererPreference = 'auto' | RendererKind;
 export type QualityTier = 'high' | 'medium' | 'low';
 export type UIState = 'boot' | 'playing' | 'paused' | 'levelup' | 'chest' | 'gameover';
+export type VisualPreset = 'bioluminescent';
+export type ColorVisionMode = 'normal' | 'deuteranopia' | 'protanopia' | 'tritanopia';
+export type RenderBudgetTier = 'ultra' | 'high' | 'medium' | 'low' | 'minimal';
 
 export type EntityKind =
   | 'player'
@@ -16,6 +19,16 @@ export type ItemKind = 'weapon' | 'catalyst' | 'evolution';
 export type WeaponPattern = 'single' | 'fan' | 'ring' | 'burst' | 'spiral' | 'heavy' | 'orbit';
 export type EnemyBehavior = 'chaser' | 'dash_striker' | 'spitter';
 export type EnemyRole = 'swarmer' | 'charger' | 'bruiser' | 'tank' | 'sniper' | 'summoner' | 'disruptor';
+export type VisualRole =
+  | 'player'
+  | 'enemy_role'
+  | 'enemy_elite'
+  | 'player_projectile'
+  | 'enemy_projectile'
+  | 'xp_orb'
+  | 'hazard'
+  | 'chest'
+  | 'telegraph';
 
 export interface Vec2 {
   x: number;
@@ -235,6 +248,72 @@ export interface QueryOptions {
   audioEnabled: boolean;
   audioVolume: number;
   motionScale: number;
+  visualPreset: VisualPreset;
+  colorVisionMode: ColorVisionMode;
+  uiScale: number;
+  screenShake: number;
+  hazardOpacity: number;
+  hitFlashStrength: number;
+  showDamageNumbers: boolean;
+  showDirectionalIndicators: boolean;
+}
+
+export interface VisualRuntimeSettings {
+  visualPreset: VisualPreset;
+  colorVisionMode: ColorVisionMode;
+  motionScale: number;
+  uiScale: number;
+  screenShake: number;
+  hazardOpacity: number;
+  hitFlashStrength: number;
+  showDamageNumbers: boolean;
+  showDirectionalIndicators: boolean;
+}
+
+export interface RenderBudgetFlags {
+  parallaxBackdrop: boolean;
+  ambientMotes: boolean;
+  secondaryGlows: boolean;
+  trailFx: boolean;
+  overlayNoise: boolean;
+}
+
+export interface RenderPerformanceSnapshot {
+  budgetTier: RenderBudgetTier;
+  frameTimeMs: number;
+  smoothedFrameTimeMs: number;
+  visibleEntities: number;
+  culledEntities: number;
+  drawCallsEstimate: number;
+  timings: {
+    backdropMs: number;
+    entitiesMs: number;
+    overlaysMs: number;
+    hudSyncMs: number;
+    totalMs: number;
+  };
+  rolling: {
+    p50FrameMs: number;
+    p95FrameMs: number;
+  };
+}
+
+export interface VisualThemeTokens {
+  player: { fill: number; stroke: number; aura: number };
+  projectiles: { allied: number; alliedStroke: number; enemy: number; enemyStroke: number };
+  pickups: { xpFill: number; xpStroke: number; chestFill: number; chestStroke: number };
+  hazards: { fill: number; inner: number; stroke: number };
+  telegraph: { line: number; ring: number };
+  enemies: Record<EnemyRole, { fill: number; stroke: number }>;
+  elite: { stroke: number; crown: number };
+  backdrop: {
+    floor: number;
+    canopy: number;
+    fog: number;
+    vines: number;
+    grade: number;
+    eventTint: number;
+  };
 }
 
 export interface IObjectPool<T> {
@@ -256,6 +335,9 @@ export interface IRenderAdapter<TWorld> {
   }): Promise<RendererKind>;
   render(world: TWorld, alpha: number, frameTimeMs: number): void;
   setQuality(quality: QualityTier): void;
+  setVisualSettings(settings: VisualRuntimeSettings): void;
+  setHudSyncTime(hudSyncMs: number): void;
+  getPerformanceSnapshot(): RenderPerformanceSnapshot;
   getCanvas(): HTMLCanvasElement | null;
   destroy(): void;
 }

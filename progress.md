@@ -126,3 +126,51 @@ Original prompt: What is the next logical step for our game. I want to make the 
   - `hazards: 7`
   - `xpOrbs: 18`
 - Confirmed no Playwright error files emitted in final probe folder.
+
+## 2026-02-27 (visual/qol/perf overhaul)
+
+### Progress update
+
+- Started implementation of visual/readability/performance-focused overhaul (no gameplay-content rewrite).
+- Added new runtime settings model with migration-safe defaults in `game-src/src/runtime/settings.ts`:
+  - color vision mode, UI scale, screen shake, hazard opacity, hit flash strength, directional indicators, damage numbers.
+- Extended shared interfaces in `game-src/src/types.ts`:
+  - visual roles/theme tokens, visual runtime settings, render budget/perf snapshot contracts.
+- Refactored `game-src/src/main.ts`:
+  - removed per-frame inventory/catalyst DOM rebuild.
+  - implemented cached + throttled HUD sync (heavy HUD updates at 10Hz).
+  - added readability settings wiring + persistence + debug telemetry hooks.
+- Replaced `game-src/src/render/pixiRenderAdapter.ts` with new renderer pipeline:
+  - semantic visual palette integration via `render/visualTheme.ts`.
+  - camera-anchored parallax backdrop.
+  - culling-aware entity sync and distance-sensitive simplification.
+  - adaptive render budget tiers and perf snapshot reporting.
+  - off-screen elite/chest directional indicators and hazard opacity / hit-flash controls.
+- Updated `game-src/index.html` and `game-src/src/styles.css`:
+  - stronger bioluminescent contrast styling, low-HP pulse, evolution-ready chip.
+  - expanded runtime settings panel for readability controls.
+- Added tests:
+  - `game-src/tests/settings-runtime.test.ts` for settings migration and query override behavior.
+  - `game-src/tests/visual-theme.test.ts` for luminance separation gates.
+
+### Verification status
+
+- `npm run game:typecheck` currently passing after refactor.
+- Next: run `npm run game:test`, then Playwright visual run and inspect screenshots/state for regressions.
+
+### Verification update (visual/qol/perf overhaul)
+
+- `npm run game:check` passed after refactor (typecheck + 12 test files / 22 tests).
+- `npm run game:build` completed successfully and refreshed `pages/game` assets.
+- Attempted Playwright gameplay capture using the skill client and repo-local client, but browser automation could not reach local dev server from this environment (`ERR_CONNECTION_REFUSED` across sandbox/escalated contexts). Kept this as an environment limitation and validated via static checks/build.
+
+### Remaining follow-up
+
+- Re-run gameplay probe/screenshots in an environment where browser runner and dev server share the same network namespace.
+- Confirm late-run FPS/visual readability targets with real capture artifacts.
+
+### Follow-up fixes
+
+- Added legacy settings fallback loading (`forestArcana.settings.v2` -> v3 normalization) in runtime settings.
+- Expanded settings tests to assert legacy key migration behavior.
+- Re-ran `npm run game:test` and `npm run game:check` after migration fix; both passing.

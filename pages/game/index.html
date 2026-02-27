@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Manrope:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="./assets/index-DfvgvJ_7.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-BDutCCCC.css">
+  <script type="module" crossorigin src="./assets/index-CSl8-Beb.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-bsVcSKPU.css">
 </head>
 <body>
   <main class="game-shell" id="gameShell">
@@ -41,13 +41,14 @@
 
     <section class="hud hidden" id="hud" aria-live="polite">
       <div class="hud-left">
-        <div class="hud-chip"><span>HP</span><strong id="hudHp">0 / 0</strong></div>
+        <div class="hud-chip" id="hudHpChip"><span>HP</span><strong id="hudHp">0 / 0</strong></div>
         <div class="hud-chip"><span>Level</span><strong id="hudLevel">1</strong></div>
         <div class="hud-chip"><span>Enemies</span><strong id="hudEnemies">0</strong></div>
       </div>
       <div class="hud-right">
         <div class="hud-chip"><span>Time</span><strong id="hudTime">0:00</strong></div>
         <div class="hud-chip" id="hudEventChip"><span>Event</span><strong id="hudEvent">None</strong></div>
+        <div class="hud-chip"><span>Evo Ready</span><strong id="hudEvolutionReady">None</strong></div>
         <div class="hud-chip"><span>Audio</span><strong id="hudAudio">On</strong></div>
         <div class="hud-chip"><span>Renderer</span><strong id="hudRenderer">-</strong></div>
       </div>
@@ -101,6 +102,7 @@
         <p class="tag">Runtime Settings</p>
         <h2>Preferences</h2>
         <div class="settings-grid">
+          <p class="setting-group">General</p>
           <label class="setting-row" for="settingsAudioEnabled">
             <span>Audio</span>
             <input id="settingsAudioEnabled" type="checkbox" checked>
@@ -126,6 +128,53 @@
               <option value="webgpu">WebGPU</option>
               <option value="webgl">WebGL</option>
             </select>
+          </label>
+
+          <p class="setting-group">Readability</p>
+          <label class="setting-row" for="settingsColorVision">
+            <span>Color Vision</span>
+            <select id="settingsColorVision">
+              <option value="normal">Normal</option>
+              <option value="deuteranopia">Deuteranopia</option>
+              <option value="protanopia">Protanopia</option>
+              <option value="tritanopia">Tritanopia</option>
+            </select>
+          </label>
+          <label class="setting-row" for="settingsUiScale">
+            <span>UI Scale</span>
+            <div class="setting-control">
+              <input id="settingsUiScale" type="range" min="90" max="125" step="1" value="100">
+              <strong id="settingsUiScaleValue">100%</strong>
+            </div>
+          </label>
+          <label class="setting-row" for="settingsScreenShake">
+            <span>Screen Shake</span>
+            <div class="setting-control">
+              <input id="settingsScreenShake" type="range" min="0" max="100" step="1" value="100">
+              <strong id="settingsScreenShakeValue">100%</strong>
+            </div>
+          </label>
+          <label class="setting-row" for="settingsHazardOpacity">
+            <span>Hazard Opacity</span>
+            <div class="setting-control">
+              <input id="settingsHazardOpacity" type="range" min="45" max="100" step="1" value="90">
+              <strong id="settingsHazardOpacityValue">90%</strong>
+            </div>
+          </label>
+          <label class="setting-row" for="settingsHitFlashStrength">
+            <span>Hit Flash</span>
+            <div class="setting-control">
+              <input id="settingsHitFlashStrength" type="range" min="0" max="100" step="1" value="90">
+              <strong id="settingsHitFlashStrengthValue">90%</strong>
+            </div>
+          </label>
+          <label class="setting-row" for="settingsDirectionalIndicators">
+            <span>Offscreen Indicators</span>
+            <input id="settingsDirectionalIndicators" type="checkbox" checked>
+          </label>
+          <label class="setting-row" for="settingsDamageNumbers">
+            <span>Damage Numbers</span>
+            <input id="settingsDamageNumbers" type="checkbox">
           </label>
         </div>
         <p class="hint">Renderer changes apply after reload.</p>
