@@ -1,9 +1,21 @@
 export type RendererKind = 'webgpu' | 'webgl';
 export type RendererPreference = 'auto' | RendererKind;
 export type QualityTier = 'high' | 'medium' | 'low';
-export type UIState = 'boot' | 'playing' | 'paused' | 'levelup' | 'gameover';
-export type EntityKind = 'player' | 'enemy' | 'projectile' | 'enemy_projectile' | 'xp' | 'hazard';
+export type UIState = 'boot' | 'playing' | 'paused' | 'levelup' | 'chest' | 'gameover';
+
+export type EntityKind =
+  | 'player'
+  | 'enemy'
+  | 'projectile'
+  | 'enemy_projectile'
+  | 'xp'
+  | 'hazard'
+  | 'chest';
+
+export type ItemKind = 'weapon' | 'catalyst' | 'evolution';
+export type WeaponPattern = 'single' | 'fan' | 'ring' | 'burst' | 'spiral' | 'heavy' | 'orbit';
 export type EnemyBehavior = 'chaser' | 'dash_striker' | 'spitter';
+export type EnemyRole = 'swarmer' | 'charger' | 'bruiser' | 'tank' | 'sniper' | 'summoner' | 'disruptor';
 
 export interface Vec2 {
   x: number;
@@ -23,19 +35,107 @@ export interface GameConfig {
 export interface WeaponArchetype {
   id: string;
   name: string;
-  damage: number;
-  fireCooldown: number;
+  description: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  pattern: WeaponPattern;
+  baseDamage: number;
+  damagePerRank: number;
+  baseCooldown: number;
+  cooldownScalePerRank: number;
   projectileSpeed: number;
   projectileLifetime: number;
   projectileRadius: number;
-  pierce: number;
+  basePierce: number;
+  piercePerRank: number;
   range: number;
+  projectilesPerAttack: number;
+  spreadAngleDeg: number;
+  colorHex: number;
+  isEvolution?: boolean;
+  evolvedFrom?: string;
+}
+
+export type CatalystEffect =
+  | { type: 'max_hp'; amount: number }
+  | { type: 'heal'; amount: number }
+  | { type: 'move_speed'; amount: number }
+  | { type: 'pickup_radius'; amount: number }
+  | { type: 'regen'; amount: number }
+  | { type: 'global_damage_mult'; amount: number }
+  | { type: 'global_cooldown_mult'; amount: number }
+  | { type: 'projectile_speed_mult'; amount: number }
+  | { type: 'crit_chance'; amount: number }
+  | { type: 'crit_damage'; amount: number }
+  | { type: 'armor'; amount: number };
+
+export interface CatalystDefinition {
+  id: string;
+  name: string;
+  description: string;
+  rarity: 'common' | 'rare' | 'epic';
+  weight: number;
+  maxRank: number;
+  effects: CatalystEffect[];
+}
+
+export interface EvolutionRecipe {
+  id: string;
+  weaponId: string;
+  catalystId: string;
+  evolvedWeaponId: string;
+  minTimeSeconds: number;
+}
+
+export interface InventorySlot {
+  slotIndex: number;
+  itemId: string | null;
+  rank: number;
+  isEvolved: boolean;
+}
+
+export interface LevelUpChoice {
+  id: string;
+  title: string;
+  description: string;
+  choiceType: 'new_item' | 'upgrade_item' | 'stat_boost' | 'reroll';
+  itemKind?: ItemKind;
+  itemId?: string;
+  slotIndex?: number;
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary';
+  statBoost?: 'heal' | 'armor' | 'speed' | 'damage';
+}
+
+export interface ChestChoice {
+  id: string;
+  title: string;
+  description: string;
+  choiceType: 'evolve' | 'reward';
+  slotIndex?: number;
+  evolvedWeaponId?: string;
+  rewardType?: 'xp_burst' | 'heal' | 'catalyst_boost';
+}
+
+export interface PlayerStats {
+  maxHp: number;
+  hp: number;
+  moveSpeed: number;
+  pickupRadius: number;
+  regenPerSecond: number;
+  contactInvuln: number;
+  damageMultiplier: number;
+  cooldownMultiplier: number;
+  projectileSpeedMultiplier: number;
+  critChance: number;
+  critMultiplier: number;
+  armor: number;
 }
 
 export interface EnemyArchetype {
   id: string;
   name: string;
+  role: EnemyRole;
   behavior: EnemyBehavior;
+  unlockTime: number;
   maxHp: number;
   radius: number;
   speed: number;
@@ -95,14 +195,28 @@ export interface UpgradeOption {
   effect: UpgradeEffect;
 }
 
-export interface PlayerStats {
-  maxHp: number;
-  hp: number;
-  moveSpeed: number;
-  pickupRadius: number;
-  regenPerSecond: number;
-  contactInvuln: number;
-  weapon: WeaponArchetype;
+export interface DirectorBand {
+  id: string;
+  startTime: number;
+  endTime: number;
+  targetEnemiesMin: number;
+  targetEnemiesMax: number;
+  targetThreatMin: number;
+  targetThreatMax: number;
+  projectileHazardMin: number;
+  projectileHazardMax: number;
+  baseSpawnInterval: number;
+}
+
+export interface RunDirectorState {
+  phaseId: string;
+  intensity: number;
+  heat: number;
+  targetThreat: number;
+  targetEnemies: number;
+  lastEliteSpawnTime: number;
+  nextGuaranteedEliteTime: number;
+  antiLullTimer: number;
 }
 
 export interface RunSnapshot {
@@ -118,7 +232,6 @@ export interface QueryOptions {
   rendererPreference: RendererPreference;
   debugMode: boolean;
   seed: number;
-  metaEnabled: boolean;
   audioEnabled: boolean;
   audioVolume: number;
   motionScale: number;

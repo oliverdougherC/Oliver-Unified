@@ -1,16 +1,12 @@
 import { FixedStepLoop, type LoopStats } from './core/loop';
-import {
-  isMetaProgressionEnabled,
-  loadMetaProgression,
-  setMetaProgressionEnabled,
-  updateMetaProgression
-} from './core/metaProgression';
 import { AudioManager } from './audio/audioManager';
 import { parseSeedFromQuery } from './core/rng';
 import { GameWorld } from './core/world';
-import { PixiRenderAdapter } from './render/pixiRenderAdapter';
+import { CATALYST_DEFINITIONS } from './data/catalysts';
 import { getRunEventDescription, getRunEventLabel } from './data/events';
-import type { ISystem, QueryOptions, QualityTier, RendererPreference } from './types';
+import { WEAPON_ARCHETYPES } from './data/weapons';
+import { PixiRenderAdapter } from './render/pixiRenderAdapter';
+import type { ISystem, LevelUpChoice, QualityTier, QueryOptions, RendererPreference } from './types';
 import { AutoAttackSystem } from './systems/autoAttackSystem';
 import { CleanupSystem } from './systems/cleanupSystem';
 import { CollisionSystem } from './systems/collisionSystem';
@@ -23,7 +19,7 @@ import { RuntimeSystem } from './systems/runtimeSystem';
 import { SpawnSystem } from './systems/spawnSystem';
 import { XpSystem } from './systems/xpSystem';
 
-const SETTINGS_KEY = 'forestArcana.settings.v1';
+const SETTINGS_KEY = 'forestArcana.settings.v2';
 const DEBUG_KEY = 'forestArcana.debug.v1';
 
 interface SettingsPayload {
@@ -72,12 +68,6 @@ function saveSettings(next: SettingsPayload): void {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
 }
 
-function parseMetaFlag(value: string | null): boolean | null {
-  if (value === '1') return true;
-  if (value === '0') return false;
-  return null;
-}
-
 function parseAudioFlag(value: string | null): boolean | null {
   if (value === '1') return true;
   if (value === '0') return false;
@@ -102,7 +92,6 @@ function parseOptions(): QueryOptions {
   );
   const debugFromQuery = url.searchParams.get('debug');
   const seed = parseSeedFromQuery(url.searchParams.get('seed'));
-  const metaFlagFromQuery = parseMetaFlag(url.searchParams.get('meta'));
   const audioFlagFromQuery = parseAudioFlag(url.searchParams.get('audio'));
   const volumeFromQuery = parsePercentFlag(url.searchParams.get('volume'));
   const motionFromQuery = parsePercentFlag(url.searchParams.get('motion'));
@@ -111,19 +100,16 @@ function parseOptions(): QueryOptions {
     debugFromQuery === '1' ||
     (debugFromQuery !== '0' && localStorage.getItem(DEBUG_KEY) === '1');
 
-  const metaEnabled = metaFlagFromQuery ?? isMetaProgressionEnabled();
   const audioEnabled = audioFlagFromQuery ?? settings.audioEnabled;
   const audioVolume = volumeFromQuery ?? settings.audioVolume;
   const motionScale = motionFromQuery ?? settings.motionScale;
 
   localStorage.setItem(DEBUG_KEY, debugMode ? '1' : '0');
-  setMetaProgressionEnabled(metaEnabled);
 
   return {
     rendererPreference,
     debugMode,
     seed,
-    metaEnabled,
     audioEnabled,
     audioVolume,
     motionScale
@@ -170,6 +156,10 @@ function requireElement<T extends HTMLElement>(id: string): T {
   return element as T;
 }
 
+function choiceRarity(choice: LevelUpChoice): 'common' | 'rare' | 'epic' | 'legendary' {
+  return choice.rarity ?? 'common';
+}
+
 async function main(): Promise<void> {
   const options = parseOptions();
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -187,6 +177,10 @@ async function main(): Promise<void> {
   const pauseBanner = requireElement<HTMLElement>('pauseBanner');
   const levelUpModal = requireElement<HTMLElement>('levelUpModal');
   const upgradeGrid = requireElement<HTMLElement>('upgradeGrid');
+  const chestModal = requireElement<HTMLElement>('chestModal');
+  const chestGrid = requireElement<HTMLElement>('chestGrid');
+  const inventoryBar = requireElement<HTMLElement>('inventoryBar');
+  const catalystBar = requireElement<HTMLElement>('catalystBar');
   const gameOverModal = requireElement<HTMLElement>('gameOverModal');
   const settingsPanel = requireElement<HTMLElement>('settingsPanel');
   const settingsToggleBtn = requireElement<HTMLButtonElement>('settingsToggleBtn');
@@ -200,7 +194,6 @@ async function main(): Promise<void> {
   const settingsRendererPreference = requireElement<HTMLSelectElement>('settingsRendererPreference');
   const restartRunBtn = requireElement<HTMLButtonElement>('restartRunBtn');
   const runSummary = requireElement<HTMLElement>('runSummary');
-  const metaSummary = requireElement<HTMLElement>('metaSummary');
   const debugPanel = requireElement<HTMLElement>('debugPanel');
 
   const hudHp = requireElement<HTMLElement>('hudHp');
@@ -216,8 +209,8 @@ async function main(): Promise<void> {
   let pausedByVisibility = false;
   let pausedBySettings = false;
   let settingsOpen = false;
-  let lastUpgradeSignature = '';
-  let runPersisted = false;
+  let lastLevelSignature = '';
+  let lastChestSignature = '';
   let preferredRenderer = options.rendererPreference;
   let audioEnabled = options.audioEnabled;
   let audioVolume = options.audioVolume;
@@ -225,7 +218,7 @@ async function main(): Promise<void> {
   let previousShotsFired = 0;
   let previousPlayerHitCount = 0;
   let previousLevelUpOfferedCount = 0;
-  let previousUpgradeCount = 0;
+  let previousEliteKills = 0;
   let previousEventId: string | null = null;
   let previousUiState = world.uiState;
 
@@ -234,7 +227,7 @@ async function main(): Promise<void> {
     const hudBottom = hud.classList.contains('hidden')
       ? 0
       : Math.max(0, hud.getBoundingClientRect().bottom - shellRect.top);
-    const topAnchor = Math.max(68, Math.round(hudBottom + 8));
+    const topAnchor = Math.max(88, Math.round(hudBottom + 8));
     gameShell.style.setProperty('--hud-stack-bottom', `${topAnchor}px`);
   }
 
@@ -298,33 +291,64 @@ async function main(): Promise<void> {
     new CleanupSystem()
   ];
 
-  function renderUpgradeChoices(): void {
-    const signature = world.pendingUpgradeChoices.map((option) => option.id).join('|');
-    if (signature === lastUpgradeSignature) return;
+  function renderLevelChoices(): void {
+    const signature = world.pendingLevelChoices.map((choice) => choice.id).join('|');
+    if (signature === lastLevelSignature) return;
 
-    lastUpgradeSignature = signature;
+    lastLevelSignature = signature;
     upgradeGrid.innerHTML = '';
 
-    world.pendingUpgradeChoices.forEach((option, index) => {
+    world.pendingLevelChoices.forEach((choice, index) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'upgrade-btn';
-      button.innerHTML = `<strong>${index + 1}. ${option.name}</strong><span>${option.description}</span>`;
+      button.dataset.rarity = choiceRarity(choice);
+      button.innerHTML = `<strong>${index + 1}. ${choice.title}</strong><span>${choice.description}</span>`;
       button.addEventListener('click', () => {
-        world.applyUpgrade(option.id);
+        world.applyLevelChoice(choice.id);
         levelUpModal.classList.add('hidden');
       });
       upgradeGrid.appendChild(button);
     });
   }
 
-  function chooseUpgradeByIndex(index: number): void {
-    if (world.uiState !== 'levelup') return;
-    const option = world.pendingUpgradeChoices[index];
-    if (!option) return;
+  function renderChestChoices(): void {
+    const signature = world.pendingChestChoices.map((choice) => choice.id).join('|');
+    if (signature === lastChestSignature) return;
 
-    world.applyUpgrade(option.id);
+    lastChestSignature = signature;
+    chestGrid.innerHTML = '';
+
+    world.pendingChestChoices.forEach((choice, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'upgrade-btn';
+      button.dataset.rarity = choice.choiceType === 'evolve' ? 'legendary' : 'epic';
+      button.innerHTML = `<strong>${index + 1}. ${choice.title}</strong><span>${choice.description}</span>`;
+      button.addEventListener('click', () => {
+        world.applyChestChoice(choice.id);
+        chestModal.classList.add('hidden');
+      });
+      chestGrid.appendChild(button);
+    });
+  }
+
+  function chooseLevelChoiceByIndex(index: number): void {
+    if (world.uiState !== 'levelup') return;
+    const choice = world.pendingLevelChoices[index];
+    if (!choice) return;
+
+    world.applyLevelChoice(choice.id);
     levelUpModal.classList.add('hidden');
+  }
+
+  function chooseChestChoiceByIndex(index: number): void {
+    if (world.uiState !== 'chest') return;
+    const choice = world.pendingChestChoices[index];
+    if (!choice) return;
+
+    world.applyChestChoice(choice.id);
+    chestModal.classList.add('hidden');
   }
 
   function clearMovementInput(): void {
@@ -393,11 +417,40 @@ async function main(): Promise<void> {
     hudEventChip.title = getRunEventDescription(world.activeEventId);
     const ratio = world.xpToNext > 0 ? Math.min(1, world.xp / world.xpToNext) : 0;
     xpFill.style.width = `${ratio * 100}%`;
+
+    inventoryBar.innerHTML = '';
+    for (const slot of world.inventorySlots) {
+      const tile = document.createElement('div');
+      const empty = !slot.itemId;
+      const weapon = slot.itemId ? WEAPON_ARCHETYPES[slot.itemId] : null;
+      tile.className = `build-slot ${empty ? 'empty' : ''} ${weapon?.rarity === 'legendary' ? 'legendary' : ''}`;
+      tile.innerHTML = empty
+        ? `<strong>Slot ${slot.slotIndex + 1}</strong><em>Empty</em>`
+        : `<strong>S${slot.slotIndex + 1}: ${weapon?.name ?? slot.itemId}</strong><em>Rank ${slot.rank}${slot.isEvolved ? ' • Evolved' : ''}</em>`;
+      inventoryBar.appendChild(tile);
+    }
+
+    catalystBar.innerHTML = '';
+    const catalystEntries = Array.from(world.catalystRanks.entries());
+    if (catalystEntries.length === 0) {
+      const tile = document.createElement('div');
+      tile.className = 'build-slot empty';
+      tile.innerHTML = '<strong>Catalysts</strong><em>None yet</em>';
+      catalystBar.appendChild(tile);
+    } else {
+      for (const [id, rank] of catalystEntries) {
+        const catalyst = CATALYST_DEFINITIONS[id];
+        const tile = document.createElement('div');
+        tile.className = `build-slot ${catalyst?.rarity === 'epic' ? 'legendary' : ''}`;
+        tile.innerHTML = `<strong>${catalyst?.name ?? id}</strong><em>Rank ${rank}</em>`;
+        catalystBar.appendChild(tile);
+      }
+    }
   }
 
   function syncAudioCues(): void {
     if (world.shotsFired > previousShotsFired) {
-      const delta = Math.min(3, world.shotsFired - previousShotsFired);
+      const delta = Math.min(4, world.shotsFired - previousShotsFired);
       for (let i = 0; i < delta; i += 1) {
         audio.playShot();
       }
@@ -411,8 +464,8 @@ async function main(): Promise<void> {
       audio.playLevelUp();
     }
 
-    if (world.chosenUpgrades.length > previousUpgradeCount) {
-      audio.playUpgradePick();
+    if (world.eliteKills > previousEliteKills) {
+      audio.playEventStart();
     }
 
     if (world.activeEventId !== previousEventId && world.activeEventId) {
@@ -426,7 +479,7 @@ async function main(): Promise<void> {
     previousShotsFired = world.shotsFired;
     previousPlayerHitCount = world.playerHitCount;
     previousLevelUpOfferedCount = world.levelUpOfferedCount;
-    previousUpgradeCount = world.chosenUpgrades.length;
+    previousEliteKills = world.eliteKills;
     previousEventId = world.activeEventId;
     previousUiState = world.uiState;
   }
@@ -436,36 +489,26 @@ async function main(): Promise<void> {
     settingsToggleBtn.classList.toggle('hidden', world.uiState === 'boot' || world.uiState === 'gameover');
 
     if (world.uiState === 'levelup') {
-      renderUpgradeChoices();
+      renderLevelChoices();
       levelUpModal.classList.remove('hidden');
     } else {
       levelUpModal.classList.add('hidden');
-      lastUpgradeSignature = '';
+      lastLevelSignature = '';
+    }
+
+    if (world.uiState === 'chest') {
+      renderChestChoices();
+      chestModal.classList.remove('hidden');
+    } else {
+      chestModal.classList.add('hidden');
+      lastChestSignature = '';
     }
 
     if (world.uiState === 'gameover') {
       gameOverModal.classList.remove('hidden');
       runSummary.textContent = world.toRunSummaryText();
-
-      if (!runPersisted && options.metaEnabled) {
-        updateMetaProgression(world.getSnapshot());
-        runPersisted = true;
-      }
-
-      if (options.metaEnabled) {
-        const meta = loadMetaProgression();
-        metaSummary.classList.remove('hidden');
-        metaSummary.textContent = [
-          `Meta ${meta.totalRuns} runs`,
-          `${meta.totalKills} kills`,
-          `best ${formatRunTime(meta.bestRunSeconds)}`
-        ].join(' | ');
-      } else {
-        metaSummary.classList.add('hidden');
-      }
     } else {
       gameOverModal.classList.add('hidden');
-      metaSummary.classList.add('hidden');
     }
   }
 
@@ -476,13 +519,15 @@ async function main(): Promise<void> {
     const projectilePoolStats = world.projectilePool.getStats();
     const enemyProjectilePoolStats = world.enemyProjectilePool.getStats();
     const hazardPoolStats = world.hazardPool.getStats();
+    const chestPoolStats = world.chestPool.getStats();
     const xpPoolStats = world.xpPool.getStats();
+
+    const evolutionsReady = world.getEvolutionCandidates();
 
     debugPanel.textContent = [
       `seed: ${world.seed}`,
       `ui: ${world.uiState}`,
       `renderer: ${world.rendererKind}`,
-      `meta: ${options.metaEnabled ? 'enabled' : 'off'}`,
       `audio: ${audioEnabled ? 'on' : 'off'}`,
       `volume: ${Math.round(audioVolume * 100)}%`,
       `motion: ${Math.round(motionScale * 100)}%`,
@@ -490,14 +535,24 @@ async function main(): Promise<void> {
       `frame: ${stats.smoothedFrameTimeMs.toFixed(2)}ms`,
       `quality: ${world.quality}`,
       `event: ${world.activeEventId ?? 'none'}`,
+      `phase: ${world.director.phaseId}`,
+      `intensity: ${world.director.intensity.toFixed(2)}`,
+      `heat: ${world.director.heat.toFixed(2)}`,
+      `target enemies: ${world.director.targetEnemies}`,
+      `target threat: ${world.director.targetThreat.toFixed(1)}`,
       `entities: ${world.entities.size}`,
       `threat: ${world.threatLevel.toFixed(1)}`,
       `enemy shots: ${world.enemyShotsFired}`,
       `hazards: ${world.hazards.size}`,
+      `chests: ${world.chests.size}`,
+      `evolutions ready: ${evolutionsReady.length}`,
+      `inventory: ${world.inventorySlots.map((slot) => `${slot.slotIndex + 1}:${slot.itemId ?? '-'}:${slot.rank}${slot.isEvolved ? '*' : ''}`).join(' | ')}`,
+      `catalysts: ${Array.from(world.catalystRanks.entries()).map(([id, rank]) => `${id}:${rank}`).join(', ') || 'none'}`,
       `enemy pool: ${enemyPoolStats.available}/${enemyPoolStats.total}`,
       `proj pool: ${projectilePoolStats.available}/${projectilePoolStats.total}`,
       `enemy proj pool: ${enemyProjectilePoolStats.available}/${enemyProjectilePoolStats.total}`,
       `hazard pool: ${hazardPoolStats.available}/${hazardPoolStats.total}`,
+      `chest pool: ${chestPoolStats.available}/${chestPoolStats.total}`,
       `xp pool: ${xpPoolStats.available}/${xpPoolStats.total}`
     ].join('\n');
   }
@@ -508,16 +563,16 @@ async function main(): Promise<void> {
     settingsOpen = false;
     pausedBySettings = false;
     settingsPanel.classList.add('hidden');
-    runPersisted = false;
     previousShotsFired = world.shotsFired;
     previousPlayerHitCount = world.playerHitCount;
     previousLevelUpOfferedCount = world.levelUpOfferedCount;
-    previousUpgradeCount = world.chosenUpgrades.length;
+    previousEliteKills = world.eliteKills;
     previousEventId = world.activeEventId;
     previousUiState = world.uiState;
     bootScreen.classList.add('hidden');
     gameOverModal.classList.add('hidden');
     levelUpModal.classList.add('hidden');
+    chestModal.classList.add('hidden');
     pauseBanner.classList.add('hidden');
     hud.classList.remove('hidden');
     syncTopChromeOffsets();
@@ -599,7 +654,7 @@ async function main(): Promise<void> {
       })
       .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
       .sort(sortByDistanceToPlayer)
-      .slice(0, 24);
+      .slice(0, 28);
 
     const enemyProjectiles = Array.from(world.enemyProjectiles)
       .map((projectileId) => {
@@ -615,7 +670,7 @@ async function main(): Promise<void> {
       })
       .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
       .sort(sortByDistanceToPlayer)
-      .slice(0, 24);
+      .slice(0, 28);
 
     const hazards = Array.from(world.hazards)
       .map((hazardId) => {
@@ -633,7 +688,30 @@ async function main(): Promise<void> {
       })
       .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
       .sort(sortByDistanceToPlayer)
-      .slice(0, 24);
+      .slice(0, 28);
+
+    const chests = Array.from(world.chests)
+      .map((chestId) => {
+        const pos = world.positions.get(chestId);
+        if (!pos) return null;
+        return {
+          id: chestId,
+          x: Number(pos.x.toFixed(1)),
+          y: Number(pos.y.toFixed(1))
+        };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+      .sort(sortByDistanceToPlayer)
+      .slice(0, 12);
+
+    const inventory = world.inventorySlots.map((slot) => ({
+      slot: slot.slotIndex + 1,
+      itemId: slot.itemId,
+      rank: slot.rank,
+      evolved: slot.isEvolved
+    }));
+
+    const catalysts = Array.from(world.catalystRanks.entries()).map(([id, rank]) => ({ id, rank }));
 
     return JSON.stringify({
       coordinateSystem: 'World space with origin at player spawn (0,0), +x right, +y down.',
@@ -650,10 +728,21 @@ async function main(): Promise<void> {
         xp: Number(world.xp.toFixed(1)),
         xpToNext: Number(world.xpToNext.toFixed(1))
       },
+      director: {
+        phase: world.director.phaseId,
+        intensity: Number(world.director.intensity.toFixed(2)),
+        heat: Number(world.director.heat.toFixed(2)),
+        targetEnemies: world.director.targetEnemies,
+        targetThreat: Number(world.director.targetThreat.toFixed(1))
+      },
+      inventory,
+      catalysts,
+      evolutionCandidates: world.getEvolutionCandidates(),
       counts: {
         enemies: world.enemies.size,
         enemyProjectiles: world.enemyProjectiles.size,
         hazards: world.hazards.size,
+        chests: world.chests.size,
         xpOrbs: world.xpOrbs.size
       },
       event: world.activeEventId,
@@ -661,7 +750,8 @@ async function main(): Promise<void> {
       quality: world.quality,
       enemies,
       enemyProjectiles,
-      hazards
+      hazards,
+      chests
     });
   }
 
@@ -805,10 +895,19 @@ async function main(): Promise<void> {
     }
 
     if (world.uiState === 'levelup') {
-      if (key === '1') chooseUpgradeByIndex(0);
-      if (key === '2') chooseUpgradeByIndex(1);
-      if (key === '3') chooseUpgradeByIndex(2);
-      if (key === ' ') chooseUpgradeByIndex(0);
+      if (key === '1') chooseLevelChoiceByIndex(0);
+      if (key === '2') chooseLevelChoiceByIndex(1);
+      if (key === '3') chooseLevelChoiceByIndex(2);
+      if (key === ' ') chooseLevelChoiceByIndex(0);
+      event.preventDefault();
+      return;
+    }
+
+    if (world.uiState === 'chest') {
+      if (key === '1') chooseChestChoiceByIndex(0);
+      if (key === '2') chooseChestChoiceByIndex(1);
+      if (key === '3') chooseChestChoiceByIndex(2);
+      if (key === ' ') chooseChestChoiceByIndex(0);
       event.preventDefault();
       return;
     }

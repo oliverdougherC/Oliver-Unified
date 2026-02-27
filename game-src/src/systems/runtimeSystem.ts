@@ -6,6 +6,8 @@ export class RuntimeSystem implements ISystem<GameWorld> {
   update(dt: number, world: GameWorld): void {
     world.runTime += dt;
     world.updateCooldowns(dt);
+    world.updateChestAges(dt);
+    world.consumeNearbyChest();
     world.threatLevel = world.getCurrentEnemyThreat();
 
     const activeEvent = getActiveRunEvent(world.runTime);

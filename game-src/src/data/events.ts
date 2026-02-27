@@ -14,43 +14,43 @@ export interface RunEventModifier {
 
 export const RUN_EVENT_MODIFIERS: RunEventModifier[] = [
   {
-    id: 'verdant_fog',
-    label: 'Verdant Fog',
-    startTime: 240,
-    endTime: 300,
-    spawnIntervalScale: 0.84,
-    enemySpeedScale: 0.9,
-    playerMoveSpeedScale: 1.04,
-    enemyHealthScale: 1,
-    enemyXpScale: 1,
+    id: 'blood_monsoon',
+    label: 'Blood Monsoon',
+    startTime: 55,
+    endTime: 90,
+    spawnIntervalScale: 0.72,
+    enemySpeedScale: 1.1,
+    playerMoveSpeedScale: 1.06,
+    enemyHealthScale: 0.94,
+    enemyXpScale: 1.18,
     projectileDamageScale: 1,
-    description: 'Dense mist swells the horde but blunts their pace.'
+    description: 'The sky tears open. More enemies surge, but they are easier to shred.'
   },
   {
-    id: 'moonlit_rush',
-    label: 'Moonlit Rush',
-    startTime: 405,
-    endTime: 470,
-    spawnIntervalScale: 0.78,
-    enemySpeedScale: 1.17,
-    playerMoveSpeedScale: 1.08,
-    enemyHealthScale: 0.96,
-    enemyXpScale: 1.12,
-    projectileDamageScale: 1,
-    description: 'Predators frenzy under moonlight. You must kite harder.'
-  },
-  {
-    id: 'ancient_bloom',
-    label: 'Ancient Bloom',
-    startTime: 590,
-    endTime: 680,
-    spawnIntervalScale: 1.06,
-    enemySpeedScale: 0.94,
-    playerMoveSpeedScale: 0.96,
-    enemyHealthScale: 1.38,
-    enemyXpScale: 1.34,
+    id: 'iron_canopy',
+    label: 'Iron Canopy',
+    startTime: 105,
+    endTime: 150,
+    spawnIntervalScale: 0.9,
+    enemySpeedScale: 0.92,
+    playerMoveSpeedScale: 0.98,
+    enemyHealthScale: 1.34,
+    enemyXpScale: 1.22,
     projectileDamageScale: 1.08,
-    description: 'Ancient roots fortify enemies, but each kill is richer.'
+    description: 'Ancient bark hardens the horde into walking fortresses.'
+  },
+  {
+    id: 'void_howl',
+    label: 'Void Howl',
+    startTime: 170,
+    endTime: 220,
+    spawnIntervalScale: 0.7,
+    enemySpeedScale: 1.2,
+    playerMoveSpeedScale: 1.12,
+    enemyHealthScale: 1,
+    enemyXpScale: 1.3,
+    projectileDamageScale: 1.14,
+    description: 'The run enters peak chaos as the forest goes feral.'
   }
 ];
 

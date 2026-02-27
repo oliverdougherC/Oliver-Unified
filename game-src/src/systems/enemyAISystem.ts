@@ -75,12 +75,12 @@ export class EnemyAISystem implements ISystem<GameWorld> {
       }
 
       if (enemyData.behavior === 'spitter' && archetype.spit) {
-        const desiredRange = archetype.spit.range * 0.85;
+        const desiredRange = archetype.spit.range * 0.72;
         enemyData.spitCooldown = Math.max(0, enemyData.spitCooldown - dt);
 
-        if (distance < desiredRange * 0.82 && distance > 0.1) {
+        if (distance < desiredRange * 0.78 && distance > 0.1) {
           setVelocity(enemyVel, { x: -toPlayer.x, y: -toPlayer.y }, baseSpeed * 1.05);
-        } else if (distance > desiredRange * 1.22) {
+        } else if (distance > desiredRange * 1.08) {
           setVelocity(enemyVel, toPlayer, baseSpeed * 0.82);
         } else {
           const strafeSign = enemyId % 2 === 0 ? 1 : -1;
@@ -88,7 +88,7 @@ export class EnemyAISystem implements ISystem<GameWorld> {
           setVelocity(enemyVel, strafe, baseSpeed * 0.72);
         }
 
-        if (enemyData.spitCooldown <= 0 && distance <= archetype.spit.range) {
+        if (enemyData.spitCooldown <= 0 && distance <= archetype.spit.range * 1.3) {
           world.spawnEnemyProjectile(enemyPos, toPlayer, {
             speed: archetype.spit.projectileSpeed,
             lifetime: archetype.spit.projectileLifetime,
@@ -98,7 +98,7 @@ export class EnemyAISystem implements ISystem<GameWorld> {
             hazardDuration: archetype.spit.hazardDuration,
             hazardDamagePerSecond: archetype.spit.hazardDamagePerSecond
           });
-          enemyData.spitCooldown = world.rng.float(archetype.spit.cooldown * 0.88, archetype.spit.cooldown * 1.2);
+          enemyData.spitCooldown = world.rng.float(archetype.spit.cooldown * 0.82, archetype.spit.cooldown * 1.08);
         }
         continue;
       }

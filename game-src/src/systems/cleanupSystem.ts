@@ -29,8 +29,29 @@ export class CleanupSystem implements ISystem<GameWorld> {
 
       const dx = pos.x - playerPos.x;
       const dy = pos.y - playerPos.y;
-      if (dx * dx + dy * dy > (world.config.enemyDespawnRadius + 600) ** 2) {
+      if (dx * dx + dy * dy > (world.config.enemyDespawnRadius + 760) ** 2) {
         world.markForRemoval(projectileId);
+      }
+    }
+
+    for (const projectileId of world.projectiles) {
+      const pos = world.positions.get(projectileId);
+      if (!pos) continue;
+
+      const dx = pos.x - playerPos.x;
+      const dy = pos.y - playerPos.y;
+      if (dx * dx + dy * dy > (world.config.enemyDespawnRadius + 820) ** 2) {
+        world.markForRemoval(projectileId);
+      }
+    }
+
+    for (const chestId of world.chests) {
+      const pos = world.positions.get(chestId);
+      if (!pos) continue;
+      const dx = pos.x - playerPos.x;
+      const dy = pos.y - playerPos.y;
+      if (dx * dx + dy * dy > (world.config.enemyDespawnRadius + 500) ** 2) {
+        world.markForRemoval(chestId);
       }
     }
 

@@ -1,16 +1,21 @@
+import { CATALYST_DEFINITIONS } from '../data/catalysts';
+import { EVOLUTION_RECIPES } from '../data/evolutions';
 import { ENEMY_ARCHETYPES } from '../data/enemies';
-import { UPGRADE_OPTIONS } from '../data/upgrades';
-import { ROOTSPARK_WAND } from '../data/weapons';
+import { STARTING_WEAPON_ID, WEAPON_ARCHETYPES } from '../data/weapons';
 import type {
+  CatalystDefinition,
+  ChestChoice,
   EnemyArchetype,
   EnemyBehavior,
   EntityKind,
   GameConfig,
+  InventorySlot,
+  LevelUpChoice,
   PlayerStats,
   QualityTier,
   RendererKind,
+  RunDirectorState,
   UIState,
-  UpgradeOption,
   Vec2
 } from '../types';
 import { NumericIdPool } from './objectPool';
@@ -36,6 +41,11 @@ interface ProjectileComponent {
   age: number;
   lifetime: number;
   pierce: number;
+  weaponId: string;
+  colorHex: number;
+  hazardRadius: number;
+  hazardDuration: number;
+  hazardDamagePerSecond: number;
 }
 
 interface EnemyProjectileComponent {
@@ -51,6 +61,12 @@ interface HazardComponent {
   damagePerSecond: number;
   age: number;
   lifetime: number;
+}
+
+interface ChestComponent {
+  age: number;
+  lifetime: number;
+  guaranteedEvolution: boolean;
 }
 
 interface XpComponent {
@@ -85,30 +101,69 @@ export interface HazardSpawnConfig {
   damagePerSecond: number;
 }
 
+export interface PlayerProjectileSpawnConfig {
+  direction: Vec2;
+  weaponId: string;
+  speed: number;
+  lifetime: number;
+  radius: number;
+  damage: number;
+  pierce: number;
+  colorHex: number;
+  hazardRadius?: number;
+  hazardDuration?: number;
+  hazardDamagePerSecond?: number;
+}
+
 export const DEFAULT_GAME_CONFIG: GameConfig = {
-  fieldWidth: 5000,
-  fieldHeight: 5000,
+  fieldWidth: 5800,
+  fieldHeight: 5800,
   fixedDelta: 1 / 60,
   maxDelta: 0.2,
-  enemyDespawnRadius: 1500,
+  enemyDespawnRadius: 1700,
   collisionCellSize: 96,
-  maxNarrowPhaseChecks: 5000
+  maxNarrowPhaseChecks: 14000
 };
 
 function createDefaultPlayerStats(): PlayerStats {
   return {
-    maxHp: 130,
-    hp: 130,
-    moveSpeed: 260,
-    pickupRadius: 84,
+    maxHp: 170,
+    hp: 170,
+    moveSpeed: 274,
+    pickupRadius: 88,
     regenPerSecond: 0,
-    contactInvuln: 0.35,
-    weapon: { ...ROOTSPARK_WAND }
+    contactInvuln: 0.36,
+    damageMultiplier: 1,
+    cooldownMultiplier: 0,
+    projectileSpeedMultiplier: 1,
+    critChance: 0,
+    critMultiplier: 1.6,
+    armor: 0
   };
+}
+
+function createDefaultInventory(): InventorySlot[] {
+  return [0, 1, 2, 3].map((slotIndex) => ({
+    slotIndex,
+    itemId: null,
+    rank: 0,
+    isEvolved: false
+  }));
 }
 
 function randomCooldown(rng: SeededRng, base: number): number {
   return rng.float(base * 0.45, base * 1.15);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function rarityScore(rarity: 'common' | 'rare' | 'epic' | 'legendary'): number {
+  if (rarity === 'legendary') return 4;
+  if (rarity === 'epic') return 3;
+  if (rarity === 'rare') return 2;
+  return 1;
 }
 
 export class GameWorld {
@@ -116,6 +171,7 @@ export class GameWorld {
   readonly enemyHash: SpatialHash;
   readonly xpHash: SpatialHash;
   readonly hazardHash: SpatialHash;
+  readonly chestHash: SpatialHash;
 
   readonly entities = new Set<number>();
   readonly entityKind = new Map<number, EntityKind>();
@@ -131,14 +187,17 @@ export class GameWorld {
   readonly enemyProjectileComponents = new Map<number, EnemyProjectileComponent>();
   readonly hazards = new Set<number>();
   readonly hazardComponents = new Map<number, HazardComponent>();
+  readonly chests = new Set<number>();
+  readonly chestComponents = new Map<number, ChestComponent>();
   readonly xpOrbs = new Set<number>();
   readonly xpComponents = new Map<number, XpComponent>();
 
   readonly enemyPool = new NumericIdPool(10_000);
-  readonly projectilePool = new NumericIdPool(100_000);
-  readonly enemyProjectilePool = new NumericIdPool(100_000);
-  readonly hazardPool = new NumericIdPool(40_000);
-  readonly xpPool = new NumericIdPool(200_000);
+  readonly projectilePool = new NumericIdPool(120_000);
+  readonly enemyProjectilePool = new NumericIdPool(120_000);
+  readonly hazardPool = new NumericIdPool(60_000);
+  readonly chestPool = new NumericIdPool(80_000);
+  readonly xpPool = new NumericIdPool(220_000);
 
   readonly pendingRemoval = new Set<number>();
 
@@ -149,7 +208,6 @@ export class GameWorld {
     right: false
   };
 
-  readonly upgrades = UPGRADE_OPTIONS;
   readonly hazardTickInterval = 0.2;
 
   readonly playerId = 1;
@@ -159,6 +217,12 @@ export class GameWorld {
   rendererKind: RendererKind | null = null;
   reducedMotion = false;
 
+  inventorySlots: InventorySlot[] = createDefaultInventory();
+  catalystRanks = new Map<string, number>();
+  pendingLevelChoices: LevelUpChoice[] = [];
+  pendingChestChoices: ChestChoice[] = [];
+  chosenItems: string[] = [];
+
   rng: SeededRng;
   seed: number;
   runTime = 0;
@@ -167,12 +231,13 @@ export class GameWorld {
   xpToNext = xpThresholdForLevel(1);
   kills = 0;
   totalSpawns = 0;
-  weaponCooldown = 0;
+  weaponCooldownBySlot: number[] = [0, 0, 0, 0];
   contactCooldown = 0;
   hazardTickCooldown = 0;
+  damageWindowCooldown = 0;
+  damageWindowTaken = 0;
   spawnAccumulator = 0;
-  chosenUpgrades: string[] = [];
-  pendingUpgradeChoices: UpgradeOption[] = [];
+  chestPickupCooldown = 0;
   activeEventId: string | null = null;
   enemySpeedScale = 1;
   spawnIntervalScale = 1;
@@ -188,6 +253,17 @@ export class GameWorld {
   playerHitCount = 0;
   hazardsCreated = 0;
   threatLevel = 0;
+  eliteKills = 0;
+  director: RunDirectorState = {
+    phaseId: 'awakening',
+    intensity: 0.35,
+    heat: 0,
+    targetThreat: 14,
+    targetEnemies: 10,
+    lastEliteSpawnTime: -999,
+    nextGuaranteedEliteTime: 240,
+    antiLullTimer: 0
+  };
 
   constructor(seed: number, reducedMotion: boolean, config: Partial<GameConfig> = {}) {
     this.config = {
@@ -201,6 +277,7 @@ export class GameWorld {
     this.enemyHash = new SpatialHash(this.config.collisionCellSize);
     this.xpHash = new SpatialHash(this.config.collisionCellSize);
     this.hazardHash = new SpatialHash(this.config.collisionCellSize);
+    this.chestHash = new SpatialHash(this.config.collisionCellSize);
   }
 
   setRendererKind(kind: RendererKind): void {
@@ -229,6 +306,8 @@ export class GameWorld {
     this.enemyProjectileComponents.clear();
     this.hazards.clear();
     this.hazardComponents.clear();
+    this.chests.clear();
+    this.chestComponents.clear();
     this.xpOrbs.clear();
     this.xpComponents.clear();
     this.pendingRemoval.clear();
@@ -236,14 +315,23 @@ export class GameWorld {
     this.enemyHash.clear();
     this.hazardHash.clear();
     this.xpHash.clear();
+    this.chestHash.clear();
 
     this.enemyPool.reset();
     this.projectilePool.reset();
     this.enemyProjectilePool.reset();
     this.hazardPool.reset();
+    this.chestPool.reset();
     this.xpPool.reset();
 
     this.playerStats = createDefaultPlayerStats();
+    this.inventorySlots = createDefaultInventory();
+    this.catalystRanks.clear();
+    this.pendingLevelChoices = [];
+    this.pendingChestChoices = [];
+    this.weaponCooldownBySlot = [0, 0, 0, 0];
+    this.chosenItems = [];
+
     this.uiState = 'playing';
     this.runTime = 0;
     this.level = 1;
@@ -251,12 +339,12 @@ export class GameWorld {
     this.xpToNext = xpThresholdForLevel(1);
     this.kills = 0;
     this.totalSpawns = 0;
-    this.weaponCooldown = 0;
     this.contactCooldown = 0;
     this.hazardTickCooldown = 0;
+    this.damageWindowCooldown = 0;
+    this.damageWindowTaken = 0;
     this.spawnAccumulator = 0;
-    this.chosenUpgrades = [];
-    this.pendingUpgradeChoices = [];
+    this.chestPickupCooldown = 0;
     this.activeEventId = null;
     this.enemySpeedScale = 1;
     this.spawnIntervalScale = 1;
@@ -272,8 +360,20 @@ export class GameWorld {
     this.playerHitCount = 0;
     this.hazardsCreated = 0;
     this.threatLevel = 0;
+    this.eliteKills = 0;
+    this.director = {
+      phaseId: 'awakening',
+      intensity: 0.35,
+      heat: 0,
+      targetThreat: 14,
+      targetEnemies: 10,
+      lastEliteSpawnTime: -999,
+      nextGuaranteedEliteTime: 240,
+      antiLullTimer: 0
+    };
 
     this.spawnPlayer();
+    this.addWeaponToFirstOpenSlot(STARTING_WEAPON_ID);
   }
 
   private spawnPlayer(): void {
@@ -307,14 +407,32 @@ export class GameWorld {
     return total;
   }
 
+  getArmedWeaponSlots(): InventorySlot[] {
+    return this.inventorySlots.filter((slot) => slot.itemId !== null);
+  }
+
+  getWeaponForSlot(slotIndex: number): InventorySlot | null {
+    const slot = this.inventorySlots[slotIndex];
+    if (!slot || !slot.itemId) return null;
+    return slot;
+  }
+
+  getCatalystRank(catalystId: string): number {
+    return this.catalystRanks.get(catalystId) ?? 0;
+  }
+
   getSnapshot() {
+    const inventorySummary = this.inventorySlots
+      .filter((slot) => slot.itemId)
+      .map((slot) => `${slot.itemId}:${slot.rank}${slot.isEvolved ? '*' : ''}`);
+
     return {
       seed: this.seed,
       timeSeconds: this.runTime,
       level: this.level,
       kills: this.kills,
       enemiesAlive: this.enemies.size,
-      upgradesChosen: [...this.chosenUpgrades]
+      upgradesChosen: [...this.chosenItems, ...inventorySummary]
     };
   }
 
@@ -353,6 +471,10 @@ export class GameWorld {
         this.hazards.delete(entityId);
         this.hazardComponents.delete(entityId);
         this.hazardPool.release(entityId);
+      } else if (kind === 'chest') {
+        this.chests.delete(entityId);
+        this.chestComponents.delete(entityId);
+        this.chestPool.release(entityId);
       } else if (kind === 'xp') {
         this.xpOrbs.delete(entityId);
         this.xpComponents.delete(entityId);
@@ -396,25 +518,29 @@ export class GameWorld {
     return entityId;
   }
 
-  spawnProjectile(direction: Vec2): number {
+  spawnPlayerProjectile(config: PlayerProjectileSpawnConfig): number {
     const playerPos = this.getPlayerPosition();
-    const weapon = this.playerStats.weapon;
     const entityId = this.projectilePool.acquire();
 
     this.entities.add(entityId);
     this.entityKind.set(entityId, 'projectile');
     this.positions.set(entityId, { x: playerPos.x, y: playerPos.y });
     this.velocities.set(entityId, {
-      x: direction.x * weapon.projectileSpeed,
-      y: direction.y * weapon.projectileSpeed
+      x: config.direction.x * config.speed,
+      y: config.direction.y * config.speed
     });
-    this.radii.set(entityId, weapon.projectileRadius);
+    this.radii.set(entityId, config.radius);
     this.projectiles.add(entityId);
     this.projectileComponents.set(entityId, {
-      damage: weapon.damage * this.projectileDamageScale,
+      damage: config.damage,
       age: 0,
-      lifetime: weapon.projectileLifetime,
-      pierce: weapon.pierce
+      lifetime: config.lifetime,
+      pierce: config.pierce,
+      weaponId: config.weaponId,
+      colorHex: config.colorHex,
+      hazardRadius: config.hazardRadius ?? 0,
+      hazardDuration: config.hazardDuration ?? 0,
+      hazardDamagePerSecond: config.hazardDamagePerSecond ?? 0
     });
 
     this.shotsFired += 1;
@@ -470,6 +596,24 @@ export class GameWorld {
     return entityId;
   }
 
+  spawnChest(position: Vec2, guaranteedEvolution = false): number {
+    const entityId = this.chestPool.acquire();
+
+    this.entities.add(entityId);
+    this.entityKind.set(entityId, 'chest');
+    this.positions.set(entityId, { ...position });
+    this.velocities.set(entityId, { x: 0, y: 0 });
+    this.radii.set(entityId, 18);
+    this.chests.add(entityId);
+    this.chestComponents.set(entityId, {
+      age: 0,
+      lifetime: 22,
+      guaranteedEvolution
+    });
+
+    return entityId;
+  }
+
   spawnXpOrb(position: Vec2, value: number): number {
     const entityId = this.xpPool.acquire();
 
@@ -496,57 +640,368 @@ export class GameWorld {
     return true;
   }
 
-  beginLevelUp(choices: UpgradeOption[]): void {
-    this.pendingUpgradeChoices = choices;
+  beginLevelUp(choices: LevelUpChoice[]): void {
+    this.pendingLevelChoices = choices;
     this.levelUpOfferedCount += 1;
     this.uiState = 'levelup';
   }
 
-  applyUpgrade(optionId: string): void {
-    const option = this.upgrades.find((entry) => entry.id === optionId);
-    if (!option) return;
+  applyLevelChoice(choiceId: string): void {
+    const choice = this.pendingLevelChoices.find((entry) => entry.id === choiceId);
+    if (!choice) return;
 
-    const weapon = this.playerStats.weapon;
-
-    switch (option.effect.type) {
-      case 'weapon_damage':
-        weapon.damage += option.effect.amount;
-        break;
-      case 'fire_rate':
-        weapon.fireCooldown = Math.max(0.1, weapon.fireCooldown * (1 - option.effect.amount));
-        break;
-      case 'projectile_speed':
-        weapon.projectileSpeed += option.effect.amount;
-        break;
-      case 'projectile_pierce':
-        weapon.pierce += option.effect.amount;
-        break;
-      case 'max_hp':
-        this.playerStats.maxHp += option.effect.amount;
-        this.playerStats.hp = Math.min(this.playerStats.maxHp, this.playerStats.hp + option.effect.amount);
-        break;
-      case 'heal':
-        this.playerStats.hp = Math.min(this.playerStats.maxHp, this.playerStats.hp + option.effect.amount);
-        break;
-      case 'move_speed':
-        this.playerStats.moveSpeed += option.effect.amount;
-        break;
-      case 'pickup_radius':
-        this.playerStats.pickupRadius += option.effect.amount;
-        break;
-      case 'regen':
-        this.playerStats.regenPerSecond += option.effect.amount;
-        break;
-      case 'projectile_lifetime':
-        weapon.projectileLifetime += option.effect.amount;
-        break;
-      default:
-        break;
+    if (choice.choiceType === 'new_item') {
+      if (choice.itemKind === 'weapon' && choice.itemId) {
+        this.addWeaponToFirstOpenSlot(choice.itemId);
+      }
+      if (choice.itemKind === 'catalyst' && choice.itemId) {
+        this.addCatalystRank(choice.itemId);
+      }
     }
 
-    this.chosenUpgrades.push(option.id);
-    this.pendingUpgradeChoices = [];
+    if (choice.choiceType === 'upgrade_item') {
+      if (choice.itemKind === 'weapon' && choice.slotIndex !== undefined) {
+        this.upgradeWeaponSlot(choice.slotIndex);
+      }
+      if (choice.itemKind === 'catalyst' && choice.itemId) {
+        this.addCatalystRank(choice.itemId);
+      }
+    }
+
+    if (choice.choiceType === 'stat_boost') {
+      switch (choice.statBoost) {
+        case 'heal':
+          this.playerStats.hp = Math.min(this.playerStats.maxHp, this.playerStats.hp + 36);
+          break;
+        case 'armor':
+          this.playerStats.armor = clamp(this.playerStats.armor + 0.45, 0, 8);
+          break;
+        case 'speed':
+          this.playerStats.moveSpeed += 18;
+          break;
+        case 'damage':
+          this.playerStats.damageMultiplier += 0.12;
+          break;
+        default:
+          this.playerStats.hp = Math.min(this.playerStats.maxHp, this.playerStats.hp + 22);
+          break;
+      }
+    }
+
+    this.chosenItems.push(choice.id);
+    this.pendingLevelChoices = [];
     this.uiState = 'playing';
+  }
+
+  beginChestChoices(choices: ChestChoice[]): void {
+    this.pendingChestChoices = choices;
+    this.uiState = 'chest';
+  }
+
+  applyChestChoice(choiceId: string): void {
+    const choice = this.pendingChestChoices.find((entry) => entry.id === choiceId);
+    if (!choice) return;
+
+    if (choice.choiceType === 'evolve' && choice.slotIndex !== undefined && choice.evolvedWeaponId) {
+      const slot = this.inventorySlots[choice.slotIndex];
+      if (slot && slot.itemId) {
+        slot.itemId = choice.evolvedWeaponId;
+        slot.rank = 1;
+        slot.isEvolved = true;
+        this.chosenItems.push(`evolution:${choice.evolvedWeaponId}`);
+      }
+    } else if (choice.choiceType === 'reward') {
+      if (choice.rewardType === 'xp_burst') {
+        this.gainXp(Math.round(this.xpToNext * 0.55));
+      } else if (choice.rewardType === 'heal') {
+        this.playerStats.hp = this.playerStats.maxHp;
+      } else {
+        const catalystIds = Object.keys(CATALYST_DEFINITIONS).filter((id) => this.getCatalystRank(id) < 1);
+        if (catalystIds.length > 0) {
+          this.addCatalystRank(catalystIds[this.rng.int(0, catalystIds.length - 1)]);
+        } else {
+          this.gainXp(Math.round(this.xpToNext * 0.4));
+        }
+      }
+    }
+
+    this.pendingChestChoices = [];
+    this.uiState = 'playing';
+  }
+
+  consumeNearbyChest(): void {
+    if (this.chests.size === 0 || this.chestPickupCooldown > 0 || this.uiState !== 'playing') return;
+
+    const playerPos = this.getPlayerPosition();
+    const playerRadius = this.radii.get(this.playerId) ?? 14;
+
+    for (const chestId of this.chests) {
+      const pos = this.positions.get(chestId);
+      const radius = this.radii.get(chestId);
+      if (!pos || radius === undefined) continue;
+
+      const dx = playerPos.x - pos.x;
+      const dy = playerPos.y - pos.y;
+      const rr = playerRadius + radius + 10;
+      if (dx * dx + dy * dy <= rr * rr) {
+        this.openChest(chestId);
+        break;
+      }
+    }
+  }
+
+  openChest(chestId: number): void {
+    const chest = this.chestComponents.get(chestId);
+    this.markForRemoval(chestId);
+    this.chestPickupCooldown = 0.25;
+
+    const evolutionCandidates = this.getEvolutionCandidates();
+    if (evolutionCandidates.length > 0 && this.runTime >= 480) {
+      const shuffled = [...evolutionCandidates].sort((a, b) => a.slotIndex - b.slotIndex);
+      const picked: ChestChoice[] = [];
+
+      while (picked.length < Math.min(2, shuffled.length)) {
+        const index = this.rng.int(0, shuffled.length - 1);
+        const candidate = shuffled.splice(index, 1)[0];
+        picked.push({
+          id: `chest_evolve_${candidate.slotIndex}_${candidate.evolvedWeaponId}`,
+          title: `Evolve: ${candidate.evolvedWeaponName}`,
+          description: `Transform slot ${candidate.slotIndex + 1} into a legendary weapon.`,
+          choiceType: 'evolve',
+          slotIndex: candidate.slotIndex,
+          evolvedWeaponId: candidate.evolvedWeaponId
+        });
+      }
+
+      if (picked.length < 2) {
+        picked.push({
+          id: 'chest_reward_xp',
+          title: 'Chaos Tribute',
+          description: 'Gain a large burst of XP.',
+          choiceType: 'reward',
+          rewardType: 'xp_burst'
+        });
+      }
+
+      this.beginChestChoices(picked);
+      return;
+    }
+
+    const fallbackChoices: ChestChoice[] = [
+      {
+        id: 'chest_reward_xp',
+        title: 'Chaos Tribute',
+        description: 'Gain a large burst of XP.',
+        choiceType: 'reward',
+        rewardType: 'xp_burst'
+      },
+      {
+        id: 'chest_reward_heal',
+        title: 'Blood Mend',
+        description: 'Restore to full HP.',
+        choiceType: 'reward',
+        rewardType: 'heal'
+      },
+      {
+        id: 'chest_reward_catalyst',
+        title: 'Arcane Relic',
+        description: 'Gain a catalyst rank or fallback XP.',
+        choiceType: 'reward',
+        rewardType: 'catalyst_boost'
+      }
+    ];
+
+    if (chest?.guaranteedEvolution) {
+      fallbackChoices[0].description = 'Guaranteed chest reward: massive XP burst.';
+    }
+
+    this.beginChestChoices(fallbackChoices);
+  }
+
+  getEvolutionCandidates(): Array<{
+    slotIndex: number;
+    evolvedWeaponId: string;
+    evolvedWeaponName: string;
+    catalystId: string;
+  }> {
+    const out: Array<{
+      slotIndex: number;
+      evolvedWeaponId: string;
+      evolvedWeaponName: string;
+      catalystId: string;
+    }> = [];
+
+    for (const slot of this.inventorySlots) {
+      if (!slot.itemId || slot.isEvolved || slot.rank < 8) continue;
+
+      const recipe = EVOLUTION_RECIPES.find((entry) => entry.weaponId === slot.itemId);
+      if (!recipe) continue;
+      if (this.runTime < recipe.minTimeSeconds) continue;
+      if (this.getCatalystRank(recipe.catalystId) <= 0) continue;
+
+      const evolved = WEAPON_ARCHETYPES[recipe.evolvedWeaponId];
+      if (!evolved) continue;
+
+      out.push({
+        slotIndex: slot.slotIndex,
+        evolvedWeaponId: recipe.evolvedWeaponId,
+        evolvedWeaponName: evolved.name,
+        catalystId: recipe.catalystId
+      });
+    }
+
+    return out;
+  }
+
+  addWeaponToFirstOpenSlot(weaponId: string): boolean {
+    const slot = this.inventorySlots.find((entry) => entry.itemId === null);
+    if (!slot) return false;
+
+    if (!WEAPON_ARCHETYPES[weaponId]) return false;
+
+    slot.itemId = weaponId;
+    slot.rank = 1;
+    slot.isEvolved = false;
+    this.weaponCooldownBySlot[slot.slotIndex] = 0;
+    this.chosenItems.push(`weapon:${weaponId}`);
+    return true;
+  }
+
+  upgradeWeaponSlot(slotIndex: number): boolean {
+    const slot = this.inventorySlots[slotIndex];
+    if (!slot || !slot.itemId || slot.isEvolved) return false;
+    if (slot.rank >= 8) return false;
+
+    slot.rank += 1;
+    this.chosenItems.push(`weapon_up:${slot.itemId}:${slot.rank}`);
+    return true;
+  }
+
+  addCatalystRank(catalystId: string): boolean {
+    const catalyst = CATALYST_DEFINITIONS[catalystId];
+    if (!catalyst) return false;
+
+    const current = this.getCatalystRank(catalystId);
+    if (current >= catalyst.maxRank) return false;
+
+    const nextRank = current + 1;
+    this.catalystRanks.set(catalystId, nextRank);
+    this.applyCatalystEffects(catalyst);
+    this.chosenItems.push(`catalyst:${catalystId}:${nextRank}`);
+    return true;
+  }
+
+  private applyCatalystEffects(catalyst: CatalystDefinition): void {
+    for (const effect of catalyst.effects) {
+      switch (effect.type) {
+        case 'max_hp': {
+          this.playerStats.maxHp += effect.amount;
+          this.playerStats.hp = Math.min(this.playerStats.maxHp, this.playerStats.hp + effect.amount);
+          break;
+        }
+        case 'heal': {
+          this.playerStats.hp = Math.min(this.playerStats.maxHp, this.playerStats.hp + effect.amount);
+          break;
+        }
+        case 'move_speed': {
+          this.playerStats.moveSpeed += effect.amount;
+          break;
+        }
+        case 'pickup_radius': {
+          this.playerStats.pickupRadius += effect.amount;
+          break;
+        }
+        case 'regen': {
+          this.playerStats.regenPerSecond += effect.amount;
+          break;
+        }
+        case 'global_damage_mult': {
+          this.playerStats.damageMultiplier += effect.amount;
+          break;
+        }
+        case 'global_cooldown_mult': {
+          this.playerStats.cooldownMultiplier = clamp(this.playerStats.cooldownMultiplier + effect.amount, 0, 0.65);
+          break;
+        }
+        case 'projectile_speed_mult': {
+          this.playerStats.projectileSpeedMultiplier += effect.amount;
+          break;
+        }
+        case 'crit_chance': {
+          this.playerStats.critChance = clamp(this.playerStats.critChance + effect.amount, 0, 0.68);
+          break;
+        }
+        case 'crit_damage': {
+          this.playerStats.critMultiplier += effect.amount;
+          break;
+        }
+        case 'armor': {
+          this.playerStats.armor = clamp(this.playerStats.armor + effect.amount, 0, 8);
+          break;
+        }
+      }
+    }
+  }
+
+  getWeaponRuntimeStats(slotIndex: number): {
+    weaponId: string;
+    name: string;
+    rarity: 'common' | 'rare' | 'epic' | 'legendary';
+    pattern: string;
+    rank: number;
+    damage: number;
+    cooldown: number;
+    projectileSpeed: number;
+    projectileLifetime: number;
+    projectileRadius: number;
+    pierce: number;
+    range: number;
+    projectilesPerAttack: number;
+    spreadAngleDeg: number;
+    colorHex: number;
+    powerScore: number;
+  } | null {
+    const slot = this.inventorySlots[slotIndex];
+    if (!slot || !slot.itemId) return null;
+
+    const weapon = WEAPON_ARCHETYPES[slot.itemId];
+    if (!weapon) return null;
+
+    const rank = slot.rank;
+    const rankScale = 1 + (rank - 1) * 0.085;
+    const damage =
+      (weapon.baseDamage + weapon.damagePerRank * Math.max(0, rank - 1)) *
+      rankScale *
+      this.playerStats.damageMultiplier *
+      this.projectileDamageScale;
+
+    const cooldownRankScale = Math.max(0.2, 1 - weapon.cooldownScalePerRank * Math.max(0, rank - 1));
+    const cooldownPlayerScale = Math.max(0.35, 1 - this.playerStats.cooldownMultiplier);
+    const cooldown = weapon.baseCooldown * cooldownRankScale * cooldownPlayerScale;
+
+    const projectileSpeed =
+      weapon.projectileSpeed * (1 + (rank - 1) * 0.04) * this.playerStats.projectileSpeedMultiplier;
+
+    const pierce = Math.round(weapon.basePierce + weapon.piercePerRank * Math.max(0, rank - 1));
+
+    return {
+      weaponId: weapon.id,
+      name: weapon.name,
+      rarity: weapon.rarity,
+      pattern: weapon.pattern,
+      rank,
+      damage,
+      cooldown,
+      projectileSpeed,
+      projectileLifetime: weapon.projectileLifetime,
+      projectileRadius: weapon.projectileRadius,
+      pierce,
+      range: weapon.range,
+      projectilesPerAttack: weapon.projectilesPerAttack,
+      spreadAngleDeg: weapon.spreadAngleDeg,
+      colorHex: weapon.colorHex,
+      powerScore: damage * (1 + pierce * 0.22) * rarityScore(weapon.rarity)
+    };
   }
 
   applyPlayerRegen(dt: number): void {
@@ -557,11 +1012,20 @@ export class GameWorld {
     );
   }
 
-  applyPlayerDamage(amount: number): void {
-    if (this.contactCooldown > 0 || this.uiState !== 'playing') return;
+  private applyRawPlayerDamage(amount: number): void {
+    if (this.uiState !== 'playing') return;
 
-    this.playerStats.hp -= Math.max(0, amount);
-    this.contactCooldown = this.playerStats.contactInvuln;
+    const damageCap = this.playerStats.maxHp * 0.45;
+    const available = Math.max(0, damageCap - this.damageWindowTaken);
+    if (available <= 0) return;
+
+    const reducedByArmor = amount * (1 - clamp(this.playerStats.armor * 0.08, 0, 0.6));
+    const clamped = Math.min(available, Math.max(0, reducedByArmor));
+    if (clamped <= 0) return;
+
+    this.playerStats.hp -= clamped;
+    this.damageWindowTaken += clamped;
+    this.damageWindowCooldown = 0.5;
     this.damageFlashTimer = Math.max(this.damageFlashTimer, 0.2);
     this.playerHitCount += 1;
 
@@ -571,29 +1035,59 @@ export class GameWorld {
     }
   }
 
+  applyPlayerDamage(amount: number): void {
+    if (this.contactCooldown > 0 || this.uiState !== 'playing') return;
+
+    this.contactCooldown = this.playerStats.contactInvuln;
+    this.applyRawPlayerDamage(amount);
+  }
+
   applyHazardDamage(amount: number): void {
     if (this.hazardTickCooldown > 0 || this.uiState !== 'playing') return;
 
-    this.playerStats.hp -= Math.max(0, amount);
     this.hazardTickCooldown = this.hazardTickInterval;
-    this.damageFlashTimer = Math.max(this.damageFlashTimer, 0.14);
-    this.playerHitCount += 1;
+    this.applyRawPlayerDamage(amount);
+  }
 
-    if (this.playerStats.hp <= 0) {
-      this.playerStats.hp = 0;
-      this.uiState = 'gameover';
+  applyProjectileHitDamage(baseDamage: number): number {
+    const critRoll = this.rng.next();
+    const crit = critRoll < this.playerStats.critChance;
+    const dealt = crit ? baseDamage * this.playerStats.critMultiplier : baseDamage;
+    if (crit) {
+      this.impactFlashTimer = Math.max(this.impactFlashTimer, 0.2);
     }
+    return dealt;
   }
 
   updateCooldowns(dt: number): void {
-    this.weaponCooldown = Math.max(0, this.weaponCooldown - dt);
+    for (let i = 0; i < this.weaponCooldownBySlot.length; i += 1) {
+      this.weaponCooldownBySlot[i] = Math.max(0, this.weaponCooldownBySlot[i] - dt);
+    }
+
     this.contactCooldown = Math.max(0, this.contactCooldown - dt);
     this.hazardTickCooldown = Math.max(0, this.hazardTickCooldown - dt);
+    this.damageWindowCooldown = Math.max(0, this.damageWindowCooldown - dt);
+    if (this.damageWindowCooldown <= 0) {
+      this.damageWindowTaken = 0;
+    }
     this.damageFlashTimer = Math.max(0, this.damageFlashTimer - dt);
     this.impactFlashTimer = Math.max(0, this.impactFlashTimer - dt);
+    this.chestPickupCooldown = Math.max(0, this.chestPickupCooldown - dt);
+  }
+
+  updateChestAges(dt: number): void {
+    for (const chestId of this.chests) {
+      const chest = this.chestComponents.get(chestId);
+      if (!chest) continue;
+      chest.age += dt;
+      if (chest.age >= chest.lifetime) {
+        this.markForRemoval(chestId);
+      }
+    }
   }
 
   toRunSummaryText(): string {
-    return `Survived ${this.runTime.toFixed(1)}s | Lvl ${this.level} | Kills ${this.kills}`;
+    const evolvedCount = this.inventorySlots.filter((slot) => slot.isEvolved).length;
+    return `Survived ${this.runTime.toFixed(1)}s | Lvl ${this.level} | Kills ${this.kills} | Evolutions ${evolvedCount}`;
   }
 }

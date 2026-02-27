@@ -1,5 +1,6 @@
 import type { ISystem } from '../types';
 import { GameWorld } from '../core/world';
+import { ENEMY_ARCHETYPES } from '../data/enemies';
 
 function circlesOverlap(
   ax: number,
@@ -20,6 +21,7 @@ export class CollisionSystem implements ISystem<GameWorld> {
     world.enemyHash.clear();
     world.xpHash.clear();
     world.hazardHash.clear();
+    world.chestHash.clear();
 
     for (const enemyId of world.enemies) {
       const pos = world.positions.get(enemyId);
@@ -42,6 +44,13 @@ export class CollisionSystem implements ISystem<GameWorld> {
       world.hazardHash.insert(hazardId, pos, radius);
     }
 
+    for (const chestId of world.chests) {
+      const pos = world.positions.get(chestId);
+      const radius = world.radii.get(chestId);
+      if (!pos || radius === undefined) continue;
+      world.chestHash.insert(chestId, pos, radius);
+    }
+
     const playerPos = world.positions.get(world.playerId);
     const playerRadius = world.radii.get(world.playerId);
 
@@ -50,7 +59,7 @@ export class CollisionSystem implements ISystem<GameWorld> {
     const playerEnemyCandidates = world.enemyHash.queryCircle(
       playerPos,
       playerRadius + 64,
-      64
+      96
     );
 
     for (const enemyId of playerEnemyCandidates) {
@@ -93,7 +102,7 @@ export class CollisionSystem implements ISystem<GameWorld> {
       }
     }
 
-    const hazardCandidates = world.hazardHash.queryCircle(playerPos, playerRadius + 96, 48);
+    const hazardCandidates = world.hazardHash.queryCircle(playerPos, playerRadius + 120, 64);
     for (const hazardId of hazardCandidates) {
       const hazardPos = world.positions.get(hazardId);
       const hazardRadius = world.radii.get(hazardId);
@@ -109,7 +118,7 @@ export class CollisionSystem implements ISystem<GameWorld> {
     const pickupCandidates = world.xpHash.queryCircle(
       playerPos,
       playerRadius + world.playerStats.pickupRadius,
-      128
+      132
     );
 
     for (const xpId of pickupCandidates) {
@@ -144,7 +153,7 @@ export class CollisionSystem implements ISystem<GameWorld> {
       const projectileData = world.projectileComponents.get(projectileId);
       if (!projectilePos || projectileRadius === undefined || !projectileData) continue;
 
-      const candidates = world.enemyHash.queryCircle(projectilePos, projectileRadius + 52, 48);
+      const candidates = world.enemyHash.queryCircle(projectilePos, projectileRadius + 56, 52);
 
       for (const enemyId of candidates) {
         if (narrowPhaseChecks >= world.config.maxNarrowPhaseChecks) break;
@@ -163,12 +172,18 @@ export class CollisionSystem implements ISystem<GameWorld> {
           continue;
         }
 
-        enemyHealth.hp -= projectileData.damage;
+        const dealt = world.applyProjectileHitDamage(projectileData.damage);
+        enemyHealth.hp -= dealt;
         projectileData.pierce -= 1;
 
         if (enemyHealth.hp <= 0) {
           world.kills += 1;
+          const archetype = ENEMY_ARCHETYPES[enemyData.archetypeId];
           world.spawnXpOrb(enemyPos, enemyData.xpDrop);
+          if (archetype?.isElite) {
+            world.eliteKills += 1;
+            world.spawnChest(enemyPos, true);
+          }
           world.markForRemoval(enemyId);
         }
 

@@ -12,16 +12,23 @@ export class ProjectileSystem implements ISystem<GameWorld> {
 
       projectile.age += dt;
 
-      if (projectile.age >= projectile.lifetime) {
-        world.markForRemoval(projectileId);
-        continue;
+      const expired = projectile.age >= projectile.lifetime;
+      const tooFar =
+        (projectilePos.x - playerPos.x) * (projectilePos.x - playerPos.x) +
+          (projectilePos.y - playerPos.y) * (projectilePos.y - playerPos.y) >
+        2400 * 2400;
+
+      if (!expired && !tooFar) continue;
+
+      if (projectile.hazardRadius > 1 && projectile.hazardDuration > 0.2 && projectile.hazardDamagePerSecond > 0) {
+        world.spawnHazard(projectilePos, {
+          radius: projectile.hazardRadius,
+          duration: projectile.hazardDuration,
+          damagePerSecond: projectile.hazardDamagePerSecond
+        });
       }
 
-      const dx = projectilePos.x - playerPos.x;
-      const dy = projectilePos.y - playerPos.y;
-      if (dx * dx + dy * dy > 2200 * 2200) {
-        world.markForRemoval(projectileId);
-      }
+      world.markForRemoval(projectileId);
     }
 
     for (const projectileId of world.enemyProjectiles) {

@@ -8,7 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Manrope:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./src/styles.css">
 </head>
 <body>
@@ -16,14 +16,14 @@
     <div class="game-canvas-wrap" id="gameRoot" role="application" aria-label="Forest Arcana game world"></div>
 
     <section class="overlay boot-screen" id="bootScreen">
-      <div class="panel">
+      <div class="panel hero-panel">
         <p class="tag">Forest Arcana</p>
-        <h1>Night of Root and Thorn</h1>
+        <h1>Cataclysm Hunt</h1>
         <p>
-          Move with <strong>WASD</strong>. Your wand auto-targets nearby enemies. Survive, level up,
-          and choose your build. Press <strong>M</strong> to mute and <strong>O</strong> for settings.
+          Move with <strong>WASD</strong>. Weapons auto-fire. Build up to <strong>4 weapons</strong>, stack catalysts,
+          and evolve late-game with elite chests. Press <strong>M</strong> to mute and <strong>O</strong> for settings.
         </p>
-        <button class="btn-primary" id="startGameBtn" type="button">Begin Hunt</button>
+        <button class="btn-primary" id="startGameBtn" type="button">Begin Run</button>
       </div>
     </section>
 
@@ -53,6 +53,10 @@
       <div class="xp-track">
         <div class="xp-fill" id="xpFill"></div>
       </div>
+      <div class="build-panels">
+        <div class="build-panel" id="inventoryBar"></div>
+        <div class="build-panel catalyst" id="catalystBar"></div>
+      </div>
     </section>
 
     <button class="settings-toggle hidden" id="settingsToggleBtn" type="button" aria-haspopup="dialog">
@@ -62,20 +66,28 @@
     <div class="pause-banner hidden" id="pauseBanner">Paused - Press Esc to Resume</div>
 
     <section class="overlay hidden" id="levelUpModal" aria-live="assertive" aria-modal="true" role="dialog">
-      <div class="panel">
+      <div class="panel levelup-panel">
         <p class="tag">Level Up</p>
-        <h2>Choose an upgrade</h2>
+        <h2>Choose your next power spike</h2>
         <div class="upgrade-grid" id="upgradeGrid"></div>
         <p class="hint">Press <strong>1</strong>, <strong>2</strong>, or <strong>3</strong> to choose.</p>
+      </div>
+    </section>
+
+    <section class="overlay hidden" id="chestModal" aria-live="assertive" aria-modal="true" role="dialog">
+      <div class="panel chest-panel">
+        <p class="tag">Elite Chest</p>
+        <h2>Choose your reward</h2>
+        <div class="upgrade-grid" id="chestGrid"></div>
+        <p class="hint">Evolutions unlock after minute 8 with rank 8 weapon + catalyst.</p>
       </div>
     </section>
 
     <section class="overlay hidden" id="gameOverModal" aria-live="assertive" aria-modal="true" role="dialog">
       <div class="panel warning">
         <p class="tag">Run Ended</p>
-        <h2>The forest reclaimed the night.</h2>
+        <h2>The forest consumed the hunt.</h2>
         <p id="runSummary">Survived 0.0s</p>
-        <p class="meta-summary hidden" id="metaSummary"></p>
         <div class="actions">
           <button class="btn-primary" id="restartRunBtn" type="button">Run Again</button>
           <a class="btn-secondary" href="/index.html">Return Home</a>

@@ -1,6 +1,18 @@
 export function xpThresholdForLevel(level: number): number {
   const safeLevel = Math.max(1, Math.floor(level));
-  return Math.round(20 + (safeLevel - 1) * 16 + (safeLevel - 1) * (safeLevel - 1) * 3);
+
+  if (safeLevel <= 5) {
+    const early = safeLevel - 1;
+    return Math.round(40 + early * 32 + early * early * 10);
+  }
+
+  if (safeLevel <= 10) {
+    const mid = safeLevel - 5;
+    return Math.round(328 + mid * 72 + mid * mid * 18);
+  }
+
+  const late = safeLevel - 10;
+  return Math.round(1060 + late * 92 + late * late * 22);
 }
 
 export function projectLevel(totalXp: number): {
