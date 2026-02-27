@@ -5,11 +5,25 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  initMotionPreference();
   initNavigation();
   initScrollAnimations();
   initSmoothScroll();
   initPortalGlow();
 });
+
+/**
+ * Honor reduced-motion preference globally.
+ */
+function initMotionPreference() {
+  if (prefersReducedMotion()) {
+    document.documentElement.classList.add('reduced-motion');
+  }
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 
 /**
  * Navigation functionality (shared across all pages)
@@ -18,9 +32,17 @@ function initNavigation() {
   const nav = document.getElementById('nav');
   const navToggle = document.getElementById('navToggle');
   const navLinks = document.getElementById('navLinks');
+  const mobileBreakpoint = 768;
 
   // Mobile menu toggle
   if (navToggle && navLinks) {
+    const closeMobileNav = () => {
+      navToggle.classList.remove('active');
+      navLinks.classList.remove('active');
+      navToggle.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    };
+
     navToggle.addEventListener('click', () => {
       const isActive = navLinks.classList.toggle('active');
       navToggle.classList.toggle('active');
@@ -31,12 +53,16 @@ function initNavigation() {
     // Close menu when clicking a link
     navLinks.querySelectorAll('.nav-link').forEach(link => {
       link.addEventListener('click', () => {
-        navToggle.classList.remove('active');
-        navLinks.classList.remove('active');
-        navToggle.setAttribute('aria-expanded', 'false');
-        document.body.style.overflow = '';
+        closeMobileNav();
       });
     });
+
+    // Reset menu state when returning to desktop width
+    window.addEventListener('resize', debounce(() => {
+      if (window.innerWidth > mobileBreakpoint) {
+        closeMobileNav();
+      }
+    }, 120));
   }
 
   // Scroll behavior for nav background (landing page only)
@@ -58,6 +84,13 @@ function initScrollAnimations() {
   const animatedElements = document.querySelectorAll('[data-animate]');
 
   if (!animatedElements.length) return;
+
+  if (prefersReducedMotion()) {
+    animatedElements.forEach((el) => {
+      el.classList.add('visible');
+    });
+    return;
+  }
 
   const observerOptions = {
     root: null,
@@ -95,7 +128,11 @@ function initSmoothScroll() {
         const navHeight = document.querySelector('.nav')?.offsetHeight || 0;
         const targetPosition = target.getBoundingClientRect().top + window.scrollY - navHeight - 20;
 
-        smoothScrollTo(targetPosition, 1200);
+        if (prefersReducedMotion()) {
+          window.scrollTo(0, targetPosition);
+        } else {
+          smoothScrollTo(targetPosition, 1200);
+        }
       }
     });
   });
@@ -105,6 +142,11 @@ function initSmoothScroll() {
  * Custom smooth scroll with eased duration
  */
 function smoothScrollTo(targetY, duration) {
+  if (prefersReducedMotion()) {
+    window.scrollTo(0, targetY);
+    return;
+  }
+
   const startY = window.scrollY;
   const distance = targetY - startY;
   let startTime = null;
@@ -168,6 +210,7 @@ function initPortalGlow() {
   const portalCards = document.querySelectorAll('.portal-card');
 
   if (!portalCards.length) return;
+  if (prefersReducedMotion()) return;
 
   portalCards.forEach(card => {
     const portalBg = card.querySelector('.portal-bg');

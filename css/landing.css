@@ -597,6 +597,195 @@
 }
 
 /* ========================================
+   Hidden Game Gateway
+   ======================================== */
+
+.bored-void {
+  min-height: 620vh;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  position: relative;
+  padding: var(--space-20) 0 var(--space-32);
+  background: #070908;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.bored-void::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 9, 8, 0) 0%, rgba(7, 9, 8, 1) 100%);
+  pointer-events: none;
+}
+
+.bored-void-inner {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 1120px);
+  min-height: clamp(260px, 34vh, 420px);
+  display: grid;
+  place-items: center;
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 3.5rem);
+}
+
+.bored-void-inner::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(64vw, 620px);
+  height: min(42vw, 390px);
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255, 238, 184, 0.2) 0%,
+      rgba(255, 222, 149, 0.12) 34%,
+      rgba(255, 222, 149, 0.04) 54%,
+      rgba(10, 12, 10, 0) 74%
+    ),
+    radial-gradient(
+      ellipse at center,
+      rgba(255, 248, 223, 0.16) 0%,
+      rgba(255, 248, 223, 0.06) 42%,
+      rgba(10, 12, 10, 0) 72%
+    );
+  pointer-events: none;
+  z-index: -1;
+  animation: auraBreath 9.2s ease-in-out infinite;
+}
+
+.bored-portal-btn {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 210px;
+  min-height: 68px;
+  padding: 0 var(--space-10);
+  border-radius: var(--radius-full);
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  letter-spacing: var(--tracking-wide);
+  color: #5c4512;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.06) 52%, rgba(210, 154, 52, 0.26) 100%),
+    linear-gradient(138deg, #fffef2 0%, #ffe6ae 44%, #f2c46a 100%);
+  border: 2px solid rgba(255, 247, 214, 0.95);
+  box-shadow:
+    0 0 12px rgba(255, 225, 148, 0.52),
+    0 0 30px rgba(255, 215, 120, 0.3),
+    inset 0 -8px 16px rgba(173, 124, 28, 0.18),
+    inset 0 8px 14px rgba(255, 255, 255, 0.45);
+  transition:
+    transform var(--duration-base) var(--ease-bounce),
+    box-shadow var(--duration-base) var(--ease-smooth),
+    border-color var(--duration-base) var(--ease-smooth);
+  will-change: transform;
+  overflow: hidden;
+  contain: paint;
+}
+
+.bored-portal-btn::before,
+.bored-portal-btn::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.bored-portal-btn::before {
+  inset: -6px;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.52) 0%,
+    rgba(255, 230, 170, 0.32) 40%,
+    rgba(255, 230, 170, 0) 78%
+  );
+  filter: blur(6px);
+  z-index: -1;
+  animation: angelPulse 7.2s ease-in-out infinite;
+}
+
+.bored-portal-btn::after {
+  inset: 0;
+  border-radius: inherit;
+  clip-path: inset(0 round var(--radius-full));
+  background: linear-gradient(
+    112deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.06) 44%,
+    rgba(255, 255, 255, 0.56) 50%,
+    rgba(255, 245, 203, 0.5) 54%,
+    rgba(255, 255, 255, 0.06) 60%,
+    transparent 68%
+  );
+  transform: translateX(-160%) skewX(-16deg);
+  opacity: 0;
+  animation: holyShimmer 8.4s cubic-bezier(0.2, 0.55, 0.3, 1) infinite;
+}
+
+.bored-portal-btn:hover {
+  transform: translateY(-2px) scale(1.004);
+  border-color: rgba(255, 250, 230, 1);
+  box-shadow:
+    0 0 16px rgba(255, 235, 171, 0.62),
+    0 0 36px rgba(255, 219, 129, 0.42),
+    inset 0 -10px 20px rgba(173, 124, 28, 0.2),
+    inset 0 10px 16px rgba(255, 255, 255, 0.5);
+}
+
+.bored-portal-btn:focus-visible {
+  outline: 3px solid rgba(255, 248, 220, 0.95);
+  outline-offset: 4px;
+}
+
+@keyframes angelPulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(0.99);
+  }
+  50% {
+    opacity: 0.74;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes holyShimmer {
+  0%, 20% {
+    transform: translateX(-160%) skewX(-16deg);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.56;
+  }
+  48% {
+    transform: translateX(150%) skewX(-16deg);
+    opacity: 0.56;
+  }
+  60%, 100% {
+    transform: translateX(150%) skewX(-16deg);
+    opacity: 0;
+  }
+}
+
+@keyframes auraBreath {
+  0%, 100% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(0.99);
+  }
+  50% {
+    opacity: 0.82;
+    transform: translate(-50%, -50%) scale(1.01);
+  }
+}
+
+/* ========================================
    Responsive Styles
    ======================================== */
 
@@ -740,5 +929,25 @@
     gap: var(--space-2);
     min-height: 44px;
     padding: var(--space-4);
+  }
+
+  .bored-void {
+    min-height: 430vh;
+    padding-bottom: var(--space-20);
+  }
+
+  .bored-portal-btn {
+    min-width: 180px;
+    min-height: 58px;
+    font-size: var(--text-2xl);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bored-portal-btn,
+  .bored-portal-btn::before,
+  .bored-portal-btn::after {
+    animation: none !important;
+    transition: none !important;
   }
 }

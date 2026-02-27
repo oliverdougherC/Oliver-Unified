@@ -1,39 +1,57 @@
 #!/usr/bin/env node
 /**
  * Image Optimization Script
- * Generates optimized thumbnail and large variants of gallery photos.
+ * Generates optimized gallery variants and updates photos/photos.json.
  *
  * Outputs:
- *   photos/thumbs/  - 800px wide grid thumbnails (JPEG + WebP)
- *   photos/large/   - 2400px wide lightbox images (JPEG + WebP)
- *
- * Also updates photos/photos.json with width/height metadata for each variant.
+ *   photos/thumbs/  - 800px variants (JPEG + WebP + AVIF)
+ *   photos/medium/  - 1600px variants (JPEG + WebP + AVIF)
+ *   photos/large/   - 2400px variants (JPEG + WebP + AVIF)
  *
  * Usage: node scripts/optimize-images.js
+ * Optional env: IMAGE_CONCURRENCY=4
  */
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const sharp = require('sharp');
 const exifr = require('exifr');
-const fs = require('fs');
-const path = require('path');
 
 const PHOTOS_DIR = path.join(__dirname, '..', 'photos');
-const THUMBS_DIR = path.join(PHOTOS_DIR, 'thumbs');
-const LARGE_DIR = path.join(PHOTOS_DIR, 'large');
 const MANIFEST_PATH = path.join(PHOTOS_DIR, 'photos.json');
 
-const THUMB_MAX_WIDTH = 800;
-const THUMB_QUALITY_JPEG = 80;
-const THUMB_QUALITY_WEBP = 80;
-
-const LARGE_MAX_WIDTH = 2400;
-const LARGE_QUALITY_JPEG = 85;
-const LARGE_QUALITY_WEBP = 85;
+const VARIANTS = [
+  {
+    key: 'thumbs',
+    dir: path.join(PHOTOS_DIR, 'thumbs'),
+    maxWidth: 800,
+    jpegQuality: 80,
+    webpQuality: 80,
+    avifQuality: 58
+  },
+  {
+    key: 'medium',
+    dir: path.join(PHOTOS_DIR, 'medium'),
+    maxWidth: 1600,
+    jpegQuality: 84,
+    webpQuality: 84,
+    avifQuality: 52
+  },
+  {
+    key: 'large',
+    dir: path.join(PHOTOS_DIR, 'large'),
+    maxWidth: 2400,
+    jpegQuality: 85,
+    webpQuality: 85,
+    avifQuality: 48
+  }
+];
 
 async function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
-    console.log(`Created directory: ${dir}`);
+    console.log(`Created directory: ${path.relative(PHOTOS_DIR, dir)}`);
   }
 }
 
@@ -41,172 +59,275 @@ function getBaseName(filename) {
   return filename.replace(/\.(jpe?g|png)$/i, '');
 }
 
-async function processImage(photo) {
+function bytesToMB(bytes) {
+  return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+}
+
+function bytesToKB(bytes) {
+  return `${(bytes / 1024).toFixed(0)}KB`;
+}
+
+function parseConcurrency() {
+  const requested = Number.parseInt(process.env.IMAGE_CONCURRENCY || '', 10);
+  if (Number.isFinite(requested) && requested > 0) return requested;
+
+  const cpuCount = os.cpus()?.length || 1;
+  return Math.max(1, Math.min(cpuCount, 6));
+}
+
+async function generateVariant(inputPath, baseName, originalWidth, originalHeight, variant) {
+  const width = Math.min(variant.maxWidth, originalWidth);
+  const height = Math.max(1, Math.round((width / originalWidth) * originalHeight));
+
+  const jpgName = `${baseName}.jpg`;
+  const webpName = `${baseName}.webp`;
+  const avifName = `${baseName}.avif`;
+
+  const jpgPath = path.join(variant.dir, jpgName);
+  const webpPath = path.join(variant.dir, webpName);
+  const avifPath = path.join(variant.dir, avifName);
+
+  const basePipeline = sharp(inputPath)
+    .rotate()
+    .resize(width, null, { withoutEnlargement: true });
+
+  await Promise.all([
+    basePipeline
+      .clone()
+      .jpeg({ quality: variant.jpegQuality, mozjpeg: true })
+      .toFile(jpgPath),
+    basePipeline
+      .clone()
+      .webp({ quality: variant.webpQuality })
+      .toFile(webpPath),
+    basePipeline
+      .clone()
+      .avif({ quality: variant.avifQuality, effort: 4 })
+      .toFile(avifPath)
+  ]);
+
+  const totalBytes =
+    fs.statSync(jpgPath).size +
+    fs.statSync(webpPath).size +
+    fs.statSync(avifPath).size;
+
+  return {
+    manifestData: {
+      jpg: jpgName,
+      webp: webpName,
+      avif: avifName,
+      width,
+      height
+    },
+    totalBytes,
+    webpBytes: fs.statSync(webpPath).size,
+    avifBytes: fs.statSync(avifPath).size
+  };
+}
+
+function parseExifShutter(exposureTime) {
+  if (!exposureTime) return null;
+  if (exposureTime < 1) return `1/${Math.round(1 / exposureTime)}`;
+  return `${exposureTime.toFixed(1)}`;
+}
+
+async function extractExif(inputPath) {
+  try {
+    const exif = await exifr.parse(inputPath, {
+      pick: [
+        'Model',
+        'LensModel',
+        'FocalLength',
+        'FNumber',
+        'ExposureTime',
+        'ISO',
+        'DateTimeOriginal'
+      ]
+    });
+
+    if (!exif) return null;
+
+    const result = {};
+    if (exif.Model) result.camera = exif.Model;
+    if (exif.LensModel) result.lens = exif.LensModel;
+    if (exif.FocalLength) result.focalLength = Math.round(exif.FocalLength);
+    if (exif.FNumber) result.aperture = parseFloat(exif.FNumber.toFixed(1));
+
+    const shutter = parseExifShutter(exif.ExposureTime);
+    if (shutter) result.shutter = shutter;
+
+    if (exif.ISO) result.iso = exif.ISO;
+    if (exif.DateTimeOriginal) {
+      const date = exif.DateTimeOriginal;
+      result.date = date instanceof Date
+        ? date.toISOString().split('T')[0]
+        : String(date);
+    }
+
+    return Object.keys(result).length > 0 ? result : null;
+  } catch (_err) {
+    return null;
+  }
+}
+
+async function processImage(photo, index, total) {
   const inputPath = path.join(PHOTOS_DIR, photo.filename);
 
   if (!fs.existsSync(inputPath)) {
-    console.warn(`  SKIP: ${photo.filename} not found`);
+    console.warn(`[${index + 1}/${total}] SKIP missing file: ${photo.filename}`);
+    return null;
+  }
+
+  const metadata = await sharp(inputPath).rotate().metadata();
+  const originalWidth = metadata.width;
+  const originalHeight = metadata.height;
+
+  if (!originalWidth || !originalHeight) {
+    console.warn(`[${index + 1}/${total}] SKIP unreadable dimensions: ${photo.filename}`);
     return null;
   }
 
   const baseName = getBaseName(photo.filename);
-  const metadata = await sharp(inputPath).metadata();
-  const originalWidth = metadata.width;
-  const originalHeight = metadata.height;
-
-  const result = {
+  const output = {
     ...photo,
     width: originalWidth,
-    height: originalHeight,
-    thumbs: {},
-    large: {}
+    height: originalHeight
   };
 
-  // --- Thumbnails (800px wide) ---
-  const thumbWidth = Math.min(THUMB_MAX_WIDTH, originalWidth);
-  const thumbHeight = Math.round((thumbWidth / originalWidth) * originalHeight);
+  let optimizedBytes = 0;
+  const perVariant = {};
 
-  // JPEG thumbnail
-  const thumbJpegPath = path.join(THUMBS_DIR, `${baseName}.jpg`);
-  await sharp(inputPath)
-    .resize(thumbWidth, null, { withoutEnlargement: true })
-    .jpeg({ quality: THUMB_QUALITY_JPEG, mozjpeg: true })
-    .toFile(thumbJpegPath);
+  for (const variant of VARIANTS) {
+    const generated = await generateVariant(
+      inputPath,
+      baseName,
+      originalWidth,
+      originalHeight,
+      variant
+    );
 
-  result.thumbs.jpg = `${baseName}.jpg`;
-  result.thumbs.width = thumbWidth;
-  result.thumbs.height = thumbHeight;
+    output[variant.key] = generated.manifestData;
+    optimizedBytes += generated.totalBytes;
 
-  // WebP thumbnail
-  const thumbWebpPath = path.join(THUMBS_DIR, `${baseName}.webp`);
-  await sharp(inputPath)
-    .resize(thumbWidth, null, { withoutEnlargement: true })
-    .webp({ quality: THUMB_QUALITY_WEBP })
-    .toFile(thumbWebpPath);
-
-  result.thumbs.webp = `${baseName}.webp`;
-
-  // --- Large (2400px wide) ---
-  const largeWidth = Math.min(LARGE_MAX_WIDTH, originalWidth);
-  const largeHeight = Math.round((largeWidth / originalWidth) * originalHeight);
-
-  // JPEG large
-  const largeJpegPath = path.join(LARGE_DIR, `${baseName}.jpg`);
-  await sharp(inputPath)
-    .resize(largeWidth, null, { withoutEnlargement: true })
-    .jpeg({ quality: LARGE_QUALITY_JPEG, mozjpeg: true })
-    .toFile(largeJpegPath);
-
-  result.large.jpg = `${baseName}.jpg`;
-  result.large.width = largeWidth;
-  result.large.height = largeHeight;
-
-  // WebP large
-  const largeWebpPath = path.join(LARGE_DIR, `${baseName}.webp`);
-  await sharp(inputPath)
-    .resize(largeWidth, null, { withoutEnlargement: true })
-    .webp({ quality: LARGE_QUALITY_WEBP })
-    .toFile(largeWebpPath);
-
-  result.large.webp = `${baseName}.webp`;
-
-  // --- Extract EXIF from original image ---
-  try {
-    const exif = await exifr.parse(inputPath, {
-      pick: ['Model', 'LensModel', 'FocalLength', 'FNumber', 'ExposureTime', 'ISO', 'DateTimeOriginal']
-    });
-
-    if (exif) {
-      result.exif = {};
-      if (exif.Model) result.exif.camera = exif.Model;
-      if (exif.LensModel) result.exif.lens = exif.LensModel;
-      if (exif.FocalLength) result.exif.focalLength = Math.round(exif.FocalLength);
-      if (exif.FNumber) result.exif.aperture = parseFloat(exif.FNumber.toFixed(1));
-      if (exif.ExposureTime) {
-        if (exif.ExposureTime < 1) {
-          result.exif.shutter = `1/${Math.round(1 / exif.ExposureTime)}`;
-        } else {
-          result.exif.shutter = `${exif.ExposureTime.toFixed(1)}`;
-        }
-      }
-      if (exif.ISO) result.exif.iso = exif.ISO;
-      if (exif.DateTimeOriginal) {
-        const d = exif.DateTimeOriginal;
-        result.exif.date = d instanceof Date
-          ? d.toISOString().split('T')[0]
-          : String(d);
-      }
-    }
-  } catch (e) {
-    // No EXIF data available for this image
+    perVariant[variant.key] = {
+      webpBytes: generated.webpBytes,
+      avifBytes: generated.avifBytes
+    };
   }
 
-  // Report sizes
-  const origSize = fs.statSync(inputPath).size;
-  const thumbSize = fs.statSync(thumbWebpPath).size;
-  const largeSize = fs.statSync(largeWebpPath).size;
+  const exif = await extractExif(inputPath);
+  if (exif) {
+    output.exif = exif;
+  }
 
-  const exifStatus = result.exif ? 'EXIF ok' : 'no EXIF';
+  const originalBytes = fs.statSync(inputPath).size;
+  const reduction = originalBytes > 0
+    ? 100 - ((optimizedBytes / originalBytes) * 100)
+    : 0;
+
+  const exifStatus = exif ? 'EXIF ok' : 'no EXIF';
   console.log(
-    `  ${photo.filename}: ${(origSize / 1024 / 1024).toFixed(1)}MB -> ` +
-    `thumb ${(thumbSize / 1024).toFixed(0)}KB, ` +
-    `large ${(largeSize / 1024).toFixed(0)}KB (WebP) [${exifStatus}]`
+    `[${index + 1}/${total}] ${photo.filename}: ${bytesToMB(originalBytes)} -> ` +
+    `thumb ${bytesToKB(perVariant.thumbs.webpBytes)} webp / ${bytesToKB(perVariant.thumbs.avifBytes)} avif, ` +
+    `medium ${bytesToKB(perVariant.medium.webpBytes)} webp / ${bytesToKB(perVariant.medium.avifBytes)} avif, ` +
+    `large ${bytesToKB(perVariant.large.webpBytes)} webp / ${bytesToKB(perVariant.large.avifBytes)} avif ` +
+    `(${reduction.toFixed(1)}% net) [${exifStatus}]`
   );
 
-  return result;
+  return {
+    photo: output,
+    originalBytes,
+    optimizedBytes
+  };
+}
+
+async function processWithConcurrency(items, concurrency, handler) {
+  const results = new Array(items.length);
+  let cursor = 0;
+
+  async function worker() {
+    while (true) {
+      const index = cursor;
+      cursor += 1;
+
+      if (index >= items.length) return;
+
+      try {
+        results[index] = await handler(items[index], index, items.length);
+      } catch (err) {
+        console.error(`Failed processing ${items[index]?.filename || 'unknown file'}:`, err.message);
+        results[index] = null;
+      }
+    }
+  }
+
+  const workerCount = Math.max(1, Math.min(concurrency, items.length || 1));
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+
+  return results;
 }
 
 async function main() {
   console.log('Image Optimization Script');
-  console.log('='.repeat(50));
+  console.log('='.repeat(70));
 
-  // Read manifest
   if (!fs.existsSync(MANIFEST_PATH)) {
-    console.error('photos.json not found at', MANIFEST_PATH);
+    console.error(`photos.json not found at ${MANIFEST_PATH}`);
     process.exit(1);
   }
 
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
-  const photos = manifest.photos || [];
+  const photos = Array.isArray(manifest.photos) ? manifest.photos : [];
 
-  console.log(`Found ${photos.length} photos in manifest\n`);
+  const concurrency = parseConcurrency();
+  console.log(`Found ${photos.length} photos in manifest`);
+  console.log(`Using concurrency: ${concurrency}`);
 
-  // Create output directories
-  await ensureDir(THUMBS_DIR);
-  await ensureDir(LARGE_DIR);
-
-  // Process all images
-  const results = [];
-  let totalOriginal = 0;
-  let totalOptimized = 0;
-
-  for (const photo of photos) {
-    const result = await processImage(photo);
-    if (result) {
-      results.push(result);
-
-      const origSize = fs.statSync(path.join(PHOTOS_DIR, photo.filename)).size;
-      const thumbSize = fs.statSync(path.join(THUMBS_DIR, `${getBaseName(photo.filename)}.webp`)).size;
-      const largeSize = fs.statSync(path.join(LARGE_DIR, `${getBaseName(photo.filename)}.webp`)).size;
-
-      totalOriginal += origSize;
-      totalOptimized += thumbSize + largeSize;
-    }
+  for (const variant of VARIANTS) {
+    await ensureDir(variant.dir);
   }
 
-  // Write updated manifest
-  const updatedManifest = { photos: results };
-  fs.writeFileSync(MANIFEST_PATH, JSON.stringify(updatedManifest, null, 2) + '\n');
+  if (photos.length === 0) {
+    const emptyManifest = { ...manifest, photos: [] };
+    fs.writeFileSync(MANIFEST_PATH, `${JSON.stringify(emptyManifest, null, 2)}\n`);
 
-  console.log('\n' + '='.repeat(50));
-  console.log(`Processed ${results.length} images`);
-  console.log(`Original total:  ${(totalOriginal / 1024 / 1024).toFixed(1)}MB`);
-  console.log(`Optimized total: ${(totalOptimized / 1024 / 1024).toFixed(1)}MB (thumbs + large WebP)`);
-  console.log(`Reduction:       ${(100 - (totalOptimized / totalOriginal * 100)).toFixed(1)}%`);
-  console.log(`\nUpdated photos.json with dimensions and variant paths`);
+    console.log('\nNo photos found. Wrote manifest with empty photos array.');
+    console.log('Nothing to optimize.');
+    return;
+  }
+
+  const processed = await processWithConcurrency(
+    photos,
+    concurrency,
+    processImage
+  );
+
+  const results = processed.filter(Boolean);
+  const optimizedPhotos = results.map(result => result.photo);
+
+  const totalOriginalBytes = results.reduce((sum, result) => sum + result.originalBytes, 0);
+  const totalOptimizedBytes = results.reduce((sum, result) => sum + result.optimizedBytes, 0);
+
+  const updatedManifest = {
+    ...manifest,
+    photos: optimizedPhotos
+  };
+
+  fs.writeFileSync(MANIFEST_PATH, `${JSON.stringify(updatedManifest, null, 2)}\n`);
+
+  const totalReduction = totalOriginalBytes > 0
+    ? 100 - ((totalOptimizedBytes / totalOriginalBytes) * 100)
+    : 0;
+
+  console.log('\n' + '='.repeat(70));
+  console.log(`Processed ${optimizedPhotos.length}/${photos.length} images`);
+  console.log(`Original total:  ${bytesToMB(totalOriginalBytes)}`);
+  console.log(`Optimized total: ${bytesToMB(totalOptimizedBytes)} (thumbs + medium + large, all formats)`);
+  console.log(`Reduction:       ${totalReduction.toFixed(1)}%`);
+  console.log('Updated photos.json with variant dimensions and paths.');
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error('Fatal error:', err);
   process.exit(1);
 });

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="game">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forest Arcana - Oliver Dougherty</title>
+  <meta name="description" content="Forest Arcana - a survivor-style roguelike built with HTML5 + WebGPU/WebGL.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/styles.css">
+</head>
+<body>
+  <main class="game-shell" id="gameShell">
+    <div class="game-canvas-wrap" id="gameRoot" role="application" aria-label="Forest Arcana game world"></div>
+
+    <section class="overlay boot-screen" id="bootScreen">
+      <div class="panel">
+        <p class="tag">Forest Arcana</p>
+        <h1>Night of Root and Thorn</h1>
+        <p>
+          Move with <strong>WASD</strong>. Your wand auto-targets nearby enemies. Survive, level up,
+          and choose your build. Press <strong>M</strong> to mute and <strong>O</strong> for settings.
+        </p>
+        <button class="btn-primary" id="startGameBtn" type="button">Begin Hunt</button>
+      </div>
+    </section>
+
+    <section class="overlay hidden" id="unsupportedPanel" aria-live="polite">
+      <div class="panel warning">
+        <h2>Renderer Unsupported</h2>
+        <p>
+          Forest Arcana could not initialize WebGPU or WebGL on this browser/device.
+          Try a current desktop browser with hardware acceleration enabled.
+        </p>
+        <a class="btn-secondary" href="/index.html">Return Home</a>
+      </div>
+    </section>
+
+    <section class="hud hidden" id="hud" aria-live="polite">
+      <div class="hud-left">
+        <div class="hud-chip"><span>HP</span><strong id="hudHp">0 / 0</strong></div>
+        <div class="hud-chip"><span>Level</span><strong id="hudLevel">1</strong></div>
+        <div class="hud-chip"><span>Enemies</span><strong id="hudEnemies">0</strong></div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip"><span>Time</span><strong id="hudTime">0:00</strong></div>
+        <div class="hud-chip" id="hudEventChip"><span>Event</span><strong id="hudEvent">None</strong></div>
+        <div class="hud-chip"><span>Audio</span><strong id="hudAudio">On</strong></div>
+        <div class="hud-chip"><span>Renderer</span><strong id="hudRenderer">-</strong></div>
+      </div>
+      <div class="xp-track">
+        <div class="xp-fill" id="xpFill"></div>
+      </div>
+    </section>
+
+    <button class="settings-toggle hidden" id="settingsToggleBtn" type="button" aria-haspopup="dialog">
+      Settings
+    </button>
+
+    <div class="pause-banner hidden" id="pauseBanner">Paused - Press Esc to Resume</div>
+
+    <section class="overlay hidden" id="levelUpModal" aria-live="assertive" aria-modal="true" role="dialog">
+      <div class="panel">
+        <p class="tag">Level Up</p>
+        <h2>Choose an upgrade</h2>
+        <div class="upgrade-grid" id="upgradeGrid"></div>
+        <p class="hint">Press <strong>1</strong>, <strong>2</strong>, or <strong>3</strong> to choose.</p>
+      </div>
+    </section>
+
+    <section class="overlay hidden" id="gameOverModal" aria-live="assertive" aria-modal="true" role="dialog">
+      <div class="panel warning">
+        <p class="tag">Run Ended</p>
+        <h2>The forest reclaimed the night.</h2>
+        <p id="runSummary">Survived 0.0s</p>
+        <p class="meta-summary hidden" id="metaSummary"></p>
+        <div class="actions">
+          <button class="btn-primary" id="restartRunBtn" type="button">Run Again</button>
+          <a class="btn-secondary" href="/index.html">Return Home</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="overlay hidden settings-overlay" id="settingsPanel" aria-modal="true" role="dialog">
+      <div class="panel settings-panel">
+        <p class="tag">Runtime Settings</p>
+        <h2>Preferences</h2>
+        <div class="settings-grid">
+          <label class="setting-row" for="settingsAudioEnabled">
+            <span>Audio</span>
+            <input id="settingsAudioEnabled" type="checkbox" checked>
+          </label>
+          <label class="setting-row" for="settingsAudioVolume">
+            <span>Audio Volume</span>
+            <div class="setting-control">
+              <input id="settingsAudioVolume" type="range" min="0" max="100" step="1" value="70">
+              <strong id="settingsAudioVolumeValue">70%</strong>
+            </div>
+          </label>
+          <label class="setting-row" for="settingsMotionIntensity">
+            <span>Motion Intensity</span>
+            <div class="setting-control">
+              <input id="settingsMotionIntensity" type="range" min="0" max="100" step="1" value="100">
+              <strong id="settingsMotionIntensityValue">100%</strong>
+            </div>
+          </label>
+          <label class="setting-row" for="settingsRendererPreference">
+            <span>Renderer</span>
+            <select id="settingsRendererPreference">
+              <option value="auto">Auto</option>
+              <option value="webgpu">WebGPU</option>
+              <option value="webgl">WebGL</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint">Renderer changes apply after reload.</p>
+        <div class="actions">
+          <button class="btn-secondary" id="settingsCloseBtn" type="button">Close</button>
+          <button class="btn-primary" id="settingsApplyRendererBtn" type="button">Apply Renderer + Reload</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="debug-panel hidden" id="debugPanel" aria-live="polite"></aside>
+  </main>
+
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>

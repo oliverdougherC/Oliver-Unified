@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kubernetes - Neurophasia Archive</title>
   <meta name="description" content="Technical deep dive into Kubernetes container orchestration, architecture, workload management, and deployment patterns.">
+  <link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -388,7 +389,7 @@
   <!-- Footer -->
   <footer class="abstract-footer">
           <div class="footer-container footer-inner">
-            <p class="footer-text">&copy; 2026 Oliver Dougherty</p>
+            <p class="footer-text">&copy; <span data-current-year>2026</span> Oliver Dougherty</p>
           </div>    </div>
   </footer>
 
@@ -431,6 +432,9 @@
       const archDetails = document.getElementById('arch-details');
 
       archComponents.forEach(component => {
+        component.setAttribute('role', 'button');
+        component.setAttribute('tabindex', '0');
+        component.setAttribute('aria-label', `Show details for ${component.textContent.trim()}`);
         component.addEventListener('click', () => {
           archComponents.forEach(c => c.classList.remove('selected'));
           component.classList.add('selected');
@@ -440,6 +444,12 @@
             <h4 style="font-size: 1.25rem; font-weight: 600; color: var(--color-accent); margin-bottom: var(--space-3);">${data.title}</h4>
             <p style="color: var(--color-text-secondary); line-height: 1.7;">${data.description}</p>
           `;
+        });
+        component.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            component.click();
+          }
         });
       });
 
@@ -567,5 +577,6 @@
       renderUseCases();
     });
   </script>
+  <script src="../../../js/year.js" defer></script>
 </body>
 </html>

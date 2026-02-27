@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pi - Neurophasia Archive</title>
   <meta name="description" content="Exploring Pi: one of mathematics' most revered constants. Its history, properties, applications, and the endless quest to calculate its digits.">
+  <link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 
   <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js" defer integrity="sha384-T/4KgSWuZEPozpPz7rnnp/5lDSnpY1VPJCojf1S81uTHS1E38qgLfMgVsAeRCWc4" crossorigin="anonymous"></script>
 
   <!-- Styles -->
   <link rel="stylesheet" href="../../../css/abstract.css">
@@ -263,7 +264,7 @@
   <header class="abstract-hero">
     <div class="hero-container">
       <span class="hero-badge">Mathematics</span>
-      <div class="pi-symbol">pi</div>
+      <h1 class="pi-symbol">pi</h1>
       <p class="hero-subtitle" style="font-style: italic; margin-bottom: var(--space-2);">
         The ratio of a circle's circumference to its diameter.
       </p>
@@ -448,7 +449,7 @@
         </p>
 
         <div class="pi-search-container">
-          <input type="text" id="piSearchInput" class="pi-search-input" placeholder="Search digits...">
+          <input type="text" id="piSearchInput" class="pi-search-input" placeholder="Search digits..." aria-label="Search sequence in Pi digits">
           <button id="piSearchButton" class="pi-search-btn">Search</button>
         </div>
 
@@ -465,7 +466,7 @@
   <!-- Footer -->
   <footer class="abstract-footer">
           <div class="footer-container footer-inner">
-            <p class="footer-text">&copy; 2026 Oliver Dougherty</p>
+            <p class="footer-text">&copy; <span data-current-year>2026</span> Oliver Dougherty</p>
           </div>    </div>
   </footer>
 
@@ -494,6 +495,9 @@
       timelineData.forEach((item, index) => {
         const timelineItem = document.createElement('div');
         timelineItem.className = 'timeline-item';
+        timelineItem.setAttribute('role', 'button');
+        timelineItem.setAttribute('tabindex', '0');
+        timelineItem.setAttribute('aria-label', `Show details for ${item.title}`);
         timelineItem.innerHTML = `
           <div class="timeline-dot"></div>
           <div class="timeline-year">${item.year}</div>
@@ -509,6 +513,12 @@
               <p>${item.description}</p>
             </div>
           `;
+        });
+        timelineItem.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            timelineItem.click();
+          }
         });
         timeline.appendChild(timelineItem);
       });
@@ -655,5 +665,6 @@
       });
     });
   </script>
+  <script src="../../../js/year.js" defer></script>
 </body>
 </html>

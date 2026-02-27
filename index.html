@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Oliver Dougherty</title>
   <meta name="description" content="Engineer, photographer, and creator. Welcome to my corner of the internet.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,11 +28,11 @@
   <!-- Navigation -->
   <nav class="nav" id="nav">
     <div class="nav-inner container">
-      <a href="/" class="nav-logo">
+      <a href="index.html" class="nav-logo">
         <span class="logo-text">O<span class="logo-d">D</span></span>
       </a>
       <div class="nav-links" id="navLinks">
-        <a href="/" class="nav-link active" aria-current="page">Home</a>
+        <a href="index.html" class="nav-link active" aria-current="page">Home</a>
         <a href="pages/resume/index.html" class="nav-link">Resume</a>
         <a href="pages/gallery/index.html" class="nav-link">Gallery</a>
         <a href="pages/archive/index.html" class="nav-link">Archive</a>
@@ -235,7 +236,7 @@
           </div>
           <div class="project-meta">
             <span class="project-date">2025 - Present</span>
-            <a href="https://encodingdb.platinumlabs.dev" class="project-link" target="_blank" rel="noopener">
+            <a href="https://encodingdb.platinumlabs.dev" class="project-link" target="_blank" rel="noopener noreferrer">
               Visit
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -259,7 +260,7 @@
           </div>
           <div class="project-meta">
             <span class="project-date">2024 - Present</span>
-            <a href="https://computerhardwareclub.org" class="project-link" target="_blank" rel="noopener">
+            <a href="https://computerhardwareclub.org" class="project-link" target="_blank" rel="noopener noreferrer">
               Visit
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -300,7 +301,7 @@
             <span class="contact-link-label">Email</span>
             <span class="contact-link-value">oliverfdougherty@gmail.com</span>
           </a>
-          <a href="https://github.com/oliverdougherC" class="contact-link" target="_blank" rel="noopener">
+          <a href="https://github.com/oliverdougherC" class="contact-link" target="_blank" rel="noopener noreferrer">
             <span class="contact-link-label">GitHub</span>
             <span class="contact-link-value">oliverdougherC</span>
           </a>
@@ -315,11 +316,26 @@
   <footer class="footer">
     <div class="container">
       <div class="footer-inner">
-        <p class="footer-text">&copy; 2026 Oliver Dougherty</p>
+        <p class="footer-text">&copy; <span data-current-year>2026</span> Oliver Dougherty</p>
       </div>
     </div>
   </footer>
 
+  <!-- Hidden Game Gateway -->
+  <section class="bored-void" id="boredVoid" aria-label="Hidden game portal">
+    <div class="bored-void-inner">
+      <a
+        href="pages/game/index.html"
+        class="bored-portal-btn"
+        id="boredPortalButton"
+        aria-label="Enter Forest Arcana game"
+      >
+        Bored?
+      </a>
+    </div>
+  </section>
+
+  <script src="js/year.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>
 </html>

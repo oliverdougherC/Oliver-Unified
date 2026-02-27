@@ -20,6 +20,7 @@ const gallery = {
   currentIndex: 0,
   photosPath: '../../photos/',
   thumbsPath: '../../photos/thumbs/',
+  mediumPath: '../../photos/medium/',
   largePath: '../../photos/large/',
   triggerElement: null // Stores the element that opened the lightbox for focus return
 };
@@ -104,6 +105,49 @@ function formatTitle(filename) {
 }
 
 /**
+ * Escape dynamic text before interpolating into HTML strings.
+ */
+function escapeHTML(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function makeResponsiveCandidate(src, width) {
+  if (!src) return null;
+  return Number.isFinite(width) && width > 0 ? `${src} ${width}w` : src;
+}
+
+function joinSrcset(candidates) {
+  return candidates.filter(Boolean).join(', ');
+}
+
+function setPictureSource(source, srcset, sizes) {
+  if (!source) return;
+
+  if (!srcset) {
+    source.removeAttribute('srcset');
+    source.removeAttribute('sizes');
+    return;
+  }
+
+  source.srcset = srcset;
+  if (sizes) {
+    source.sizes = sizes;
+  } else {
+    source.removeAttribute('sizes');
+  }
+}
+
+function resolveVariantPath(variant, format, basePath) {
+  if (!variant || !variant[format]) return null;
+  return `${basePath}${variant[format]}`;
+}
+
+/**
  * Create photo card element with responsive images (<picture> + WebP)
  */
 function createPhotoCard(photo, index) {
@@ -114,50 +158,65 @@ function createPhotoCard(photo, index) {
   card.setAttribute('role', 'button');
   card.setAttribute('aria-label', `View ${photo.title || 'photograph'}`);
 
-  // Use optimized thumbnails if available, fall back to original
-  const hasThumb = photo.thumbs && photo.thumbs.webp;
-  const thumbWebp = hasThumb ? `${gallery.thumbsPath}${photo.thumbs.webp}` : null;
-  const thumbJpg = hasThumb ? `${gallery.thumbsPath}${photo.thumbs.jpg}` : `${gallery.photosPath}${photo.filename}`;
+  const thumbJpg = resolveVariantPath(photo.thumbs, 'jpg', gallery.thumbsPath);
+  const thumbWebp = resolveVariantPath(photo.thumbs, 'webp', gallery.thumbsPath);
+  const thumbFallback = thumbJpg || `${gallery.photosPath}${photo.filename}`;
+  const photoTitle = photo.title || 'Untitled';
+  const imgAlt = photo.title || 'Photograph';
+  const thumbWidth = Number(photo.thumbs?.width);
+  const thumbHeight = Number(photo.thumbs?.height);
+  const thumbSizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
+  const thumbJpgSrcset = joinSrcset([
+    makeResponsiveCandidate(thumbJpg, thumbWidth)
+  ]);
+  const thumbWebpSrcset = joinSrcset([
+    makeResponsiveCandidate(thumbWebp, thumbWidth)
+  ]);
 
-  // Add width/height to prevent CLS
-  const widthAttr = photo.thumbs && photo.thumbs.width ? `width="${photo.thumbs.width}"` : '';
-  const heightAttr = photo.thumbs && photo.thumbs.height ? `height="${photo.thumbs.height}"` : '';
+  // Build image media element without template HTML interpolation
+  const imageEl = document.createElement('img');
+  imageEl.src = thumbFallback;
+  imageEl.alt = imgAlt;
+  imageEl.className = 'photo-image';
+  const isFirstRowCandidate = index < 4;
+  imageEl.loading = isFirstRowCandidate ? 'eager' : 'lazy';
+  imageEl.decoding = isFirstRowCandidate ? 'sync' : 'auto';
+  imageEl.fetchPriority = isFirstRowCandidate ? 'high' : 'auto';
+  if (thumbJpgSrcset) {
+    imageEl.srcset = thumbJpgSrcset;
+    imageEl.sizes = thumbSizes;
+  }
+  if (Number.isFinite(thumbWidth) && thumbWidth > 0) imageEl.width = thumbWidth;
+  if (Number.isFinite(thumbHeight) && thumbHeight > 0) imageEl.height = thumbHeight;
 
-  // EXIF metadata is pre-extracted and embedded in photos.json
-  const metaHTML = photo.exif ? formatMetaHTML(photo.exif, true) : '<span class="meta-item">No metadata</span>';
+  if (thumbWebpSrcset) {
+    const picture = document.createElement('picture');
+    const sourceWebp = document.createElement('source');
+    sourceWebp.type = 'image/webp';
+    sourceWebp.srcset = thumbWebpSrcset;
+    sourceWebp.sizes = thumbSizes;
+    picture.appendChild(sourceWebp);
 
-  const imgHTML = thumbWebp
-    ? `<picture>
-        <source srcset="${thumbWebp}" type="image/webp">
-        <img
-          src="${thumbJpg}"
-          alt="${photo.title || 'Photograph'}"
-          class="photo-image"
-          loading="lazy"
-          decoding="async"
-          ${widthAttr}
-          ${heightAttr}
-        >
-      </picture>`
-    : `<img
-        src="${thumbJpg}"
-        alt="${photo.title || 'Photograph'}"
-        class="photo-image"
-        loading="lazy"
-        decoding="async"
-        ${widthAttr}
-        ${heightAttr}
-      >`;
+    picture.appendChild(imageEl);
+    card.appendChild(picture);
+  } else {
+    card.appendChild(imageEl);
+  }
 
-  card.innerHTML = `
-    ${imgHTML}
-    <div class="photo-info">
-      <h3 class="photo-title">${photo.title || 'Untitled'}</h3>
-      <div class="photo-meta" id="meta-${index}">
-        ${metaHTML}
-      </div>
-    </div>
-  `;
+  const info = document.createElement('div');
+  info.className = 'photo-info';
+
+  const title = document.createElement('h3');
+  title.className = 'photo-title';
+  title.textContent = photoTitle;
+
+  const meta = document.createElement('div');
+  meta.className = 'photo-meta';
+  meta.id = `meta-${index}`;
+  renderMetaHTML(meta, photo.exif, true);
+
+  info.append(title, meta);
+  card.appendChild(info);
 
   // Click and keyboard to open lightbox
   card.addEventListener('click', () => {
@@ -182,74 +241,91 @@ function formatMetaHTML(exif, compact = false) {
   const items = [];
 
   if (exif.focalLength) {
+    const focalLength = escapeHTML(exif.focalLength);
     items.push(`
       <span class="meta-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
         </svg>
-        ${exif.focalLength}mm
+        ${focalLength}mm
       </span>
     `);
   }
 
   if (exif.aperture) {
+    const aperture = escapeHTML(exif.aperture);
     items.push(`
       <span class="meta-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
         </svg>
-        f/${exif.aperture}
+        f/${aperture}
       </span>
     `);
   }
 
   if (exif.shutter) {
+    const shutter = escapeHTML(exif.shutter);
     items.push(`
       <span class="meta-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
         </svg>
-        ${exif.shutter}s
+        ${shutter}s
       </span>
     `);
   }
 
   if (exif.iso) {
+    const iso = escapeHTML(exif.iso);
     items.push(`
       <span class="meta-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
           <line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
         </svg>
-        ISO ${exif.iso}
+        ISO ${iso}
       </span>
     `);
   }
 
   if (!compact && exif.camera) {
+    const camera = escapeHTML(exif.camera);
     items.push(`
       <span class="meta-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
           <circle cx="12" cy="13" r="4"/>
         </svg>
-        ${exif.camera}
+        ${camera}
       </span>
     `);
   }
 
   if (!compact && exif.lens) {
+    const lens = escapeHTML(exif.lens);
     items.push(`
       <span class="meta-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
         </svg>
-        ${exif.lens}
+        ${lens}
       </span>
     `);
   }
 
   return items.length > 0 ? items.join('') : '<span class="meta-item">No metadata</span>';
+}
+
+/**
+ * Render metadata content while keeping markup generation centralized.
+ */
+function renderMetaHTML(container, exif, compact = false) {
+  const template = document.createElement('template');
+  template.innerHTML = exif
+    ? formatMetaHTML(exif, compact)
+    : '<span class="meta-item">No metadata</span>';
+  container.replaceChildren(template.content.cloneNode(true));
 }
 
 /**
@@ -299,9 +375,9 @@ function updateLightboxMeta() {
   const availW = isMobile ? vw * 0.92 : vw - 192;
   const availH = isSmall ? vh - 84 : vh - 104;
 
-  // Get intrinsic image dimensions (prefer large variant, fall back to original)
-  const imgW = photo.large?.width || photo.width || image.naturalWidth || 0;
-  const imgH = photo.large?.height || photo.height || image.naturalHeight || 0;
+  // Get intrinsic image dimensions (prefer largest optimized variant, then original)
+  const imgW = photo.large?.width || photo.medium?.width || photo.width || image.naturalWidth || 0;
+  const imgH = photo.large?.height || photo.medium?.height || photo.height || image.naturalHeight || 0;
 
   if (!imgW || !imgH) {
     // Dimensions unknown - hide metadata to be safe
@@ -349,6 +425,8 @@ function getLightboxFocusables() {
 
 function openLightbox(index) {
   const lightbox = document.getElementById('lightbox');
+  const sourceAvif = document.getElementById('lightboxSourceAvif');
+  const sourceWebp = document.getElementById('lightboxSourceWebp');
   const image = document.getElementById('lightboxImage');
   const title = document.getElementById('lightboxTitle');
   const meta = document.getElementById('lightboxMeta');
@@ -356,31 +434,58 @@ function openLightbox(index) {
   gallery.currentIndex = index;
   const photo = gallery.photos[index];
 
-  // Use large optimized image if available, otherwise original
-  const hasLarge = photo.large && photo.large.webp;
-  if (hasLarge) {
-    // Prefer WebP large, with JPEG fallback if browser doesn't support
-    const webpSrc = `${gallery.largePath}${photo.large.webp}`;
-    const jpgSrc = `${gallery.largePath}${photo.large.jpg}`;
+  const lightboxSizes = '(max-width: 768px) 92vw, calc(100vw - 192px)';
 
-    // Test WebP support, use jpg as src (works everywhere), set webp via srcset
-    image.srcset = `${webpSrc} ${photo.large.width}w`;
-    image.sizes = '90vw';
-    image.src = jpgSrc;
+  const avifSrcset = joinSrcset([
+    makeResponsiveCandidate(
+      resolveVariantPath(photo.medium, 'avif', gallery.mediumPath),
+      Number(photo.medium?.width)
+    ),
+    makeResponsiveCandidate(
+      resolveVariantPath(photo.large, 'avif', gallery.largePath),
+      Number(photo.large?.width)
+    )
+  ]);
+  const webpSrcset = joinSrcset([
+    makeResponsiveCandidate(
+      resolveVariantPath(photo.medium, 'webp', gallery.mediumPath),
+      Number(photo.medium?.width)
+    ),
+    makeResponsiveCandidate(
+      resolveVariantPath(photo.large, 'webp', gallery.largePath),
+      Number(photo.large?.width)
+    )
+  ]);
+  const jpgSrcset = joinSrcset([
+    makeResponsiveCandidate(
+      resolveVariantPath(photo.medium, 'jpg', gallery.mediumPath),
+      Number(photo.medium?.width)
+    ),
+    makeResponsiveCandidate(
+      resolveVariantPath(photo.large, 'jpg', gallery.largePath),
+      Number(photo.large?.width)
+    )
+  ]);
+
+  setPictureSource(sourceAvif, avifSrcset, lightboxSizes);
+  setPictureSource(sourceWebp, webpSrcset, lightboxSizes);
+
+  if (jpgSrcset) {
+    image.srcset = jpgSrcset;
+    image.sizes = lightboxSizes;
   } else {
-    image.srcset = '';
-    image.sizes = '';
-    image.src = `${gallery.photosPath}${photo.filename}`;
+    image.removeAttribute('srcset');
+    image.removeAttribute('sizes');
   }
+
+  image.src =
+    resolveVariantPath(photo.large, 'jpg', gallery.largePath) ||
+    resolveVariantPath(photo.medium, 'jpg', gallery.mediumPath) ||
+    `${gallery.photosPath}${photo.filename}`;
 
   image.alt = photo.title || 'Photograph';
   title.textContent = photo.title || 'Untitled';
-
-  if (photo.exif) {
-    meta.innerHTML = formatMetaHTML(photo.exif, false);
-  } else {
-    meta.innerHTML = '<span class="meta-item">No metadata</span>';
-  }
+  renderMetaHTML(meta, photo.exif, false);
 
   lightbox.classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -399,6 +504,9 @@ function openLightbox(index) {
   window.addEventListener('resize', lightboxResizeHandler);
 
   // Attach keyboard listener (scoped to lightbox open)
+  if (lightboxKeyHandler) {
+    document.removeEventListener('keydown', lightboxKeyHandler);
+  }
   lightboxKeyHandler = (e) => {
     switch (e.key) {
       case 'Escape':

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gallery - Oliver Dougherty</title>
   <meta name="description" content="Photography portfolio showcasing moments captured through my lens.">
+  <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,7 +48,7 @@
           <span class="hero-tag">Photography</span>
           <h1 class="hero-title text-display">My Gallery</h1>
           <p class="hero-subtitle">
-            A collection of some of my favorite photos.
+            A collection of photos from recent shoots.
           </p>
         </div>
       </div>
@@ -62,7 +63,7 @@
             <svg class="gallery-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <input type="text" class="gallery-search-input" id="gallerySearch" placeholder="Search by lens, ISO, aperture, etc.">
+            <input type="text" class="gallery-search-input" id="gallerySearch" placeholder="Search by lens, ISO, aperture, etc." aria-label="Search photographs by metadata">
           </div>
           <div class="gallery-count">
             <span id="photoCount">0</span> photographs
@@ -114,7 +115,11 @@
     </button>
 
     <div class="lightbox-content">
-      <img src="" alt="" id="lightboxImage" class="lightbox-image">
+      <picture id="lightboxPicture" class="lightbox-picture">
+        <source id="lightboxSourceAvif" type="image/avif">
+        <source id="lightboxSourceWebp" type="image/webp">
+        <img src="" alt="" id="lightboxImage" class="lightbox-image">
+      </picture>
       <div class="lightbox-info" id="lightboxInfo">
         <h3 class="lightbox-title" id="lightboxTitle"></h3>
         <div class="lightbox-meta" id="lightboxMeta">
@@ -128,11 +133,12 @@
   <footer class="footer">
     <div class="container">
       <div class="footer-inner">
-        <p class="footer-text">&copy; 2026 Oliver Dougherty</p>
+        <p class="footer-text">&copy; <span data-current-year>2026</span> Oliver Dougherty</p>
       </div>
     </div>
   </footer>
 
+  <script src="../../js/year.js" defer></script>
   <script src="../../js/main.js" defer></script>
   <script src="../../js/gallery.js" defer></script>
 </body>

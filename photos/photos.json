@@ -7,15 +7,17 @@
       "height": 5304,
       "thumbs": {
         "jpg": "a7rii_335.jpg",
+        "webp": "a7rii_335.webp",
+        "avif": "a7rii_335.avif",
         "width": 800,
-        "height": 534,
-        "webp": "a7rii_335.webp"
+        "height": 534
       },
       "large": {
         "jpg": "a7rii_335.jpg",
+        "webp": "a7rii_335.webp",
+        "avif": "a7rii_335.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "a7rii_335.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -25,6 +27,13 @@
         "shutter": "1/400",
         "iso": 1600,
         "date": "2025-09-13"
+      },
+      "medium": {
+        "jpg": "a7rii_335.jpg",
+        "webp": "a7rii_335.webp",
+        "avif": "a7rii_335.avif",
+        "width": 1600,
+        "height": 1067
       }
     },
     {
@@ -34,15 +43,17 @@
       "height": 5262,
       "thumbs": {
         "jpg": "a7rii_474.jpg",
+        "webp": "a7rii_474.webp",
+        "avif": "a7rii_474.avif",
         "width": 800,
-        "height": 534,
-        "webp": "a7rii_474.webp"
+        "height": 534
       },
       "large": {
         "jpg": "a7rii_474.jpg",
+        "webp": "a7rii_474.webp",
+        "avif": "a7rii_474.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "a7rii_474.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -52,6 +63,13 @@
         "shutter": "1/320",
         "iso": 100,
         "date": "2025-11-09"
+      },
+      "medium": {
+        "jpg": "a7rii_474.jpg",
+        "webp": "a7rii_474.webp",
+        "avif": "a7rii_474.avif",
+        "width": 1600,
+        "height": 1067
       }
     },
     {
@@ -61,15 +79,17 @@
       "height": 3122,
       "thumbs": {
         "jpg": "a7rii_477.jpg",
+        "webp": "a7rii_477.webp",
+        "avif": "a7rii_477.avif",
         "width": 800,
-        "height": 600,
-        "webp": "a7rii_477.webp"
+        "height": 600
       },
       "large": {
         "jpg": "a7rii_477.jpg",
+        "webp": "a7rii_477.webp",
+        "avif": "a7rii_477.avif",
         "width": 2400,
-        "height": 1800,
-        "webp": "a7rii_477.webp"
+        "height": 1800
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -79,6 +99,13 @@
         "shutter": "1/160",
         "iso": 100,
         "date": "2025-11-09"
+      },
+      "medium": {
+        "jpg": "a7rii_477.jpg",
+        "webp": "a7rii_477.webp",
+        "avif": "a7rii_477.avif",
+        "width": 1600,
+        "height": 1200
       }
     },
     {
@@ -88,15 +115,17 @@
       "height": 5304,
       "thumbs": {
         "jpg": "a7rii_492.jpg",
+        "webp": "a7rii_492.webp",
+        "avif": "a7rii_492.avif",
         "width": 800,
-        "height": 534,
-        "webp": "a7rii_492.webp"
+        "height": 534
       },
       "large": {
         "jpg": "a7rii_492.jpg",
+        "webp": "a7rii_492.webp",
+        "avif": "a7rii_492.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "a7rii_492.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -106,6 +135,13 @@
         "shutter": "1/400",
         "iso": 400,
         "date": "2025-11-09"
+      },
+      "medium": {
+        "jpg": "a7rii_492.jpg",
+        "webp": "a7rii_492.webp",
+        "avif": "a7rii_492.avif",
+        "width": 1600,
+        "height": 1067
       }
     },
     {
@@ -115,15 +151,17 @@
       "height": 5304,
       "thumbs": {
         "jpg": "Dream_Pond.jpg",
+        "webp": "Dream_Pond.webp",
+        "avif": "Dream_Pond.avif",
         "width": 800,
-        "height": 534,
-        "webp": "Dream_Pond.webp"
+        "height": 534
       },
       "large": {
         "jpg": "Dream_Pond.jpg",
+        "webp": "Dream_Pond.webp",
+        "avif": "Dream_Pond.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "Dream_Pond.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -133,6 +171,13 @@
         "shutter": "1/60",
         "iso": 100,
         "date": "2025-06-30"
+      },
+      "medium": {
+        "jpg": "Dream_Pond.jpg",
+        "webp": "Dream_Pond.webp",
+        "avif": "Dream_Pond.avif",
+        "width": 1600,
+        "height": 1067
       }
     },
     {
@@ -142,15 +187,17 @@
       "height": 5304,
       "thumbs": {
         "jpg": "DSC04084.jpg",
+        "webp": "DSC04084.webp",
+        "avif": "DSC04084.avif",
         "width": 800,
-        "height": 534,
-        "webp": "DSC04084.webp"
+        "height": 534
       },
       "large": {
         "jpg": "DSC04084.jpg",
+        "webp": "DSC04084.webp",
+        "avif": "DSC04084.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "DSC04084.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -160,6 +207,13 @@
         "shutter": "1/5000",
         "iso": 5000,
         "date": "2025-12-16"
+      },
+      "medium": {
+        "jpg": "DSC04084.jpg",
+        "webp": "DSC04084.webp",
+        "avif": "DSC04084.avif",
+        "width": 1600,
+        "height": 1067
       }
     },
     {
@@ -169,15 +223,17 @@
       "height": 5116,
       "thumbs": {
         "jpg": "DSC04098.jpg",
+        "webp": "DSC04098.webp",
+        "avif": "DSC04098.avif",
         "width": 800,
-        "height": 534,
-        "webp": "DSC04098.webp"
+        "height": 534
       },
       "large": {
         "jpg": "DSC04098.jpg",
+        "webp": "DSC04098.webp",
+        "avif": "DSC04098.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "DSC04098.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -187,6 +243,13 @@
         "shutter": "1/2000",
         "iso": 5000,
         "date": "2025-12-16"
+      },
+      "medium": {
+        "jpg": "DSC04098.jpg",
+        "webp": "DSC04098.webp",
+        "avif": "DSC04098.avif",
+        "width": 1600,
+        "height": 1067
       }
     },
     {
@@ -196,15 +259,17 @@
       "height": 5288,
       "thumbs": {
         "jpg": "DSC04102.jpg",
+        "webp": "DSC04102.webp",
+        "avif": "DSC04102.avif",
         "width": 800,
-        "height": 540,
-        "webp": "DSC04102.webp"
+        "height": 540
       },
       "large": {
         "jpg": "DSC04102.jpg",
+        "webp": "DSC04102.webp",
+        "avif": "DSC04102.avif",
         "width": 2400,
-        "height": 1621,
-        "webp": "DSC04102.webp"
+        "height": 1621
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -214,6 +279,13 @@
         "shutter": "1/2000",
         "iso": 5000,
         "date": "2025-12-16"
+      },
+      "medium": {
+        "jpg": "DSC04102.jpg",
+        "webp": "DSC04102.webp",
+        "avif": "DSC04102.avif",
+        "width": 1600,
+        "height": 1081
       }
     },
     {
@@ -223,15 +295,17 @@
       "height": 5304,
       "thumbs": {
         "jpg": "DSC04139.jpg",
+        "webp": "DSC04139.webp",
+        "avif": "DSC04139.avif",
         "width": 800,
-        "height": 534,
-        "webp": "DSC04139.webp"
+        "height": 534
       },
       "large": {
         "jpg": "DSC04139.jpg",
+        "webp": "DSC04139.webp",
+        "avif": "DSC04139.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "DSC04139.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -241,6 +315,13 @@
         "shutter": "1/160",
         "iso": 100,
         "date": "2025-12-18"
+      },
+      "medium": {
+        "jpg": "DSC04139.jpg",
+        "webp": "DSC04139.webp",
+        "avif": "DSC04139.avif",
+        "width": 1600,
+        "height": 1067
       }
     },
     {
@@ -250,15 +331,17 @@
       "height": 5304,
       "thumbs": {
         "jpg": "DSC04161.jpg",
+        "webp": "DSC04161.webp",
+        "avif": "DSC04161.avif",
         "width": 800,
-        "height": 534,
-        "webp": "DSC04161.webp"
+        "height": 534
       },
       "large": {
         "jpg": "DSC04161.jpg",
+        "webp": "DSC04161.webp",
+        "avif": "DSC04161.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "DSC04161.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -268,6 +351,13 @@
         "shutter": "1/500",
         "iso": 100,
         "date": "2025-12-18"
+      },
+      "medium": {
+        "jpg": "DSC04161.jpg",
+        "webp": "DSC04161.webp",
+        "avif": "DSC04161.avif",
+        "width": 1600,
+        "height": 1067
       }
     },
     {
@@ -277,15 +367,17 @@
       "height": 5304,
       "thumbs": {
         "jpg": "DSC04166.jpg",
+        "webp": "DSC04166.webp",
+        "avif": "DSC04166.avif",
         "width": 800,
-        "height": 534,
-        "webp": "DSC04166.webp"
+        "height": 534
       },
       "large": {
         "jpg": "DSC04166.jpg",
+        "webp": "DSC04166.webp",
+        "avif": "DSC04166.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "DSC04166.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -295,6 +387,13 @@
         "shutter": "1/160",
         "iso": 200,
         "date": "2025-12-18"
+      },
+      "medium": {
+        "jpg": "DSC04166.jpg",
+        "webp": "DSC04166.webp",
+        "avif": "DSC04166.avif",
+        "width": 1600,
+        "height": 1067
       }
     },
     {
@@ -304,15 +403,17 @@
       "height": 3644,
       "thumbs": {
         "jpg": "DSC04179.jpg",
+        "webp": "DSC04179.webp",
+        "avif": "DSC04179.avif",
         "width": 800,
-        "height": 534,
-        "webp": "DSC04179.webp"
+        "height": 534
       },
       "large": {
         "jpg": "DSC04179.jpg",
+        "webp": "DSC04179.webp",
+        "avif": "DSC04179.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "DSC04179.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -322,6 +423,13 @@
         "shutter": "1/400",
         "iso": 250,
         "date": "2025-12-19"
+      },
+      "medium": {
+        "jpg": "DSC04179.jpg",
+        "webp": "DSC04179.webp",
+        "avif": "DSC04179.avif",
+        "width": 1600,
+        "height": 1068
       }
     },
     {
@@ -331,15 +439,17 @@
       "height": 3906,
       "thumbs": {
         "jpg": "DSC04205.jpg",
+        "webp": "DSC04205.webp",
+        "avif": "DSC04205.avif",
         "width": 800,
-        "height": 514,
-        "webp": "DSC04205.webp"
+        "height": 514
       },
       "large": {
         "jpg": "DSC04205.jpg",
+        "webp": "DSC04205.webp",
+        "avif": "DSC04205.avif",
         "width": 2400,
-        "height": 1543,
-        "webp": "DSC04205.webp"
+        "height": 1543
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -349,6 +459,13 @@
         "shutter": "1/400",
         "iso": 200,
         "date": "2025-12-19"
+      },
+      "medium": {
+        "jpg": "DSC04205.jpg",
+        "webp": "DSC04205.webp",
+        "avif": "DSC04205.avif",
+        "width": 1600,
+        "height": 1029
       }
     },
     {
@@ -358,15 +475,17 @@
       "height": 5304,
       "thumbs": {
         "jpg": "DSC04209.jpg",
+        "webp": "DSC04209.webp",
+        "avif": "DSC04209.avif",
         "width": 800,
-        "height": 534,
-        "webp": "DSC04209.webp"
+        "height": 534
       },
       "large": {
         "jpg": "DSC04209.jpg",
+        "webp": "DSC04209.webp",
+        "avif": "DSC04209.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "DSC04209.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -376,6 +495,13 @@
         "shutter": "1/400",
         "iso": 320,
         "date": "2025-12-19"
+      },
+      "medium": {
+        "jpg": "DSC04209.jpg",
+        "webp": "DSC04209.webp",
+        "avif": "DSC04209.avif",
+        "width": 1600,
+        "height": 1067
       }
     },
     {
@@ -385,15 +511,17 @@
       "height": 4267,
       "thumbs": {
         "jpg": "DSC04229.jpg",
+        "webp": "DSC04229.webp",
+        "avif": "DSC04229.avif",
         "width": 800,
-        "height": 590,
-        "webp": "DSC04229.webp"
+        "height": 590
       },
       "large": {
         "jpg": "DSC04229.jpg",
+        "webp": "DSC04229.webp",
+        "avif": "DSC04229.avif",
         "width": 2400,
-        "height": 1771,
-        "webp": "DSC04229.webp"
+        "height": 1771
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -403,6 +531,13 @@
         "shutter": "1/400",
         "iso": 1000,
         "date": "2025-12-19"
+      },
+      "medium": {
+        "jpg": "DSC04229.jpg",
+        "webp": "DSC04229.webp",
+        "avif": "DSC04229.avif",
+        "width": 1600,
+        "height": 1181
       }
     },
     {
@@ -412,15 +547,17 @@
       "height": 5304,
       "thumbs": {
         "jpg": "DSC04549.jpg",
+        "webp": "DSC04549.webp",
+        "avif": "DSC04549.avif",
         "width": 800,
-        "height": 534,
-        "webp": "DSC04549.webp"
+        "height": 534
       },
       "large": {
         "jpg": "DSC04549.jpg",
+        "webp": "DSC04549.webp",
+        "avif": "DSC04549.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "DSC04549.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -430,6 +567,13 @@
         "shutter": "1/400",
         "iso": 1600,
         "date": "2025-12-27"
+      },
+      "medium": {
+        "jpg": "DSC04549.jpg",
+        "webp": "DSC04549.webp",
+        "avif": "DSC04549.avif",
+        "width": 1600,
+        "height": 1067
       }
     },
     {
@@ -439,15 +583,17 @@
       "height": 3450,
       "thumbs": {
         "jpg": "DSC04554.jpg",
+        "webp": "DSC04554.webp",
+        "avif": "DSC04554.avif",
         "width": 800,
-        "height": 544,
-        "webp": "DSC04554.webp"
+        "height": 544
       },
       "large": {
         "jpg": "DSC04554.jpg",
+        "webp": "DSC04554.webp",
+        "avif": "DSC04554.avif",
         "width": 2400,
-        "height": 1632,
-        "webp": "DSC04554.webp"
+        "height": 1632
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -457,6 +603,13 @@
         "shutter": "1/400",
         "iso": 640,
         "date": "2025-12-27"
+      },
+      "medium": {
+        "jpg": "DSC04554.jpg",
+        "webp": "DSC04554.webp",
+        "avif": "DSC04554.avif",
+        "width": 1600,
+        "height": 1088
       }
     },
     {
@@ -466,15 +619,17 @@
       "height": 1143,
       "thumbs": {
         "jpg": "DSC04599.jpg",
+        "webp": "DSC04599.webp",
+        "avif": "DSC04599.avif",
         "width": 800,
-        "height": 800,
-        "webp": "DSC04599.webp"
+        "height": 800
       },
       "large": {
         "jpg": "DSC04599.jpg",
+        "webp": "DSC04599.webp",
+        "avif": "DSC04599.avif",
         "width": 1143,
-        "height": 1143,
-        "webp": "DSC04599.webp"
+        "height": 1143
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -484,6 +639,13 @@
         "shutter": "1/6",
         "iso": 100,
         "date": "2025-12-28"
+      },
+      "medium": {
+        "jpg": "DSC04599.jpg",
+        "webp": "DSC04599.webp",
+        "avif": "DSC04599.avif",
+        "width": 1143,
+        "height": 1143
       }
     },
     {
@@ -493,15 +655,17 @@
       "height": 5304,
       "thumbs": {
         "jpg": "Hawaii_S25_121.jpg",
+        "webp": "Hawaii_S25_121.webp",
+        "avif": "Hawaii_S25_121.avif",
         "width": 800,
-        "height": 534,
-        "webp": "Hawaii_S25_121.webp"
+        "height": 534
       },
       "large": {
         "jpg": "Hawaii_S25_121.jpg",
+        "webp": "Hawaii_S25_121.webp",
+        "avif": "Hawaii_S25_121.avif",
         "width": 2400,
-        "height": 1601,
-        "webp": "Hawaii_S25_121.webp"
+        "height": 1601
       },
       "exif": {
         "camera": "ILCE-7RM2",
@@ -511,6 +675,13 @@
         "shutter": "1/250",
         "iso": 100,
         "date": "2025-07-01"
+      },
+      "medium": {
+        "jpg": "Hawaii_S25_121.jpg",
+        "webp": "Hawaii_S25_121.webp",
+        "avif": "Hawaii_S25_121.avif",
+        "width": 1600,
+        "height": 1067
       }
     },
     {
@@ -520,18 +691,27 @@
       "height": 2148,
       "thumbs": {
         "jpg": "IMG_20251211_225252_010.jpg",
+        "webp": "IMG_20251211_225252_010.webp",
+        "avif": "IMG_20251211_225252_010.avif",
         "width": 800,
-        "height": 600,
-        "webp": "IMG_20251211_225252_010.webp"
+        "height": 600
       },
       "large": {
         "jpg": "IMG_20251211_225252_010.jpg",
+        "webp": "IMG_20251211_225252_010.webp",
+        "avif": "IMG_20251211_225252_010.avif",
         "width": 2400,
-        "height": 1800,
-        "webp": "IMG_20251211_225252_010.webp"
+        "height": 1800
       },
       "exif": {
         "camera": "Insta360 Ace Pro 2"
+      },
+      "medium": {
+        "jpg": "IMG_20251211_225252_010.jpg",
+        "webp": "IMG_20251211_225252_010.webp",
+        "avif": "IMG_20251211_225252_010.avif",
+        "width": 1600,
+        "height": 1200
       }
     },
     {
@@ -541,18 +721,27 @@
       "height": 6144,
       "thumbs": {
         "jpg": "IMG_20251211_225510_015.jpg",
+        "webp": "IMG_20251211_225510_015.webp",
+        "avif": "IMG_20251211_225510_015.avif",
         "width": 800,
-        "height": 600,
-        "webp": "IMG_20251211_225510_015.webp"
+        "height": 600
       },
       "large": {
         "jpg": "IMG_20251211_225510_015.jpg",
+        "webp": "IMG_20251211_225510_015.webp",
+        "avif": "IMG_20251211_225510_015.avif",
         "width": 2400,
-        "height": 1800,
-        "webp": "IMG_20251211_225510_015.webp"
+        "height": 1800
       },
       "exif": {
         "camera": "Insta360 Ace Pro 2"
+      },
+      "medium": {
+        "jpg": "IMG_20251211_225510_015.jpg",
+        "webp": "IMG_20251211_225510_015.webp",
+        "avif": "IMG_20251211_225510_015.avif",
+        "width": 1600,
+        "height": 1200
       }
     },
     {
@@ -562,18 +751,27 @@
       "height": 6144,
       "thumbs": {
         "jpg": "IMG_20251211_225546_016.jpg",
+        "webp": "IMG_20251211_225546_016.webp",
+        "avif": "IMG_20251211_225546_016.avif",
         "width": 800,
-        "height": 600,
-        "webp": "IMG_20251211_225546_016.webp"
+        "height": 600
       },
       "large": {
         "jpg": "IMG_20251211_225546_016.jpg",
+        "webp": "IMG_20251211_225546_016.webp",
+        "avif": "IMG_20251211_225546_016.avif",
         "width": 2400,
-        "height": 1800,
-        "webp": "IMG_20251211_225546_016.webp"
+        "height": 1800
       },
       "exif": {
         "camera": "Insta360 Ace Pro 2"
+      },
+      "medium": {
+        "jpg": "IMG_20251211_225546_016.jpg",
+        "webp": "IMG_20251211_225546_016.webp",
+        "avif": "IMG_20251211_225546_016.avif",
+        "width": 1600,
+        "height": 1200
       }
     },
     {
@@ -583,18 +781,27 @@
       "height": 4601,
       "thumbs": {
         "jpg": "IMG_20251211_225914_024_crop.jpg",
+        "webp": "IMG_20251211_225914_024_crop.webp",
+        "avif": "IMG_20251211_225914_024_crop.avif",
         "width": 800,
-        "height": 800,
-        "webp": "IMG_20251211_225914_024_crop.webp"
+        "height": 800
       },
       "large": {
         "jpg": "IMG_20251211_225914_024_crop.jpg",
+        "webp": "IMG_20251211_225914_024_crop.webp",
+        "avif": "IMG_20251211_225914_024_crop.avif",
         "width": 2400,
-        "height": 2400,
-        "webp": "IMG_20251211_225914_024_crop.webp"
+        "height": 2400
       },
       "exif": {
         "camera": "Insta360 Ace Pro 2"
+      },
+      "medium": {
+        "jpg": "IMG_20251211_225914_024_crop.jpg",
+        "webp": "IMG_20251211_225914_024_crop.webp",
+        "avif": "IMG_20251211_225914_024_crop.avif",
+        "width": 1600,
+        "height": 1600
       }
     },
     {
@@ -604,18 +811,27 @@
       "height": 4743,
       "thumbs": {
         "jpg": "IMG_20251211_232447_034.jpg",
+        "webp": "IMG_20251211_232447_034.webp",
+        "avif": "IMG_20251211_232447_034.avif",
         "width": 800,
-        "height": 600,
-        "webp": "IMG_20251211_232447_034.webp"
+        "height": 600
       },
       "large": {
         "jpg": "IMG_20251211_232447_034.jpg",
+        "webp": "IMG_20251211_232447_034.webp",
+        "avif": "IMG_20251211_232447_034.avif",
         "width": 2400,
-        "height": 1800,
-        "webp": "IMG_20251211_232447_034.webp"
+        "height": 1800
       },
       "exif": {
         "camera": "Insta360 Ace Pro 2"
+      },
+      "medium": {
+        "jpg": "IMG_20251211_232447_034.jpg",
+        "webp": "IMG_20251211_232447_034.webp",
+        "avif": "IMG_20251211_232447_034.avif",
+        "width": 1600,
+        "height": 1200
       }
     }
   ]

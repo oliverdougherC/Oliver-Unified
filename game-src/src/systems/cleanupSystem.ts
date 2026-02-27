@@ -1,0 +1,39 @@
+import type { ISystem } from '../types';
+import { GameWorld } from '../core/world';
+
+export class CleanupSystem implements ISystem<GameWorld> {
+  update(_dt: number, world: GameWorld): void {
+    const playerPos = world.getPlayerPosition();
+    const despawnRadiusSq = world.config.enemyDespawnRadius * world.config.enemyDespawnRadius;
+
+    for (const enemyId of world.enemies) {
+      const health = world.health.get(enemyId);
+      if (health && health.hp <= 0) {
+        world.markForRemoval(enemyId);
+        continue;
+      }
+
+      const pos = world.positions.get(enemyId);
+      if (!pos) continue;
+
+      const dx = pos.x - playerPos.x;
+      const dy = pos.y - playerPos.y;
+      if (dx * dx + dy * dy > despawnRadiusSq) {
+        world.markForRemoval(enemyId);
+      }
+    }
+
+    for (const projectileId of world.enemyProjectiles) {
+      const pos = world.positions.get(projectileId);
+      if (!pos) continue;
+
+      const dx = pos.x - playerPos.x;
+      const dy = pos.y - playerPos.y;
+      if (dx * dx + dy * dy > (world.config.enemyDespawnRadius + 600) ** 2) {
+        world.markForRemoval(projectileId);
+      }
+    }
+
+    world.flushRemovals();
+  }
+}

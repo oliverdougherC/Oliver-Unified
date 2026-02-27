@@ -4,10 +4,31 @@
   "private": true,
   "description": "Oliver Dougherty - Portfolio Website",
   "scripts": {
-    "optimize-images": "node scripts/optimize-images.js"
+    "optimize-images": "node scripts/optimize-images.js",
+    "build:deploy": "node scripts/build-deploy.js",
+    "game:dev": "vite --config vite.config.game.mts",
+    "game:build": "vite build --config vite.config.game.mts",
+    "game:typecheck": "tsc -p tsconfig.game.json --noEmit",
+    "game:test": "vitest run --config vitest.game.config.mts",
+    "game:check": "npm run game:typecheck && npm run game:test",
+    "lint": "node scripts/lint.js",
+    "format": "node scripts/format.js --write",
+    "format:check": "node scripts/format.js --check",
+    "check-links": "node scripts/check-links.js",
+    "smoke": "node scripts/smoke.js",
+    "quality": "npm run lint && npm run format:check && npm run check-links && npm run smoke",
+    "quality:full": "npm run quality && npm run game:check"
   },
   "devDependencies": {
+    "@types/node": "^25.3.0",
     "exifr": "^7.1.3",
-    "sharp": "^0.33.0"
+    "playwright": "^1.58.2",
+    "sharp": "^0.33.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "pixi.js": "^8.16.0"
   }
 }
