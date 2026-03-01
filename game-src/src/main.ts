@@ -7,10 +7,17 @@ import { WEAPON_ARCHETYPES } from './data/weapons';
 import { PixiRenderAdapter } from './render/pixiRenderAdapter';
 import {
   clamp,
+  parseCombatReadabilityMode,
+  parseClarityPreset,
+  parseSceneStyle,
   loadSettings,
   parseColorVisionMode,
+  parseFogQuality,
+  parseLightingQuality,
+  parseMaterialDetail,
   parseOptions,
   parseRendererPreference,
+  parseShadowQuality,
   saveSettings,
   type RuntimeSettingsPayload
 } from './runtime/settings';
@@ -120,6 +127,7 @@ async function main(): Promise<void> {
   const settingsMotionIntensityValue = requireElement<HTMLElement>('settingsMotionIntensityValue');
   const settingsRendererPreference = requireElement<HTMLSelectElement>('settingsRendererPreference');
   const settingsColorVision = requireElement<HTMLSelectElement>('settingsColorVision');
+  const settingsCombatReadabilityMode = requireElement<HTMLSelectElement>('settingsCombatReadabilityMode');
   const settingsUiScale = requireElement<HTMLInputElement>('settingsUiScale');
   const settingsUiScaleValue = requireElement<HTMLElement>('settingsUiScaleValue');
   const settingsScreenShake = requireElement<HTMLInputElement>('settingsScreenShake');
@@ -128,6 +136,25 @@ async function main(): Promise<void> {
   const settingsHazardOpacityValue = requireElement<HTMLElement>('settingsHazardOpacityValue');
   const settingsHitFlashStrength = requireElement<HTMLInputElement>('settingsHitFlashStrength');
   const settingsHitFlashStrengthValue = requireElement<HTMLElement>('settingsHitFlashStrengthValue');
+  const settingsEnemyOutlineStrength = requireElement<HTMLInputElement>('settingsEnemyOutlineStrength');
+  const settingsEnemyOutlineStrengthValue = requireElement<HTMLElement>('settingsEnemyOutlineStrengthValue');
+  const settingsBackgroundDensity = requireElement<HTMLInputElement>('settingsBackgroundDensity');
+  const settingsBackgroundDensityValue = requireElement<HTMLElement>('settingsBackgroundDensityValue');
+  const settingsAtmosphereStrength = requireElement<HTMLInputElement>('settingsAtmosphereStrength');
+  const settingsAtmosphereStrengthValue = requireElement<HTMLElement>('settingsAtmosphereStrengthValue');
+  const settingsPresetPainterlyBalanced = requireElement<HTMLButtonElement>('settingsPresetPainterlyBalanced');
+  const settingsPresetPainterlyCombat = requireElement<HTMLButtonElement>('settingsPresetPainterlyCombat');
+  const settingsLightingQuality = requireElement<HTMLSelectElement>('settingsLightingQuality');
+  const settingsShadowQuality = requireElement<HTMLSelectElement>('settingsShadowQuality');
+  const settingsFogQuality = requireElement<HTMLSelectElement>('settingsFogQuality');
+  const settingsBloomStrength = requireElement<HTMLInputElement>('settingsBloomStrength');
+  const settingsBloomStrengthValue = requireElement<HTMLElement>('settingsBloomStrengthValue');
+  const settingsGamma = requireElement<HTMLInputElement>('settingsGamma');
+  const settingsGammaValue = requireElement<HTMLElement>('settingsGammaValue');
+  const settingsEnvironmentContrast = requireElement<HTMLInputElement>('settingsEnvironmentContrast');
+  const settingsEnvironmentContrastValue = requireElement<HTMLElement>('settingsEnvironmentContrastValue');
+  const settingsMaterialDetail = requireElement<HTMLSelectElement>('settingsMaterialDetail');
+  const settingsClarityPreset = requireElement<HTMLSelectElement>('settingsClarityPreset');
   const settingsDamageNumbers = requireElement<HTMLInputElement>('settingsDamageNumbers');
   const settingsDirectionalIndicators = requireElement<HTMLInputElement>('settingsDirectionalIndicators');
   const restartRunBtn = requireElement<HTMLButtonElement>('restartRunBtn');
@@ -178,10 +205,23 @@ async function main(): Promise<void> {
   let audioVolume = options.audioVolume;
   let motionScale = options.motionScale;
   let colorVisionMode = options.colorVisionMode;
+  let sceneStyle = options.sceneStyle;
+  let combatReadabilityMode = options.combatReadabilityMode;
   let uiScale = options.uiScale;
   let screenShake = options.screenShake;
   let hazardOpacity = options.hazardOpacity;
   let hitFlashStrength = options.hitFlashStrength;
+  let enemyOutlineStrength = options.enemyOutlineStrength;
+  let backgroundDensity = options.backgroundDensity;
+  let atmosphereStrength = options.atmosphereStrength;
+  let lightingQuality = options.lightingQuality;
+  let shadowQuality = options.shadowQuality;
+  let fogQuality = options.fogQuality;
+  let bloomStrength = options.bloomStrength;
+  let gamma = options.gamma;
+  let environmentContrast = options.environmentContrast;
+  let materialDetail = options.materialDetail;
+  let clarityPreset = options.clarityPreset;
   let showDamageNumbers = options.showDamageNumbers;
   let showDirectionalIndicators = options.showDirectionalIndicators;
   let previousShotsFired = 0;
@@ -203,11 +243,24 @@ async function main(): Promise<void> {
       audioVolume,
       motionScale,
       visualPreset: 'bioluminescent',
+      sceneStyle,
+      combatReadabilityMode,
       colorVisionMode,
       uiScale,
       screenShake,
       hazardOpacity,
       hitFlashStrength,
+      enemyOutlineStrength,
+      backgroundDensity,
+      atmosphereStrength,
+      lightingQuality,
+      shadowQuality,
+      fogQuality,
+      bloomStrength,
+      gamma,
+      environmentContrast,
+      materialDetail,
+      clarityPreset,
       showDamageNumbers,
       showDirectionalIndicators
     };
@@ -217,22 +270,48 @@ async function main(): Promise<void> {
   function applyVisualSettings(): void {
     const effectiveMotionScale = prefersReducedMotion ? Math.min(motionScale, 0.35) : motionScale;
     const effectiveScreenShake = prefersReducedMotion ? Math.min(screenShake, 0.2) : screenShake;
+    const effectiveFogQuality = prefersReducedMotion && fogQuality === 'volumetric' ? 'layered' : fogQuality;
 
     renderer.setMotionScale(effectiveMotionScale);
     renderer.setVisualSettings({
       visualPreset: 'bioluminescent',
+      sceneStyle,
+      combatReadabilityMode,
       colorVisionMode,
       motionScale: effectiveMotionScale,
       uiScale,
       screenShake: effectiveScreenShake,
       hazardOpacity,
       hitFlashStrength,
+      enemyOutlineStrength,
+      backgroundDensity,
+      atmosphereStrength,
       showDamageNumbers,
-      showDirectionalIndicators
+      showDirectionalIndicators,
+      lightingQuality,
+      shadowQuality,
+      fogQuality: effectiveFogQuality,
+      bloomStrength,
+      gamma,
+      environmentContrast,
+      materialDetail,
+      clarityPreset
+    });
+
+    renderer.setLightingSettings({
+      lightingQuality,
+      shadowQuality,
+      fogQuality: effectiveFogQuality,
+      bloomStrength,
+      gamma,
+      environmentContrast,
+      materialDetail,
+      clarityPreset
     });
 
     gameShell.style.setProperty('--hud-scale', uiScale.toFixed(2));
     gameShell.dataset.colorVisionMode = colorVisionMode;
+    gameShell.dataset.sceneStyle = sceneStyle;
   }
 
   function syncTopChromeOffsets(): void {
@@ -255,6 +334,7 @@ async function main(): Promise<void> {
 
     settingsRendererPreference.value = preferredRenderer;
     settingsColorVision.value = colorVisionMode;
+    settingsCombatReadabilityMode.value = combatReadabilityMode;
     settingsUiScale.value = String(Math.round(uiScale * 100));
     settingsUiScaleValue.textContent = `${Math.round(uiScale * 100)}%`;
     settingsScreenShake.value = String(Math.round(screenShake * 100));
@@ -263,6 +343,23 @@ async function main(): Promise<void> {
     settingsHazardOpacityValue.textContent = `${Math.round(hazardOpacity * 100)}%`;
     settingsHitFlashStrength.value = String(Math.round(hitFlashStrength * 100));
     settingsHitFlashStrengthValue.textContent = `${Math.round(hitFlashStrength * 100)}%`;
+    settingsEnemyOutlineStrength.value = String(Math.round(enemyOutlineStrength * 100));
+    settingsEnemyOutlineStrengthValue.textContent = `${Math.round(enemyOutlineStrength * 100)}%`;
+    settingsBackgroundDensity.value = String(Math.round(backgroundDensity * 100));
+    settingsBackgroundDensityValue.textContent = `${Math.round(backgroundDensity * 100)}%`;
+    settingsAtmosphereStrength.value = String(Math.round(atmosphereStrength * 100));
+    settingsAtmosphereStrengthValue.textContent = `${Math.round(atmosphereStrength * 100)}%`;
+    settingsLightingQuality.value = lightingQuality;
+    settingsShadowQuality.value = shadowQuality;
+    settingsFogQuality.value = fogQuality;
+    settingsBloomStrength.value = String(Math.round(bloomStrength * 100));
+    settingsBloomStrengthValue.textContent = `${Math.round(bloomStrength * 100)}%`;
+    settingsGamma.value = String(Math.round(gamma * 100));
+    settingsGammaValue.textContent = `${Math.round(gamma * 100)}%`;
+    settingsEnvironmentContrast.value = String(Math.round(environmentContrast * 100));
+    settingsEnvironmentContrastValue.textContent = `${Math.round(environmentContrast * 100)}%`;
+    settingsMaterialDetail.value = materialDetail;
+    settingsClarityPreset.value = clarityPreset;
     settingsDamageNumbers.checked = showDamageNumbers;
     settingsDirectionalIndicators.checked = showDirectionalIndicators;
   }
@@ -276,6 +373,7 @@ async function main(): Promise<void> {
 
     world.setRendererKind(rendererKind);
     renderer.setQuality(world.quality);
+    await renderer.prewarmVisualAssets();
     applyVisualSettings();
     persistSettings(world.quality);
 
@@ -577,6 +675,7 @@ async function main(): Promise<void> {
     const xpPoolStats = world.xpPool.getStats();
     const evolutionsReady = world.getEvolutionCandidates();
     const perf = renderer.getPerformanceSnapshot();
+    const readability = renderer.getReadabilitySnapshot();
 
     debugPanel.textContent = [
       `seed: ${world.seed}`,
@@ -591,10 +690,15 @@ async function main(): Promise<void> {
       `budget tier: ${perf.budgetTier}`,
       `render p50/p95: ${perf.rolling.p50FrameMs.toFixed(2)} / ${perf.rolling.p95FrameMs.toFixed(2)}ms`,
       `render timings: b${perf.timings.backdropMs.toFixed(2)} e${perf.timings.entitiesMs.toFixed(2)} o${perf.timings.overlaysMs.toFixed(2)} h${perf.timings.hudSyncMs.toFixed(2)} t${perf.timings.totalMs.toFixed(2)}`,
+      `passes: g${perf.passes.gbufferMs.toFixed(2)} c${perf.passes.lightCullMs.toFixed(2)} l${perf.passes.lightShadeMs.toFixed(2)} f${perf.passes.fogMs.toFixed(2)} x${perf.passes.compositeMs.toFixed(2)}`,
       `visible/culled: ${perf.visibleEntities}/${perf.culledEntities}`,
+      `lights/casters: ${perf.activeLights}/${perf.activeShadowCasters}`,
       `draw calls est: ${perf.drawCallsEstimate}`,
       `hud sync: ${hudSyncMs.toFixed(2)}ms`,
-      `visual: ${colorVisionMode}, ui ${Math.round(uiScale * 100)}%, shake ${Math.round(screenShake * 100)}%, hazard ${Math.round(hazardOpacity * 100)}%`,
+      `visual: ${colorVisionMode}, ui ${Math.round(uiScale * 100)}%, shake ${Math.round(screenShake * 100)}%, hazard ${Math.round(hazardOpacity * 100)}%, bloom ${Math.round(bloomStrength * 100)}%`,
+      `scene: ${sceneStyle} / readability ${combatReadabilityMode} / outline ${enemyOutlineStrength.toFixed(2)} / bg ${backgroundDensity.toFixed(2)} / atmosphere ${atmosphereStrength.toFixed(2)}`,
+      `suppression: ${readability.activeSuppressionTier} (${readability.threatLevel.toFixed(2)})`,
+      `lighting: ${lightingQuality} / shadows ${shadowQuality} / fog ${fogQuality} / gamma ${gamma.toFixed(2)} / contrast ${environmentContrast.toFixed(2)} / material ${materialDetail}`,
       `event: ${world.activeEventId ?? 'none'}`,
       `phase: ${world.director.phaseId}`,
       `intensity: ${world.director.intensity.toFixed(2)}`,
@@ -801,13 +905,27 @@ async function main(): Promise<void> {
       },
       visualSettings: {
         colorVisionMode,
+        sceneStyle,
+        combatReadabilityMode,
         uiScale: Number(uiScale.toFixed(2)),
         screenShake: Number(screenShake.toFixed(2)),
         hazardOpacity: Number(hazardOpacity.toFixed(2)),
         hitFlashStrength: Number(hitFlashStrength.toFixed(2)),
-        showDirectionalIndicators
+        enemyOutlineStrength: Number(enemyOutlineStrength.toFixed(2)),
+        backgroundDensity: Number(backgroundDensity.toFixed(2)),
+        atmosphereStrength: Number(atmosphereStrength.toFixed(2)),
+        showDirectionalIndicators,
+        lightingQuality,
+        shadowQuality,
+        fogQuality,
+        bloomStrength: Number(bloomStrength.toFixed(2)),
+        gamma: Number(gamma.toFixed(2)),
+        environmentContrast: Number(environmentContrast.toFixed(2)),
+        materialDetail,
+        clarityPreset
       },
       renderPerf,
+      readability: renderer.getReadabilitySnapshot(),
       inventory,
       catalysts,
       evolutionCandidates: world.getEvolutionCandidates(),
@@ -912,6 +1030,13 @@ async function main(): Promise<void> {
     persistSettings(world.quality);
   });
 
+  settingsCombatReadabilityMode.addEventListener('change', () => {
+    combatReadabilityMode = parseCombatReadabilityMode(settingsCombatReadabilityMode.value);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
   settingsUiScale.addEventListener('input', () => {
     uiScale = clamp(Number(settingsUiScale.value) / 100, 0.9, 1.25);
     applyVisualSettings();
@@ -941,6 +1066,113 @@ async function main(): Promise<void> {
     persistSettings(world.quality);
   });
 
+  settingsEnemyOutlineStrength.addEventListener('input', () => {
+    enemyOutlineStrength = clamp(Number(settingsEnemyOutlineStrength.value) / 100, 0.5, 1.5);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsBackgroundDensity.addEventListener('input', () => {
+    backgroundDensity = clamp(Number(settingsBackgroundDensity.value) / 100, 0.25, 1);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsAtmosphereStrength.addEventListener('input', () => {
+    atmosphereStrength = clamp(Number(settingsAtmosphereStrength.value) / 100, 0, 1);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsLightingQuality.addEventListener('change', () => {
+    lightingQuality = parseLightingQuality(settingsLightingQuality.value);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsShadowQuality.addEventListener('change', () => {
+    shadowQuality = parseShadowQuality(settingsShadowQuality.value);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsFogQuality.addEventListener('change', () => {
+    fogQuality = parseFogQuality(settingsFogQuality.value);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsBloomStrength.addEventListener('input', () => {
+    bloomStrength = clamp(Number(settingsBloomStrength.value) / 100, 0, 1);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsGamma.addEventListener('input', () => {
+    gamma = clamp(Number(settingsGamma.value) / 100, 0.85, 1.2);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsEnvironmentContrast.addEventListener('input', () => {
+    environmentContrast = clamp(Number(settingsEnvironmentContrast.value) / 100, 0.8, 1.25);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsMaterialDetail.addEventListener('change', () => {
+    materialDetail = parseMaterialDetail(settingsMaterialDetail.value);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsClarityPreset.addEventListener('change', () => {
+    clarityPreset = parseClarityPreset(settingsClarityPreset.value);
+    if (clarityPreset === 'cinematic') {
+      lightingQuality = 'cinematic';
+      shadowQuality = 'soft';
+      fogQuality = 'volumetric';
+      bloomStrength = Math.max(0.68, bloomStrength);
+      environmentContrast = Math.max(1, environmentContrast);
+      combatReadabilityMode = 'off';
+      backgroundDensity = Math.max(backgroundDensity, 0.88);
+      atmosphereStrength = Math.max(atmosphereStrength, 0.8);
+    } else if (clarityPreset === 'competitive') {
+      lightingQuality = 'medium';
+      shadowQuality = 'hard';
+      fogQuality = 'layered';
+      bloomStrength = Math.min(0.35, bloomStrength);
+      environmentContrast = Math.max(1.12, environmentContrast);
+      hitFlashStrength = Math.min(hitFlashStrength, 0.65);
+      combatReadabilityMode = 'always_on';
+      backgroundDensity = Math.min(backgroundDensity, 0.46);
+      atmosphereStrength = Math.min(atmosphereStrength, 0.34);
+      enemyOutlineStrength = Math.max(enemyOutlineStrength, 1.2);
+    } else {
+      lightingQuality = 'high';
+      shadowQuality = 'soft';
+      fogQuality = 'volumetric';
+      bloomStrength = clamp(bloomStrength, 0.45, 0.75);
+      environmentContrast = clamp(environmentContrast, 0.95, 1.15);
+      combatReadabilityMode = 'auto';
+      backgroundDensity = clamp(backgroundDensity, 0.6, 0.84);
+      atmosphereStrength = clamp(atmosphereStrength, 0.45, 0.72);
+    }
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
   settingsDamageNumbers.addEventListener('change', () => {
     showDamageNumbers = settingsDamageNumbers.checked;
     applyVisualSettings();
@@ -950,6 +1182,38 @@ async function main(): Promise<void> {
 
   settingsDirectionalIndicators.addEventListener('change', () => {
     showDirectionalIndicators = settingsDirectionalIndicators.checked;
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsPresetPainterlyBalanced.addEventListener('click', () => {
+    sceneStyle = parseSceneStyle('painterly_forest');
+    combatReadabilityMode = 'auto';
+    enemyOutlineStrength = 1.05;
+    backgroundDensity = 0.72;
+    atmosphereStrength = 0.58;
+    lightingQuality = 'high';
+    shadowQuality = 'soft';
+    fogQuality = 'layered';
+    bloomStrength = clamp(bloomStrength, 0.38, 0.6);
+    clarityPreset = 'balanced';
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsPresetPainterlyCombat.addEventListener('click', () => {
+    sceneStyle = parseSceneStyle('painterly_forest');
+    combatReadabilityMode = 'always_on';
+    enemyOutlineStrength = 1.32;
+    backgroundDensity = 0.42;
+    atmosphereStrength = 0.26;
+    lightingQuality = 'medium';
+    shadowQuality = 'hard';
+    fogQuality = 'off';
+    bloomStrength = Math.min(0.3, bloomStrength);
+    clarityPreset = 'competitive';
     applyVisualSettings();
     syncSettingsControls();
     persistSettings(world.quality);

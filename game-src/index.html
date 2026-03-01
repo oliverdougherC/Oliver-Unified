@@ -139,6 +139,14 @@
               <option value="tritanopia">Tritanopia</option>
             </select>
           </label>
+          <label class="setting-row" for="settingsCombatReadabilityMode">
+            <span>Combat Readability</span>
+            <select id="settingsCombatReadabilityMode">
+              <option value="auto">Auto</option>
+              <option value="always_on">Always On</option>
+              <option value="off">Off</option>
+            </select>
+          </label>
           <label class="setting-row" for="settingsUiScale">
             <span>UI Scale</span>
             <div class="setting-control">
@@ -166,6 +174,93 @@
               <input id="settingsHitFlashStrength" type="range" min="0" max="100" step="1" value="90">
               <strong id="settingsHitFlashStrengthValue">90%</strong>
             </div>
+          </label>
+          <label class="setting-row" for="settingsEnemyOutlineStrength">
+            <span>Enemy Outline</span>
+            <div class="setting-control">
+              <input id="settingsEnemyOutlineStrength" type="range" min="50" max="150" step="1" value="100">
+              <strong id="settingsEnemyOutlineStrengthValue">100%</strong>
+            </div>
+          </label>
+          <label class="setting-row" for="settingsBackgroundDensity">
+            <span>Background Density</span>
+            <div class="setting-control">
+              <input id="settingsBackgroundDensity" type="range" min="25" max="100" step="1" value="78">
+              <strong id="settingsBackgroundDensityValue">78%</strong>
+            </div>
+          </label>
+          <label class="setting-row" for="settingsAtmosphereStrength">
+            <span>Atmosphere Strength</span>
+            <div class="setting-control">
+              <input id="settingsAtmosphereStrength" type="range" min="0" max="100" step="1" value="62">
+              <strong id="settingsAtmosphereStrengthValue">62%</strong>
+            </div>
+          </label>
+          <div class="setting-inline-buttons" role="group" aria-label="Painterly presets">
+            <button class="btn-secondary" id="settingsPresetPainterlyBalanced" type="button">Painterly Balanced</button>
+            <button class="btn-secondary" id="settingsPresetPainterlyCombat" type="button">Painterly Combat</button>
+          </div>
+          <p class="setting-group">Lighting</p>
+          <label class="setting-row" for="settingsClarityPreset">
+            <span>Clarity Preset</span>
+            <select id="settingsClarityPreset">
+              <option value="balanced">Balanced</option>
+              <option value="cinematic">Cinematic</option>
+              <option value="competitive">Competitive</option>
+            </select>
+          </label>
+          <label class="setting-row" for="settingsLightingQuality">
+            <span>Lighting Quality</span>
+            <select id="settingsLightingQuality">
+              <option value="high">High</option>
+              <option value="cinematic">Cinematic</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </label>
+          <label class="setting-row" for="settingsShadowQuality">
+            <span>Shadow Quality</span>
+            <select id="settingsShadowQuality">
+              <option value="soft">Soft</option>
+              <option value="hard">Hard</option>
+              <option value="off">Off</option>
+            </select>
+          </label>
+          <label class="setting-row" for="settingsFogQuality">
+            <span>Fog Quality</span>
+            <select id="settingsFogQuality">
+              <option value="volumetric">Volumetric</option>
+              <option value="layered">Layered</option>
+              <option value="off">Off</option>
+            </select>
+          </label>
+          <label class="setting-row" for="settingsBloomStrength">
+            <span>Bloom Strength</span>
+            <div class="setting-control">
+              <input id="settingsBloomStrength" type="range" min="0" max="100" step="1" value="60">
+              <strong id="settingsBloomStrengthValue">60%</strong>
+            </div>
+          </label>
+          <label class="setting-row" for="settingsGamma">
+            <span>Gamma</span>
+            <div class="setting-control">
+              <input id="settingsGamma" type="range" min="85" max="120" step="1" value="100">
+              <strong id="settingsGammaValue">100%</strong>
+            </div>
+          </label>
+          <label class="setting-row" for="settingsEnvironmentContrast">
+            <span>Env Contrast</span>
+            <div class="setting-control">
+              <input id="settingsEnvironmentContrast" type="range" min="80" max="125" step="1" value="100">
+              <strong id="settingsEnvironmentContrastValue">100%</strong>
+            </div>
+          </label>
+          <label class="setting-row" for="settingsMaterialDetail">
+            <span>Material Detail</span>
+            <select id="settingsMaterialDetail">
+              <option value="full">Full</option>
+              <option value="reduced">Reduced</option>
+            </select>
           </label>
           <label class="setting-row" for="settingsDirectionalIndicators">
             <span>Offscreen Indicators</span>

@@ -174,3 +174,142 @@ Original prompt: What is the next logical step for our game. I want to make the 
 - Added legacy settings fallback loading (`forestArcana.settings.v2` -> v3 normalization) in runtime settings.
 - Expanded settings tests to assert legacy key migration behavior.
 - Re-ran `npm run game:test` and `npm run game:check` after migration fix; both passing.
+
+### 2026-02-27 visual art direction follow-up
+
+- Applied deeper renderer art pass based on user feedback ("theme good but visuals still ugly/unclear").
+- Upgraded backdrop from soft blobs to richer world-anchored geometry:
+  - shard canopy layers, animated ribbons, and rune/hex lattice overlays.
+- Upgraded combat glyph clarity:
+  - allied projectiles now directional crystal bolts.
+  - hostile projectiles now directional wedge spears.
+  - hazards now rotating sigils/spokes.
+  - dash telegraphs now include filled cone warnings, not just line+ring.
+  - XP and chest glyphs gained more ornate geometry.
+- Added mild orientation cues on enemy/projectile sprites using velocity-based rotation.
+- Re-ran checks:
+  - `npm run game:check` passed.
+  - `npm run game:build` passed; production assets refreshed.
+
+## 2026-02-27 mystical forest + lighting engine overhaul
+
+### Implementation update
+
+- Added a new visual/lighting API surface:
+  - Extended `types.ts` with lighting/runtime settings, material/light/shadow contracts, render pass metrics, and render adapter methods (`setLightingSettings`, `prewarmVisualAssets`, `getRenderPassMetrics`).
+  - Extended runtime settings parsing + persistence in `runtime/settings.ts` with migration-safe defaults for:
+    - `lightingQuality`, `shadowQuality`, `fogQuality`, `bloomStrength`, `gamma`, `environmentContrast`, `materialDetail`, `clarityPreset`.
+- Added new render modules:
+  - `render/materialLibrary.ts` for per-role material profiles and light-reactive tinting.
+  - `render/forestBiome.ts` for chunked, world-anchored biome geometry (trunks, roots, vines, runes, fungal glow clusters).
+  - `render/lightingPipeline.ts` for dynamic light registry, tile assignment, shadow projection, fog composition, and pass timings.
+  - shader placeholders under `render/shaders/` (`lighting.wgsl.ts`, `lighting.glsl.ts`).
+  - atlas descriptor scaffold under `render/atlas/forestAtlas.ts`.
+- Reworked `render/pixiRenderAdapter.ts` integration:
+  - Added dedicated shadow/light/fog layers and lighting pass synchronization.
+  - Replaced old backdrop generation with chunked `ForestBiomeRenderer`.
+  - Added dynamic light + shadow caster collection from player/enemies/hazards/chests/projectiles.
+  - Added material-aware enemy tinting via `materialLibrary`.
+  - Expanded render perf snapshot with pass metrics + active lights/casters.
+  - Wired quality/clarity settings into renderer grading and FX behavior.
+- Expanded settings UI:
+  - Added controls in `game-src/index.html` and `game-src/src/main.ts` for lighting/shadows/fog/bloom/gamma/contrast/material detail/clarity presets.
+  - Added settings panel scrolling support in `styles.css`.
+- Added/updated tests:
+  - New: `tests/material-library.test.ts`.
+  - New: `tests/lighting-pipeline.test.ts`.
+
+## 2026-02-27 painterly reboot v2 execution
+
+### Implementation update
+
+- Implemented Visual Reboot V2 contracts end-to-end:
+  - Added new runtime visual fields in `types.ts` + settings runtime model:
+    - `sceneStyle`, `combatReadabilityMode`, `enemyOutlineStrength`, `backgroundDensity`, `atmosphereStrength`.
+  - Added readability snapshot types and renderer adapter method:
+    - `ReadabilityGovernorState`, `SceneSuppressionTier`, `getReadabilitySnapshot()`.
+- Added new render modules:
+  - `src/render/atlas/painterlyForestAtlas.ts`
+  - `src/render/painterlyBiomeComposer.ts`
+  - `src/render/enemySpriteFactory.ts`
+  - `src/render/readabilityGovernor.ts`
+- Refactored `src/render/pixiRenderAdapter.ts`:
+  - Replaced old biome backend with `PainterlyBiomeComposer`.
+  - Replaced enemy shape generation with `enemySpriteFactory`.
+  - Wired `ReadabilityGovernor` with suppression-tier driven atmosphere/background/fog/glow/mote reductions.
+  - Added `getReadabilitySnapshot()` and exported governor state into debug and text probe payload.
+  - Rebalanced lighting usage to reduce full-screen haze and oversized halos.
+  - Reworked damage vignette to edge-band treatment (removed center-dimming ring artifact).
+- Updated `src/render/lightingPipeline.ts`:
+  - Added readability multiplier hook.
+  - Shifted fog from broad screen wash to local pockets.
+  - Tightened light footprint/intensity and reduced over-blooming wide radius pass.
+- Updated settings/UI:
+  - `index.html` + `main.ts` now include controls for:
+    - Combat readability mode
+    - Enemy outline strength
+    - Background density
+    - Atmosphere strength
+  - Added quick presets:
+    - Painterly Balanced
+    - Painterly Combat
+- Updated visual palette to improve enemy/background separation in `visualTheme.ts` (especially early-wave readability).
+- Added tests:
+  - `tests/readability-governor.test.ts`
+  - Expanded `tests/settings-runtime.test.ts` for new field migration/query behavior.
+
+### Verification update
+
+- `npm run game:check` passes (15 files / 30 tests).
+- `npm run game:build` passes; `pages/game/assets` refreshed.
+- Playwright probe executed against local dev server with elevated browser permission:
+  - Command used repo client: `output/web_game_playwright_client.js`
+  - Output folder: `output/web-game-painterly-v2`
+  - Captured screenshots: `shot-0.png` .. `shot-5.png`
+  - Captured state snapshots: `state-0.json` .. `state-5.json`
+  - `render_game_to_text` now includes readability governor snapshot (`threatLevel`, suppression tier, applied overrides).
+
+### Remaining TODOs
+
+- Painterly assets are now coherent/readable but still stylized/procedural; if needed, push to a richer authored atlas pass for more bespoke forest set pieces.
+- Add contrast assertions for enemy-vs-local-backdrop (runtime guard currently enforces via palette/outline strategy, not a strict local luminance sampler).
+  - Updated: `tests/settings-runtime.test.ts` for new settings fields/query overrides.
+  - Updated: `tests/visual-theme.test.ts` threshold for new dark palette balancing.
+
+### Verification update
+
+- `npm run game:typecheck`: passing.
+- `npm run game:test`: passing (14 files, 28 tests).
+- `npm run game:check`: passing.
+- `npm run game:build`: passing and refreshed `pages/game/assets`.
+- Playwright probe runs executed (escalated environment):
+  - `output/web-game-lighting`
+  - `output/web-game-lighting-long`
+  - `output/web-game-lighting-smoke`
+  - No `errors-*.json` files generated in probe directories.
+  - `render_game_to_text` now includes non-zero lighting pass timing buckets (`renderPerf.passes`).
+
+### Remaining follow-up tuning
+
+- Visual quality remains significantly darker than desired in some sampled states; tune:
+  - base ambient floor light and fog opacity curve,
+  - early-run contrast and silhouette brightness,
+  - budget-tier downgrade aggressiveness (frequent `minimal` tier in probe timings).
+- Increase late-run probe choreography coverage to guarantee hazard/projectile-heavy scenes for richer lighting validation.
+
+### 2026-02-27 readability hotfix pass
+
+- Addressed user feedback about washed-out transparency and poor enemy/background separation:
+  - Reduced background visual density and alpha in `render/forestBiome.ts` (fewer props/chunk, lower prop opacity, lighter event tint).
+  - Reduced fog/shadow wash and removed center carve ring in `render/lightingPipeline.ts`.
+  - Reduced large ambient circle spill from lighting pass and removed orbiting ambient lights in `render/pixiRenderAdapter.ts`.
+  - Boosted enemy silhouette readability:
+    - added dark underlay disk in `createEnemyGraphic`.
+    - increased enemy stroke width/base opacity and disabled dynamic dark tinting.
+    - brightened enemy palette values in `render/visualTheme.ts`.
+- Verification:
+  - `npm run game:check` passing.
+  - `npm run game:build` passing.
+  - New screenshot probe outputs:
+    - `output/web-game-contrast-pass`
+    - `output/web-game-contrast-pass-2`

@@ -5,6 +5,15 @@ export type UIState = 'boot' | 'playing' | 'paused' | 'levelup' | 'chest' | 'gam
 export type VisualPreset = 'bioluminescent';
 export type ColorVisionMode = 'normal' | 'deuteranopia' | 'protanopia' | 'tritanopia';
 export type RenderBudgetTier = 'ultra' | 'high' | 'medium' | 'low' | 'minimal';
+export type SceneStyle = 'painterly_forest';
+export type CombatReadabilityMode = 'auto' | 'always_on' | 'off';
+export type SceneSuppressionTier = 'none' | 'light' | 'medium' | 'hard';
+export type LightingQuality = 'cinematic' | 'high' | 'medium' | 'low';
+export type ShadowQuality = 'soft' | 'hard' | 'off';
+export type FogQuality = 'volumetric' | 'layered' | 'off';
+export type MaterialDetail = 'full' | 'reduced';
+export type ClarityPreset = 'cinematic' | 'balanced' | 'competitive';
+export type MaterialKind = 'bark' | 'moss' | 'stone' | 'fungal' | 'arcane' | 'flesh' | 'energy';
 
 export type EntityKind =
   | 'player'
@@ -249,25 +258,112 @@ export interface QueryOptions {
   audioVolume: number;
   motionScale: number;
   visualPreset: VisualPreset;
+  sceneStyle: SceneStyle;
+  combatReadabilityMode: CombatReadabilityMode;
   colorVisionMode: ColorVisionMode;
   uiScale: number;
   screenShake: number;
   hazardOpacity: number;
   hitFlashStrength: number;
+  enemyOutlineStrength: number;
+  backgroundDensity: number;
+  atmosphereStrength: number;
   showDamageNumbers: boolean;
   showDirectionalIndicators: boolean;
+  lightingQuality: LightingQuality;
+  shadowQuality: ShadowQuality;
+  fogQuality: FogQuality;
+  bloomStrength: number;
+  gamma: number;
+  environmentContrast: number;
+  materialDetail: MaterialDetail;
+  clarityPreset: ClarityPreset;
 }
 
 export interface VisualRuntimeSettings {
   visualPreset: VisualPreset;
+  sceneStyle: SceneStyle;
+  combatReadabilityMode: CombatReadabilityMode;
   colorVisionMode: ColorVisionMode;
   motionScale: number;
   uiScale: number;
   screenShake: number;
   hazardOpacity: number;
   hitFlashStrength: number;
+  enemyOutlineStrength: number;
+  backgroundDensity: number;
+  atmosphereStrength: number;
   showDamageNumbers: boolean;
   showDirectionalIndicators: boolean;
+  lightingQuality: LightingQuality;
+  shadowQuality: ShadowQuality;
+  fogQuality: FogQuality;
+  bloomStrength: number;
+  gamma: number;
+  environmentContrast: number;
+  materialDetail: MaterialDetail;
+  clarityPreset: ClarityPreset;
+}
+
+export interface LightingRuntimeSettings {
+  lightingQuality: LightingQuality;
+  shadowQuality: ShadowQuality;
+  fogQuality: FogQuality;
+  bloomStrength: number;
+  gamma: number;
+  environmentContrast: number;
+  materialDetail: MaterialDetail;
+  clarityPreset: ClarityPreset;
+}
+
+export interface MaterialSurface {
+  kind: MaterialKind;
+  albedo: number;
+  normal: number;
+  roughness: number;
+  emissive: number;
+  height: number;
+  occlusion: number;
+}
+
+export interface LightInstance {
+  id?: number;
+  x: number;
+  y: number;
+  radius: number;
+  color: number;
+  intensity: number;
+  falloff: number;
+  flicker: number;
+  castsShadow: boolean;
+  layerMask: number;
+  priority?: number;
+}
+
+export interface ShadowCaster {
+  id: number;
+  shape: 'circle' | 'polygon';
+  x: number;
+  y: number;
+  radius?: number;
+  vertices?: Vec2[];
+  height: number;
+  softness: number;
+}
+
+export interface LightingBudget {
+  maxLights: number;
+  maxShadowLights: number;
+  tileSize: number;
+  halfResEffects: boolean;
+}
+
+export interface RenderPassMetrics {
+  gbufferMs: number;
+  lightCullMs: number;
+  lightShadeMs: number;
+  fogMs: number;
+  compositeMs: number;
 }
 
 export interface RenderBudgetFlags {
@@ -292,9 +388,24 @@ export interface RenderPerformanceSnapshot {
     hudSyncMs: number;
     totalMs: number;
   };
+  passes: RenderPassMetrics;
+  activeLights: number;
+  activeShadowCasters: number;
   rolling: {
     p50FrameMs: number;
     p95FrameMs: number;
+  };
+}
+
+export interface ReadabilityGovernorState {
+  threatLevel: number;
+  activeSuppressionTier: SceneSuppressionTier;
+  appliedOverrides: {
+    atmosphereMultiplier: number;
+    backgroundDensityMultiplier: number;
+    fogMultiplier: number;
+    nonEssentialGlowMultiplier: number;
+    ambientParticleMultiplier: number;
   };
 }
 
@@ -336,8 +447,12 @@ export interface IRenderAdapter<TWorld> {
   render(world: TWorld, alpha: number, frameTimeMs: number): void;
   setQuality(quality: QualityTier): void;
   setVisualSettings(settings: VisualRuntimeSettings): void;
+  setLightingSettings(settings: LightingRuntimeSettings): void;
+  prewarmVisualAssets(): Promise<void>;
   setHudSyncTime(hudSyncMs: number): void;
   getPerformanceSnapshot(): RenderPerformanceSnapshot;
+  getReadabilitySnapshot(): ReadabilityGovernorState;
+  getRenderPassMetrics(): RenderPassMetrics;
   getCanvas(): HTMLCanvasElement | null;
   destroy(): void;
 }
