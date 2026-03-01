@@ -143,9 +143,12 @@ a.contact-item:hover {
 
 .education-card {
   padding: var(--space-6);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: rgba(20, 24, 18, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-glass);
   border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-glass);
 }
 
 .edu-header {
@@ -217,9 +220,12 @@ a.contact-item:hover {
 
 .project-card {
   padding: var(--space-6);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: rgba(20, 24, 18, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-glass);
   border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-glass);
   margin-bottom: var(--space-4);
   transition: all var(--duration-base) var(--ease-smooth);
 }
@@ -313,9 +319,12 @@ a.contact-item:hover {
 
 .experience-card {
   padding: var(--space-6);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: rgba(20, 24, 18, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-glass);
   border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-glass);
 }
 
 .exp-header {
@@ -369,9 +378,12 @@ a.contact-item:hover {
 
 .sidebar-section {
   padding: var(--space-6);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: rgba(20, 24, 18, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-glass);
   border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-glass);
 }
 
 .sidebar-section .section-heading {

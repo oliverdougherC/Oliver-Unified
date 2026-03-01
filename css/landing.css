@@ -23,50 +23,64 @@
   border-radius: 50%;
   filter: blur(80px);
   opacity: 0.5;
-  animation: orbFloat 20s ease-in-out infinite;
+  animation: orbFloat 30s ease-in-out infinite;
 }
 
 .orb-1 {
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(23, 59, 52, 0.25) 0%, transparent 70%);
-  top: -200px;
-  right: -100px;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(23, 59, 52, 0.4) 0%, transparent 60%);
+  top: -300px;
+  right: -200px;
   animation-delay: 0s;
 }
 
 .orb-2 {
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(42, 99, 86, 0.18) 0%, transparent 70%);
-  bottom: -150px;
-  left: -100px;
-  animation-delay: -7s;
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, rgba(42, 99, 86, 0.3) 0%, transparent 60%);
+  bottom: -250px;
+  left: -200px;
+  animation-delay: -10s;
 }
 
 .orb-3 {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(30, 79, 68, 0.15) 0%, transparent 70%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(30, 79, 68, 0.25) 0%, transparent 60%);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  animation-delay: -14s;
+  animation-delay: -20s;
 }
 
 @keyframes orbFloat {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
   }
+
   25% {
-    transform: translate(30px, -30px) scale(1.05);
+    transform: translate(50px, -50px) scale(1.1) rotate(5deg);
   }
+
   50% {
-    transform: translate(-20px, 20px) scale(0.95);
+    transform: translate(-30px, 40px) scale(0.9) rotate(-5deg);
   }
+
   75% {
-    transform: translate(-30px, -20px) scale(1.02);
+    transform: translate(-40px, -30px) scale(1.05) rotate(2deg);
   }
+}
+
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 /* ========================================
@@ -137,22 +151,35 @@
 .title-line span {
   display: inline-block;
   opacity: 0;
-  transform: translateY(100%);
-  animation: titleReveal 1s var(--ease-out-expo) forwards;
+  transform: translateY(120%);
+  filter: blur(10px);
+  animation: titleReveal 1.2s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
 }
 
 .title-line:nth-child(1) span {
-  animation-delay: 0.3s;
+  animation-delay: 0.2s;
 }
 
 .title-line:nth-child(2) span {
-  animation-delay: 0.45s;
+  animation-delay: 0.4s;
 }
 
 @keyframes titleReveal {
   to {
     opacity: 1;
     transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.hero-title .text-gradient {
+  background-size: 200% auto;
+  animation: shimmer 6s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: 200% center;
   }
 }
 
@@ -199,10 +226,13 @@
 }
 
 @keyframes scrollPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scaleY(1);
     opacity: 1;
   }
+
   50% {
     transform: scaleY(0.5);
     opacity: 0.5;
@@ -345,19 +375,39 @@
 
 /* Cursor-following glow - each portal glows with its destination page's accent color */
 .portal-gallery .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(150, 147, 204, 0.15) 0%, transparent 40%);
+  background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(150, 147, 204, 0.25) 0%, transparent 50%);
+}
+
+.portal-gallery:hover {
+  border-color: rgba(150, 147, 204, 0.4);
+  box-shadow: var(--shadow-glass), var(--shadow-xl), 0 0 30px rgba(150, 147, 204, 0.15);
 }
 
 .portal-archive .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(205, 219, 205, 0.12) 0%, transparent 40%);
+  background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(205, 219, 205, 0.2) 0%, transparent 50%);
+}
+
+.portal-archive:hover {
+  border-color: rgba(205, 219, 205, 0.4);
+  box-shadow: var(--shadow-glass), var(--shadow-xl), 0 0 30px rgba(205, 219, 205, 0.15);
 }
 
 .portal-dashboard .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(235, 228, 179, 0.1) 0%, transparent 40%);
+  background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(235, 228, 179, 0.15) 0%, transparent 50%);
+}
+
+.portal-dashboard:hover {
+  border-color: rgba(235, 228, 179, 0.4);
+  box-shadow: var(--shadow-glass), var(--shadow-xl), 0 0 30px rgba(235, 228, 179, 0.15);
 }
 
 .portal-resume .portal-bg {
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(108, 143, 213, 0.15) 0%, transparent 40%);
+  background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(108, 143, 213, 0.25) 0%, transparent 50%);
+}
+
+.portal-resume:hover {
+  border-color: rgba(108, 143, 213, 0.4);
+  box-shadow: var(--shadow-glass), var(--shadow-xl), 0 0 30px rgba(108, 143, 213, 0.15);
 }
 
 .portal-content {
@@ -382,10 +432,21 @@
   height: 32px;
 }
 
-.portal-gallery .portal-icon { color: #9693CC; }
-.portal-resume .portal-icon { color: #6C8FD5; }
-.portal-archive .portal-icon { color: #CDDBCD; }
-.portal-dashboard .portal-icon { color: #EBE4B3; }
+.portal-gallery .portal-icon {
+  color: #9693CC;
+}
+
+.portal-resume .portal-icon {
+  color: #6C8FD5;
+}
+
+.portal-archive .portal-icon {
+  color: #CDDBCD;
+}
+
+.portal-dashboard .portal-icon {
+  color: #EBE4B3;
+}
 
 .portal-title {
   font-size: var(--text-2xl);
@@ -639,19 +700,15 @@
   height: min(42vw, 390px);
   transform: translate(-50%, -50%);
   background:
-    radial-gradient(
-      ellipse at center,
+    radial-gradient(ellipse at center,
       rgba(255, 238, 184, 0.2) 0%,
       rgba(255, 222, 149, 0.12) 34%,
       rgba(255, 222, 149, 0.04) 54%,
-      rgba(10, 12, 10, 0) 74%
-    ),
-    radial-gradient(
-      ellipse at center,
+      rgba(10, 12, 10, 0) 74%),
+    radial-gradient(ellipse at center,
       rgba(255, 248, 223, 0.16) 0%,
       rgba(255, 248, 223, 0.06) 42%,
-      rgba(10, 12, 10, 0) 72%
-    );
+      rgba(10, 12, 10, 0) 72%);
   pointer-events: none;
   z-index: -1;
   animation: auraBreath 9.2s ease-in-out infinite;
@@ -701,12 +758,10 @@
 .bored-portal-btn::before {
   inset: -6px;
   border-radius: inherit;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.52) 0%,
-    rgba(255, 230, 170, 0.32) 40%,
-    rgba(255, 230, 170, 0) 78%
-  );
+  background: radial-gradient(circle,
+      rgba(255, 255, 255, 0.52) 0%,
+      rgba(255, 230, 170, 0.32) 40%,
+      rgba(255, 230, 170, 0) 78%);
   filter: blur(6px);
   z-index: -1;
   animation: angelPulse 7.2s ease-in-out infinite;
@@ -716,15 +771,13 @@
   inset: 0;
   border-radius: inherit;
   clip-path: inset(0 round var(--radius-full));
-  background: linear-gradient(
-    112deg,
-    transparent 35%,
-    rgba(255, 255, 255, 0.06) 44%,
-    rgba(255, 255, 255, 0.56) 50%,
-    rgba(255, 245, 203, 0.5) 54%,
-    rgba(255, 255, 255, 0.06) 60%,
-    transparent 68%
-  );
+  background: linear-gradient(112deg,
+      transparent 35%,
+      rgba(255, 255, 255, 0.06) 44%,
+      rgba(255, 255, 255, 0.56) 50%,
+      rgba(255, 245, 203, 0.5) 54%,
+      rgba(255, 255, 255, 0.06) 60%,
+      transparent 68%);
   transform: translateX(-160%) skewX(-16deg);
   opacity: 0;
   animation: holyShimmer 8.4s cubic-bezier(0.2, 0.55, 0.3, 1) infinite;
@@ -746,10 +799,13 @@
 }
 
 @keyframes angelPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.5;
     transform: scale(0.99);
   }
+
   50% {
     opacity: 0.74;
     transform: scale(1.02);
@@ -757,28 +813,37 @@
 }
 
 @keyframes holyShimmer {
-  0%, 20% {
+
+  0%,
+  20% {
     transform: translateX(-160%) skewX(-16deg);
     opacity: 0;
   }
+
   30% {
     opacity: 0.56;
   }
+
   48% {
     transform: translateX(150%) skewX(-16deg);
     opacity: 0.56;
   }
-  60%, 100% {
+
+  60%,
+  100% {
     transform: translateX(150%) skewX(-16deg);
     opacity: 0;
   }
 }
 
 @keyframes auraBreath {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.72;
     transform: translate(-50%, -50%) scale(0.99);
   }
+
   50% {
     opacity: 0.82;
     transform: translate(-50%, -50%) scale(1.01);
@@ -944,6 +1009,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .bored-portal-btn,
   .bored-portal-btn::before,
   .bored-portal-btn::after {
