@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, loadSettings, normalizeSettings, parseOptions } from '../src/runtime/settings';
+import { DEBUG_KEY, DEFAULT_SETTINGS, loadSettings, normalizeSettings, parseOptions } from '../src/runtime/settings';
 
 class MemoryStorage implements Storage {
   private map = new Map<string, string>();
@@ -39,6 +39,8 @@ describe('runtime settings', () => {
     });
 
     expect(normalized.rendererPreference).toBe('webgl');
+    expect(normalized.rendererPolicy).toBe(DEFAULT_SETTINGS.rendererPolicy);
+    expect(normalized.safariSafeMode).toBe(DEFAULT_SETTINGS.safariSafeMode);
     expect(normalized.quality).toBe('medium');
     expect(normalized.audioEnabled).toBe(false);
     expect(normalized.audioVolume).toBe(0.2);
@@ -63,6 +65,12 @@ describe('runtime settings', () => {
     expect(normalized.environmentContrast).toBe(DEFAULT_SETTINGS.environmentContrast);
     expect(normalized.materialDetail).toBe(DEFAULT_SETTINGS.materialDetail);
     expect(normalized.clarityPreset).toBe(DEFAULT_SETTINGS.clarityPreset);
+    expect(normalized.textureDetail).toBe(DEFAULT_SETTINGS.textureDetail);
+    expect(normalized.edgeAntialiasing).toBe(DEFAULT_SETTINGS.edgeAntialiasing);
+    expect(normalized.resolutionProfile).toBe(DEFAULT_SETTINGS.resolutionProfile);
+    expect(normalized.resolutionScale).toBe(DEFAULT_SETTINGS.resolutionScale);
+    expect(normalized.postFxSoftness).toBe(DEFAULT_SETTINGS.postFxSoftness);
+    expect(normalized.desktopUltraLock).toBe(DEFAULT_SETTINGS.desktopUltraLock);
   });
 
   it('applies query overrides while keeping defaults from stored settings', () => {
@@ -71,6 +79,8 @@ describe('runtime settings', () => {
       'forestArcana.settings.v3',
       JSON.stringify({
         rendererPreference: 'auto',
+        rendererPolicy: 'auto',
+        safariSafeMode: true,
         quality: 'high',
         audioEnabled: true,
         audioVolume: 0.7,
@@ -93,17 +103,25 @@ describe('runtime settings', () => {
         environmentContrast: 0.96,
         materialDetail: 'full',
         clarityPreset: 'balanced',
+        textureDetail: 'high',
+        edgeAntialiasing: 'fxaa',
+        resolutionProfile: 'balanced',
+        resolutionScale: 1,
+        postFxSoftness: 0.15,
+        desktopUltraLock: false,
         showDamageNumbers: false,
         showDirectionalIndicators: true
       })
     );
 
     const options = parseOptions(
-      'http://localhost:5174/?renderer=webgpu&audio=0&volume=45&motion=25&colorVision=deuteranopia&combatReadabilityMode=always_on&hazardOpacity=60&hitFlash=40&enemyOutline=120&bgDensity=54&atmosphere=22&indicators=0&lightingQuality=cinematic&shadowQuality=hard&fogQuality=layered&bloom=35&gamma=1.1&contrast=1.17&materialDetail=reduced&clarityPreset=competitive',
+      'http://localhost:5174/?renderer=webgpu&rendererPolicy=prefer_webgl&safariSafeMode=0&audio=0&volume=45&motion=25&colorVision=deuteranopia&combatReadabilityMode=always_on&hazardOpacity=60&hitFlash=40&enemyOutline=120&bgDensity=54&atmosphere=22&indicators=0&lightingQuality=cinematic&shadowQuality=hard&fogQuality=layered&bloom=35&gamma=1.1&contrast=1.17&materialDetail=reduced&clarityPreset=competitive&textureDetail=ultra&edgeAntialiasing=supersample&resolutionProfile=quality&resolutionScale=1.22&postFxSoftness=22&desktopUltraLock=1',
       storage
     );
 
     expect(options.rendererPreference).toBe('webgpu');
+    expect(options.rendererPolicy).toBe('prefer_webgl');
+    expect(options.safariSafeMode).toBe(false);
     expect(options.audioEnabled).toBe(false);
     expect(options.audioVolume).toBe(0.45);
     expect(options.motionScale).toBe(0.25);
@@ -125,6 +143,12 @@ describe('runtime settings', () => {
     expect(options.environmentContrast).toBe(1.17);
     expect(options.materialDetail).toBe('reduced');
     expect(options.clarityPreset).toBe('competitive');
+    expect(options.textureDetail).toBe('ultra');
+    expect(options.edgeAntialiasing).toBe('supersample');
+    expect(options.resolutionProfile).toBe('quality');
+    expect(options.resolutionScale).toBe(1.22);
+    expect(options.postFxSoftness).toBe(0.22);
+    expect(options.desktopUltraLock).toBe(true);
   });
 
   it('loads legacy v2 settings payloads when v3 key is absent', () => {
@@ -147,5 +171,45 @@ describe('runtime settings', () => {
     expect(settings.motionScale).toBe(0.4);
     expect(settings.visualPreset).toBe('bioluminescent');
     expect(settings.sceneStyle).toBe('painterly_forest');
+  });
+
+  it('survives storage read/write failures during options parsing', () => {
+    class RestrictedStorage extends MemoryStorage {
+      override getItem(_key: string): string | null {
+        throw new Error('blocked read');
+      }
+
+      override setItem(_key: string, _value: string): void {
+        throw new Error('blocked write');
+      }
+    }
+
+    const storage = new RestrictedStorage();
+    expect(() => parseOptions('http://localhost:5174/?debug=1&audio=0', storage)).not.toThrow();
+    const options = parseOptions('http://localhost:5174/?debug=1&audio=0', storage);
+
+    expect(options.debugMode).toBe(true);
+    expect(options.audioEnabled).toBe(false);
+  });
+
+  it('reads debug overlay from persisted v3 settings payload', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      'forestArcana.settings.v3',
+      JSON.stringify({
+        rendererPreference: 'auto',
+        rendererPolicy: 'auto',
+        safariSafeMode: true,
+        quality: 'high',
+        audioEnabled: true,
+        audioVolume: 0.7,
+        motionScale: 1,
+        debugOverlayEnabled: true
+      })
+    );
+
+    const options = parseOptions('http://localhost:5174/', storage);
+    expect(options.debugMode).toBe(true);
+    expect(storage.getItem(DEBUG_KEY)).toBe('1');
   });
 });

@@ -1,0 +1,153 @@
+/* Global cursor pack (Windows XP style) */
+:root {
+  --cursor-normal: url("../assets/professional/Normal Select.cur");
+  --cursor-link: url("../assets/professional/Link Select.cur");
+  --cursor-text: url("../assets/professional/Text Select.cur");
+  --cursor-busy: url("../assets/professional/Busy.cur");
+  --cursor-unavailable: url("../assets/professional/Unavailable.cur");
+  --cursor-move: url("../assets/professional/Move.cur");
+  --cursor-help: url("../assets/professional/Help Select.cur");
+  --cursor-precision: url("../assets/professional/Precision Select.cur");
+  --cursor-ew: url("../assets/professional/Horizontal Resize.cur");
+  --cursor-ns: url("../assets/professional/Vertical Resize.cur");
+  --cursor-nwse: url("../assets/professional/Diagonal Resize 1.cur");
+  --cursor-nesw: url("../assets/professional/Diagonal Resize 2.cur");
+}
+
+html,
+body,
+body *,
+body *::before,
+body *::after {
+  cursor: var(--cursor-normal), default !important;
+}
+
+a,
+a:hover,
+a:active,
+a:focus-visible,
+a *,
+a *:hover,
+a *:active,
+button,
+button:hover,
+button:active,
+button:focus-visible,
+button *,
+button *:hover,
+button *:active,
+summary,
+summary:hover,
+summary:active,
+summary:focus-visible,
+summary *,
+select,
+select:hover,
+select:active,
+label[for],
+label[for] *,
+[role='button'],
+[role='button'] *,
+[role='link'],
+[role='link'] *,
+[data-cursor],
+[data-cursor] *,
+[onclick],
+[onclick] *,
+[tabindex]:not([tabindex='-1']),
+[tabindex]:not([tabindex='-1']) *,
+input[type='button'],
+input[type='submit'],
+input[type='reset'],
+input[type='range'],
+input[type='file'],
+input[type='color'],
+input[type='checkbox'],
+input[type='radio'] {
+  cursor: var(--cursor-link), pointer !important;
+}
+
+/* Use system cursors in fullscreen nav overlay to avoid cursor glyph artifacts. */
+.nav-overlay,
+.nav-overlay *,
+.nav-overlay *::before,
+.nav-overlay *::after {
+  cursor: default !important;
+}
+
+.nav-overlay a,
+.nav-overlay a *,
+.nav-overlay button,
+.nav-overlay button *,
+.nav-overlay [role='button'],
+.nav-overlay [role='button'] *,
+.nav-overlay [role='link'],
+.nav-overlay [role='link'] * {
+  cursor: pointer !important;
+}
+
+input[type='text'],
+input[type='search'],
+input[type='email'],
+input[type='url'],
+input[type='password'],
+input[type='number'],
+input[type='tel'],
+input[type='date'],
+input[type='time'],
+textarea,
+[contenteditable='true'] {
+  cursor: var(--cursor-text), text !important;
+}
+
+:disabled,
+[aria-disabled='true'],
+[disabled] {
+  cursor: var(--cursor-unavailable), not-allowed !important;
+}
+
+[aria-busy='true'],
+.wait,
+.loading,
+.is-loading {
+  cursor: var(--cursor-busy), wait !important;
+}
+
+[draggable='true'] {
+  cursor: var(--cursor-move), move !important;
+}
+
+.cursor-fox {
+  cursor: var(--cursor-move), grab !important;
+}
+
+[title^='Help'],
+[aria-label*='help' i],
+.help {
+  cursor: var(--cursor-help), help !important;
+}
+
+.crosshair,
+[data-cursor='precision'] {
+  cursor: var(--cursor-precision), crosshair !important;
+}
+
+.col-resize,
+[data-cursor='col-resize'] {
+  cursor: var(--cursor-ew), ew-resize !important;
+}
+
+.row-resize,
+[data-cursor='row-resize'] {
+  cursor: var(--cursor-ns), ns-resize !important;
+}
+
+.nwse-resize,
+[data-cursor='nwse-resize'] {
+  cursor: var(--cursor-nwse), nwse-resize !important;
+}
+
+.nesw-resize,
+[data-cursor='nesw-resize'] {
+  cursor: var(--cursor-nesw), nesw-resize !important;
+}

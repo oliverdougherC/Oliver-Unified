@@ -36,10 +36,12 @@ export class ObjectPool<T> implements IObjectPool<T> {
 
 export class NumericIdPool implements IObjectPool<number> {
   private readonly freeList: number[] = [];
+  private readonly start: number;
   private next: number;
   private totalAllocated = 0;
 
   constructor(start: number) {
+    this.start = start;
     this.next = start;
   }
 
@@ -58,6 +60,7 @@ export class NumericIdPool implements IObjectPool<number> {
 
   reset(): void {
     this.freeList.length = 0;
+    this.next = this.start;
     this.totalAllocated = 0;
   }
 

@@ -71,6 +71,10 @@
   --text-5xl: clamp(3rem, 2.5rem + 4vw, 4.5rem);
   --text-6xl: clamp(4rem, 3rem + 6vw, 6.5rem);
 
+  /* Agency/Brutalist Typography */
+  --text-hero: clamp(4rem, 8vw, 10rem);
+  --text-hero-lg: clamp(5rem, 12vw, 14rem);
+
   /* Line heights */
   --leading-none: 0.95;
   --leading-tight: 1.1;
@@ -142,6 +146,9 @@
   --z-overlay: 300;
   --z-modal: 400;
   --z-toast: 500;
+
+  /* === Layout === */
+  --nav-height: 80px;
 }
 
 /* ========================================
@@ -262,6 +269,8 @@ body {
   overflow-x: hidden;
 }
 
+/* Cursor pack is applied globally via css/cursor.css */
+
 /* Selection styling */
 ::selection {
   background-color: var(--color-accent);
@@ -342,15 +351,15 @@ body {
   width: 100%;
   max-width: 1800px;
   margin: 0 auto;
-  padding: 0 var(--space-6);
+  padding: 0 var(--space-10);
 }
 
 .section {
-  padding: var(--space-24) 0;
+  padding: clamp(var(--space-20), 10vw, var(--space-32)) 0;
 }
 
 .section-lg {
-  padding: var(--space-32) 0;
+  padding: clamp(var(--space-24), 15vw, 240px) 0;
 }
 
 /* Flex utilities */
@@ -435,6 +444,19 @@ body {
    Component Base Styles
    ======================================== */
 
+/* Page Hero */
+.page-hero {
+  position: relative;
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: calc(var(--nav-height) + var(--space-32)) 0 var(--space-12);
+  background: var(--gradient-subtle);
+  border-bottom: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
 /* Cards */
 .card {
   background: rgba(20, 24, 18, 0.4);
@@ -489,9 +511,9 @@ body {
   text-decoration: none;
   border-radius: var(--radius-lg);
   border: 1px solid transparent;
-  cursor: pointer;
   transition: all var(--duration-base) var(--ease-smooth);
 }
+
 
 .btn-primary {
   background: var(--color-accent);
@@ -726,7 +748,18 @@ a:hover {
 }
 
 /* ========================================
-   Shared Navigation
+   Custom Cursor — hidden legacy elements
+   ======================================== */
+
+/* cursor-dot and cursor-circle elements are no longer used;
+   the retro arrow cursor is applied via native CSS cursor property */
+.cursor-dot,
+.cursor-circle {
+  display: none;
+}
+
+/* ========================================
+   Shared Navigation (Minimalist Header & Fullscreen Menu)
    ======================================== */
 
 .nav {
@@ -734,12 +767,18 @@ a:hover {
   top: 0;
   left: 0;
   right: 0;
-  z-index: var(--z-sticky);
-  padding: var(--space-4) 0;
-  background: rgba(10, 10, 10, 0.8);
+  z-index: calc(var(--z-sticky) + 10);
+  padding: var(--space-10) 0;
+  background: transparent;
+  transition: all var(--duration-base) var(--ease-smooth);
+}
+
+.nav.scrolled {
+  background: color-mix(in srgb, var(--color-bg-primary) 85%, transparent);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--color-border);
+  padding: var(--space-4) 0;
 }
 
 .nav-inner {
@@ -750,11 +789,13 @@ a:hover {
 
 .nav-logo {
   text-decoration: none;
+  position: relative;
+  z-index: calc(var(--z-modal) + 2);
 }
 
 .logo-text {
   font-family: var(--font-display);
-  font-size: var(--text-xl);
+  font-size: var(--text-3xl);
   color: var(--color-text-primary);
 }
 
@@ -762,65 +803,237 @@ a:hover {
   color: var(--color-accent);
 }
 
-.nav-links {
+/* Fullscreen Menu Overlay */
+.nav-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  pointer-events: none;
   display: flex;
   align-items: center;
-  gap: var(--space-1);
 }
 
-.nav-link {
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  border-radius: var(--radius-nav);
-  transition: all var(--duration-fast) var(--ease-smooth);
+.nav-overlay-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg-primary);
+  transform: translateY(-100%);
+  transition: transform 0.26s cubic-bezier(0.7, 0, 0.2, 1);
+  will-change: transform;
 }
 
-.nav-link:hover {
-  color: var(--color-text-primary);
-  background: var(--color-surface);
+.nav-overlay.active {
+  pointer-events: all;
 }
 
-.nav-link.active {
-  color: var(--color-accent);
-  background: var(--color-accent-subtle);
+.nav-overlay.active .nav-overlay-bg {
+  transform: translateY(0);
 }
 
-/* Brighter active nav text for dark accent colors */
-html:not([data-theme]) .nav-link.active {
-  color: #3DAA7E;
-  background: rgba(23, 59, 52, 0.2);
-}
-
-.nav-toggle {
-  display: none;
+.nav-overlay .nav-links {
+  position: relative;
+  z-index: calc(var(--z-modal) + 1);
+  display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: var(--space-2);
+  width: 100%;
+}
+
+.nav-menu-header {
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-8);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.nav-overlay .nav-link {
+  --nav-link-shift-x: 0px;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 6vw, 6rem);
+  line-height: var(--leading-none);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) 0;
+  opacity: 0;
+  transform: translate3d(var(--nav-link-shift-x), 40px, 0) rotate(2deg);
+  transform-origin: left center;
+  transition: opacity 0.24s ease, transform 0.16s ease, color 0.14s ease;
+}
+
+.nav-overlay .nav-link:is(:hover, :focus-visible) {
+  --nav-link-shift-x: 12px;
+}
+
+/* Per-destination nav link hover colors */
+.nav-overlay .nav-link--home:is(:hover, :focus-visible) {
+  color: #2A6356;
+}
+
+.nav-overlay .nav-link--gallery:is(:hover, :focus-visible) {
+  color: #9693CC;
+}
+
+.nav-overlay .nav-link--archive:is(:hover, :focus-visible) {
+  color: #CDDBCD;
+}
+
+.nav-overlay .nav-link--resume:is(:hover, :focus-visible) {
+  color: #6C8FD5;
+}
+
+.nav-overlay .nav-link--dashboard:is(:hover, :focus-visible) {
+  color: #EBE4B3;
+}
+
+/* Keep current-page link visually distinct when not hovered */
+.nav-overlay .nav-link.active {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.1em;
+}
+
+/* Entrance animations */
+.nav-overlay.active .nav-menu-header {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0s;
+}
+
+.nav-overlay.active .nav-link:nth-child(2) {
+  opacity: 1;
+  transform: translate3d(var(--nav-link-shift-x), 0, 0) rotate(0);
+  transition-delay: 0s;
+}
+
+.nav-overlay.active .nav-link:nth-child(3) {
+  opacity: 1;
+  transform: translate3d(var(--nav-link-shift-x), 0, 0) rotate(0);
+  transition-delay: 0s;
+}
+
+.nav-overlay.active .nav-link:nth-child(4) {
+  opacity: 1;
+  transform: translate3d(var(--nav-link-shift-x), 0, 0) rotate(0);
+  transition-delay: 0s;
+}
+
+.nav-overlay.active .nav-link:nth-child(5) {
+  opacity: 1;
+  transform: translate3d(var(--nav-link-shift-x), 0, 0) rotate(0);
+  transition-delay: 0s;
+}
+
+.nav-overlay.active .nav-link:nth-child(6) {
+  opacity: 1;
+  transform: translate3d(var(--nav-link-shift-x), 0, 0) rotate(0);
+  transition-delay: 0s;
+}
+
+/* Apply stagger only while opening, then remove delay for snappy hover/focus */
+.nav-overlay.active.opening .nav-menu-header {
+  transition-delay: 0.03s;
+}
+
+.nav-overlay.active.opening .nav-link:nth-child(2) {
+  transition-delay: 0.05s;
+}
+
+.nav-overlay.active.opening .nav-link:nth-child(3) {
+  transition-delay: 0.08s;
+}
+
+.nav-overlay.active.opening .nav-link:nth-child(4) {
+  transition-delay: 0.11s;
+}
+
+.nav-overlay.active.opening .nav-link:nth-child(5) {
+  transition-delay: 0.14s;
+}
+
+.nav-overlay.active.opening .nav-link:nth-child(6) {
+  transition-delay: 0.17s;
+}
+
+.nav-menu-footer {
+  margin-top: var(--space-12);
+  display: flex;
+  gap: var(--space-8);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.nav-overlay.active .nav-menu-footer {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0s;
+}
+
+.nav-overlay.active.opening .nav-menu-footer {
+  transition-delay: 0.2s;
+}
+
+.footer-link {
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-secondary);
+  transition: color 0.14s ease;
+}
+
+.footer-link:is(:hover, :focus-visible) {
+  color: var(--color-text-primary);
+}
+
+/* minimal toggle button */
+.nav-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   background: none;
   border: none;
-  cursor: pointer;
+  position: relative;
+  z-index: calc(var(--z-modal) + 2);
+  width: 48px;
+  height: 48px;
+  align-items: flex-end;
+  justify-content: center;
 }
 
 .nav-toggle span {
   display: block;
-  width: 24px;
   height: 2px;
   background: var(--color-text-primary);
-  transition: all var(--duration-base) var(--ease-smooth);
+  transition: all 0.4s cubic-bezier(0.7, 0, 0.2, 1);
+}
+
+.nav-toggle span:nth-child(1) {
+  width: 40px;
+}
+
+.nav-toggle span:nth-child(2) {
+  width: 28px;
+}
+
+.nav-toggle:hover span:nth-child(2) {
+  width: 40px;
 }
 
 .nav-toggle.active span:nth-child(1) {
-  transform: rotate(45deg) translate(5px, 5px);
+  transform: translateY(6px) rotate(45deg);
+  width: 40px;
 }
 
 .nav-toggle.active span:nth-child(2) {
-  opacity: 0;
-}
-
-.nav-toggle.active span:nth-child(3) {
-  transform: rotate(-45deg) translate(5px, -5px);
+  transform: translateY(-6px) rotate(-45deg);
+  width: 40px;
 }
 
 /* ========================================
@@ -874,43 +1087,17 @@ html:not([data-theme]) .nav-link.active {
 }
 
 @media (max-width: 768px) {
-  .nav-links {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: var(--space-4);
-    background: var(--color-bg-primary);
-    opacity: 0;
-    visibility: hidden;
-    transition: all var(--duration-base) var(--ease-smooth);
+  .nav-overlay .nav-link {
+    font-size: clamp(2.5rem, 10vw, 4rem);
   }
+}
 
-  .nav-links.active {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  .nav-toggle {
-    display: flex;
-    z-index: 10;
-  }
-
-  .nav-link {
-    font-size: var(--text-xl);
-    min-height: 44px;
-  }
-
-  .footer-inner {
-    justify-content: center;
-  }
-
-  .footer-text {
-    text-align: center;
+@media (hover: hover) and (pointer: fine) {
+  .nav-overlay .nav-link {
+    width: auto;
+    min-height: 0;
+    display: inline-flex;
+    align-self: flex-start;
   }
 }
 
@@ -983,22 +1170,6 @@ html:not([data-theme]) .nav-link.active {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* ========================================
-   Custom cursor (optional enhancement)
-   ======================================== */
-
-.cursor-glow {
-  position: fixed;
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(23, 59, 52, 0.15) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: -1;
-  transform: translate(-50%, -50%);
-  transition: opacity 0.3s;
 }
 
 /* ========================================

@@ -16,6 +16,7 @@
   pointer-events: none;
   z-index: -2;
   overflow: hidden;
+  contain: layout paint;
 }
 
 .gradient-orb {
@@ -24,6 +25,7 @@
   filter: blur(80px);
   opacity: 0.5;
   animation: orbFloat 30s ease-in-out infinite;
+  will-change: transform;
 }
 
 .orb-1 {
@@ -48,9 +50,8 @@
   width: 600px;
   height: 600px;
   background: radial-gradient(circle, rgba(30, 79, 68, 0.25) 0%, transparent 60%);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: calc(50% - 300px);
+  left: calc(50% - 300px);
   animation-delay: -20s;
 }
 
@@ -79,31 +80,14 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.12;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAAAAP//////////////////////f//rOubCAAAABnRSTlMAAAAAAABupgeRAAAAn0lEQVQ4y2NgQAR8DKiAIRAygAEMEMGgAiIMhAxgAE0AhAyogCEQMmAAg0IQMmAAg0ogCDkwDAJBhEMGEQ5ZRDjEEeFgRITTABHOBEQIC2AAg0wQIVAAAxhMgoiAAwxgkAkSCAZ2wSAyCGAIC2AIPzYgQuAAgygIYXDAIAjCIABhUIQAwwGIAwxgUIQAhwEIgxIQMAAAMKADhjggYAAAAAAAJyBFA2AANRkAAAAASUVORK5CYII=");
+  background-repeat: repeat;
+  background-size: 150px 150px;
 }
 
 /* ========================================
-   Navigation Override (landing-specific)
-   ======================================== */
-
-.nav {
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-bottom: none;
-  transition: all var(--duration-base) var(--ease-smooth);
-}
-
-.nav.scrolled {
-  background: rgba(10, 10, 10, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--color-border);
-}
-
-/* ========================================
-   Hero Section
+   Hero Section (Agency Overhaul)
    ======================================== */
 
 .hero {
@@ -112,103 +96,132 @@
   flex-direction: column;
   justify-content: center;
   position: relative;
-  padding: var(--space-32) 0 var(--space-16);
+  padding: calc(var(--nav-height) + var(--space-32)) 0 var(--space-16);
+  overflow: hidden;
 }
 
 .hero-content {
-  max-width: 900px;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
 }
 
 .hero-intro {
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
   opacity: 0;
-  animation: fadeInUp 0.8s var(--ease-out-expo) 0.2s forwards;
+  animation: fadeIn 1s var(--ease-out-expo) 0.5s forwards;
 }
 
 .hero-tag {
   display: inline-block;
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
   color: var(--color-accent);
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-accent-subtle);
-  border-radius: var(--radius-full);
+}
+
+/* Typography Masks */
+.mask-wrap {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+.mask-inner {
+  display: inline-block;
+  transform: translateY(110%);
+  animation: maskReveal 1.2s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+@keyframes maskReveal {
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Massive Titles */
+.hero-titles {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--space-12);
 }
 
 .hero-title {
-  font-size: var(--text-6xl);
+  font-family: var(--font-display);
+  font-weight: var(--weight-normal);
   line-height: var(--leading-none);
-  margin-bottom: var(--space-6);
+  text-transform: uppercase;
+  margin: 0;
+  white-space: nowrap;
 }
 
-.title-line {
-  display: block;
-  overflow: hidden;
+.title-main {
+  font-size: var(--text-hero-lg);
+  color: var(--color-text-primary);
+  letter-spacing: -0.04em;
+  margin-left: -5px;
 }
 
-.title-line span {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(120%);
-  filter: blur(10px);
-  animation: titleReveal 1.2s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+.title-sub {
+  font-size: var(--text-hero);
+  letter-spacing: -0.02em;
+  margin-top: -1.2vw;
+  margin-left: 10vw;
 }
 
-.title-line:nth-child(1) span {
+.title-main .mask-inner {
+  animation-delay: 0.1s;
+}
+
+.title-sub .mask-inner {
   animation-delay: 0.2s;
 }
 
-.title-line:nth-child(2) span {
-  animation-delay: 0.4s;
+.hero-title.text-gradient .mask-inner {
+  color: #173B34;
+  background: none;
+  -webkit-text-fill-color: #173B34;
+  animation: maskReveal 1.2s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 }
 
-@keyframes titleReveal {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
-.hero-title .text-gradient {
-  background-size: 200% auto;
-  animation: shimmer 6s linear infinite;
-}
-
-@keyframes shimmer {
-  to {
-    background-position: 200% center;
-  }
+/* Hero Details (Asymmetrical) */
+.hero-details {
+  display: flex;
 }
 
 .hero-subtitle {
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
   color: var(--color-text-secondary);
-  margin-bottom: var(--space-10);
-  opacity: 0;
-  animation: fadeInUp 0.8s var(--ease-out-expo) 0.6s forwards;
+  line-height: var(--leading-relaxed);
+  max-width: 500px;
 }
 
-.hero-cta {
-  display: flex;
-  gap: var(--space-4);
-  opacity: 0;
-  animation: fadeInUp 0.8s var(--ease-out-expo) 0.75s forwards;
+.hero-subtitle .mask-inner {
+  transform: translateY(110%);
+  animation-duration: 1.4s;
+}
+
+.hero-subtitle .mask-wrap:nth-child(1) .mask-inner {
+  animation-delay: 0.5s;
+}
+
+.hero-subtitle .mask-wrap:nth-child(3) .mask-inner {
+  animation-delay: 0.6s;
 }
 
 .hero-scroll {
   position: absolute;
-  bottom: var(--space-10);
+  bottom: var(--space-8);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
   opacity: 0;
-  animation: fadeIn 1s var(--ease-smooth) 1.2s forwards;
+  animation: fadeIn 1.5s var(--ease-smooth) 1.2s forwards;
 }
 
 .scroll-text {
@@ -254,8 +267,9 @@
 }
 
 .section-title {
-  font-size: var(--text-4xl);
+  font-size: var(--text-5xl);
   margin-bottom: var(--space-4);
+  line-height: var(--leading-tight);
 }
 
 .section-desc {
@@ -298,6 +312,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  padding-left: var(--space-5);
+  border-left: 1px solid var(--color-border-emphasis);
 }
 
 .stat-value {
@@ -321,7 +337,7 @@
   background: var(--color-surface);
   border-radius: var(--radius-2xl);
   overflow: hidden;
-  border: 2px solid var(--color-accent);
+  border: 2px solid #2A6356;
 }
 
 .visual-image {
@@ -510,9 +526,10 @@
 
 .project-number {
   font-family: var(--font-mono);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   color: var(--color-text-muted);
   padding-top: var(--space-1);
+  min-width: 2rem;
 }
 
 .project-content {
@@ -582,6 +599,8 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  line-height: 1.2;
+  padding-bottom: 0.12em;
 }
 
 .contact-links {
@@ -851,6 +870,125 @@
 }
 
 /* ========================================
+   Hero Editorial Details
+   ======================================== */
+
+.hero-meta-cell {
+  position: absolute;
+  top: auto;
+  bottom: var(--space-10);
+  right: var(--space-10);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-wide);
+  opacity: 0;
+  animation: fadeIn 1s var(--ease-smooth) 0.8s forwards;
+  z-index: 3;
+}
+
+.hero-title-rule {
+  width: 30%;
+  height: 1px;
+  background: var(--color-border-emphasis);
+  margin: var(--space-6) 0 var(--space-8);
+  opacity: 0;
+  animation: fadeIn 0.8s var(--ease-smooth) 0.9s forwards;
+}
+
+/* ========================================
+   Marquee Band
+   ======================================== */
+
+.marquee-band {
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  overflow: hidden;
+  padding: var(--space-4) 0;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 28s linear infinite;
+}
+
+.marquee-inner {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  padding-right: 0;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation-play-state: paused;
+  }
+}
+
+/* ========================================
+   Portal Card Numbers
+   ======================================== */
+
+.portal-card[data-index]::before {
+  content: attr(data-index);
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ========================================
+   Projects Footer
+   ======================================== */
+
+.projects-footer {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
+.projects-all-link {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  letter-spacing: var(--tracking-wide);
+  transition: color var(--duration-fast) var(--ease-smooth);
+}
+
+.projects-all-link:hover {
+  color: var(--color-accent-hover);
+}
+
+/* ========================================
+   Project item border
+   ======================================== */
+
+.project-item {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.project-item:last-child {
+  border-bottom: none;
+}
+
+/* ========================================
    Responsive Styles
    ======================================== */
 
@@ -873,10 +1011,6 @@
 @media (max-width: 768px) {
   .hero-title {
     font-size: var(--text-5xl);
-  }
-
-  .hero-cta {
-    flex-direction: column;
   }
 
   .about-stats {
@@ -912,12 +1046,6 @@
   .hero-subtitle {
     font-size: var(--text-base);
     margin-bottom: var(--space-6);
-  }
-
-  .hero-cta .btn {
-    width: 100%;
-    min-height: 48px;
-    justify-content: center;
   }
 
   .hero-scroll {

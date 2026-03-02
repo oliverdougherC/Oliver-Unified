@@ -4,20 +4,12 @@
  */
 
 /* ========================================
-   Archive Nav Override
-   ======================================== */
-
-.nav {
-  background: rgba(10, 10, 10, 0.9);
-}
-
-/* ========================================
    Archive Hero
    ======================================== */
 
 .archive-hero {
   position: relative;
-  padding: calc(var(--space-32) + 60px) 0 var(--space-12);
+  padding: calc(var(--nav-height) + var(--space-32)) 0 var(--space-12);
   background: var(--color-bg-secondary);
   border-bottom: 1px solid var(--color-border);
   overflow: hidden;
@@ -72,10 +64,12 @@
 }
 
 .hero-title {
-  font-size: var(--text-5xl);
-  font-weight: var(--weight-bold);
+  font-family: var(--font-display);
+  font-weight: var(--weight-normal);
+  font-size: var(--text-hero);
   margin-bottom: var(--space-4);
-  letter-spacing: var(--tracking-tight);
+  letter-spacing: var(--tracking-tighter);
+  line-height: var(--leading-none);
 }
 
 .hero-subtitle {
@@ -94,7 +88,7 @@
   background: var(--color-bg-primary);
   border-bottom: 1px solid var(--color-border);
   position: sticky;
-  top: 65px;
+  top: var(--nav-height);
   z-index: var(--z-dropdown);
 }
 
@@ -189,6 +183,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: var(--space-5);
+  counter-reset: report-index;
 }
 
 /* ========================================
@@ -198,11 +193,24 @@
 .report-card {
   display: flex;
   flex-direction: column;
+  position: relative;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
   transition: all var(--duration-base) var(--ease-smooth);
+  counter-increment: report-index;
+}
+
+.report-card::before {
+  content: '(' counter(report-index, decimal-leading-zero) ')';
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  pointer-events: none;
 }
 
 .report-card:hover {
@@ -359,7 +367,7 @@
 
 @media (max-width: 768px) {
   .archive-hero {
-    padding: calc(var(--space-24) + 60px) 0 var(--space-10);
+    padding: calc(var(--nav-height) + var(--space-24)) 0 var(--space-10);
   }
 
   .hero-title {
@@ -378,7 +386,7 @@
 
 @media (max-width: 480px) {
   .archive-hero {
-    padding: calc(var(--space-20) + 60px) 0 var(--space-8);
+    padding: calc(var(--nav-height) + var(--space-20)) 0 var(--space-8);
   }
 
   .hero-title {

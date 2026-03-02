@@ -2,14 +2,18 @@ import type {
   CombatReadabilityMode,
   ClarityPreset,
   ColorVisionMode,
+  EdgeAntialiasingMode,
   FogQuality,
   LightingQuality,
   MaterialDetail,
   QueryOptions,
   QualityTier,
+  ResolutionProfile,
+  RendererPolicy,
   RendererPreference,
   SceneStyle,
   ShadowQuality,
+  TextureDetail,
   VisualPreset
 } from '../types';
 import { parseSeedFromQuery } from '../core/rng';
@@ -20,6 +24,8 @@ export const DEBUG_KEY = 'forestArcana.debug.v1';
 
 export interface RuntimeSettingsPayload {
   rendererPreference: RendererPreference;
+  rendererPolicy: RendererPolicy;
+  safariSafeMode: boolean;
   quality: QualityTier;
   audioEnabled: boolean;
   audioVolume: number;
@@ -45,10 +51,19 @@ export interface RuntimeSettingsPayload {
   environmentContrast: number;
   materialDetail: MaterialDetail;
   clarityPreset: ClarityPreset;
+  textureDetail: TextureDetail;
+  edgeAntialiasing: EdgeAntialiasingMode;
+  resolutionProfile: ResolutionProfile;
+  resolutionScale: number;
+  postFxSoftness: number;
+  desktopUltraLock: boolean;
+  debugOverlayEnabled: boolean;
 }
 
 export const DEFAULT_SETTINGS: RuntimeSettingsPayload = {
   rendererPreference: 'auto',
+  rendererPolicy: 'auto',
+  safariSafeMode: true,
   quality: 'high',
   audioEnabled: true,
   audioVolume: 0.7,
@@ -62,19 +77,42 @@ export const DEFAULT_SETTINGS: RuntimeSettingsPayload = {
   hazardOpacity: 0.9,
   hitFlashStrength: 0.9,
   enemyOutlineStrength: 1,
-  backgroundDensity: 0.78,
-  atmosphereStrength: 0.62,
+  backgroundDensity: 0.72,
+  atmosphereStrength: 0.42,
   showDamageNumbers: false,
   showDirectionalIndicators: true,
   lightingQuality: 'high',
   shadowQuality: 'soft',
-  fogQuality: 'volumetric',
-  bloomStrength: 0.6,
+  fogQuality: 'layered',
+  bloomStrength: 0.4,
   gamma: 1,
   environmentContrast: 1,
   materialDetail: 'full',
-  clarityPreset: 'balanced'
+  clarityPreset: 'balanced',
+  textureDetail: 'ultra',
+  edgeAntialiasing: 'fxaa',
+  resolutionProfile: 'balanced',
+  resolutionScale: 1,
+  postFxSoftness: 0.15,
+  desktopUltraLock: true,
+  debugOverlayEnabled: false
 };
+
+export function safeGetItem(storage: Storage, key: string): string | null {
+  try {
+    return storage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export function safeSetItem(storage: Storage, key: string, value: string): void {
+  try {
+    storage.setItem(key, value);
+  } catch {
+    // Intentionally ignore storage write failures and keep runtime defaults.
+  }
+}
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -83,6 +121,11 @@ export function clamp(value: number, min: number, max: number): number {
 export function parseRendererPreference(value: string | null): RendererPreference {
   if (value === 'webgpu' || value === 'webgl' || value === 'auto') return value;
   return DEFAULT_SETTINGS.rendererPreference;
+}
+
+export function parseRendererPolicy(value: unknown): RendererPolicy {
+  if (value === 'auto' || value === 'prefer_webgl' || value === 'prefer_webgpu') return value;
+  return DEFAULT_SETTINGS.rendererPolicy;
 }
 
 export function parseColorVisionMode(value: string | null): ColorVisionMode {
@@ -127,6 +170,21 @@ export function parseClarityPreset(value: unknown): ClarityPreset {
   return DEFAULT_SETTINGS.clarityPreset;
 }
 
+export function parseTextureDetail(value: unknown): TextureDetail {
+  if (value === 'ultra' || value === 'high' || value === 'medium' || value === 'low') return value;
+  return DEFAULT_SETTINGS.textureDetail;
+}
+
+export function parseEdgeAntialiasingMode(value: unknown): EdgeAntialiasingMode {
+  if (value === 'off' || value === 'fxaa' || value === 'supersample') return value;
+  return DEFAULT_SETTINGS.edgeAntialiasing;
+}
+
+export function parseResolutionProfile(value: unknown): ResolutionProfile {
+  if (value === 'quality' || value === 'balanced' || value === 'performance') return value;
+  return DEFAULT_SETTINGS.resolutionProfile;
+}
+
 function parseQuality(value: unknown): QualityTier {
   return value === 'low' || value === 'medium' || value === 'high' ? value : DEFAULT_SETTINGS.quality;
 }
@@ -165,6 +223,8 @@ export function normalizeSettings(raw: Partial<RuntimeSettingsPayload> | null | 
   const source = raw ?? {};
   return {
     rendererPreference: parseRendererPreference(source.rendererPreference ?? null),
+    rendererPolicy: parseRendererPolicy(source.rendererPolicy),
+    safariSafeMode: parseBoolean(source.safariSafeMode, DEFAULT_SETTINGS.safariSafeMode),
     quality: parseQuality(source.quality),
     audioEnabled: parseBoolean(source.audioEnabled, DEFAULT_SETTINGS.audioEnabled),
     audioVolume: parseNumber(source.audioVolume, DEFAULT_SETTINGS.audioVolume, 0, 1),
@@ -202,16 +262,23 @@ export function normalizeSettings(raw: Partial<RuntimeSettingsPayload> | null | 
       1.25
     ),
     materialDetail: parseMaterialDetail(source.materialDetail),
-    clarityPreset: parseClarityPreset(source.clarityPreset)
+    clarityPreset: parseClarityPreset(source.clarityPreset),
+    textureDetail: parseTextureDetail(source.textureDetail),
+    edgeAntialiasing: parseEdgeAntialiasingMode(source.edgeAntialiasing),
+    resolutionProfile: parseResolutionProfile(source.resolutionProfile),
+    resolutionScale: parseNumber(source.resolutionScale, DEFAULT_SETTINGS.resolutionScale, 0.7, 1.3),
+    postFxSoftness: parseNumber(source.postFxSoftness, DEFAULT_SETTINGS.postFxSoftness, 0, 1),
+    desktopUltraLock: parseBoolean(source.desktopUltraLock, DEFAULT_SETTINGS.desktopUltraLock),
+    debugOverlayEnabled: parseBoolean(source.debugOverlayEnabled, DEFAULT_SETTINGS.debugOverlayEnabled)
   };
 }
 
 export function loadSettings(storage: Storage): RuntimeSettingsPayload {
   try {
-    const current = storage.getItem(SETTINGS_KEY);
+    const current = safeGetItem(storage, SETTINGS_KEY);
     const fallbackRaw =
       current ??
-      LEGACY_SETTINGS_KEYS.map((key) => storage.getItem(key)).find((value) => value !== null) ??
+      LEGACY_SETTINGS_KEYS.map((key) => safeGetItem(storage, key)).find((value) => value !== null) ??
       '{}';
     const raw = JSON.parse(fallbackRaw) as Partial<RuntimeSettingsPayload>;
     return normalizeSettings(raw);
@@ -221,13 +288,18 @@ export function loadSettings(storage: Storage): RuntimeSettingsPayload {
 }
 
 export function saveSettings(storage: Storage, next: RuntimeSettingsPayload): void {
-  storage.setItem(SETTINGS_KEY, JSON.stringify(normalizeSettings(next)));
+  safeSetItem(storage, SETTINGS_KEY, JSON.stringify(normalizeSettings(next)));
 }
 
 export function parseOptions(locationHref: string, storage: Storage): QueryOptions {
   const url = new URL(locationHref);
   const settings = loadSettings(storage);
   const rendererPreference = parseRendererPreference(url.searchParams.get('renderer') || settings.rendererPreference);
+  const rendererPolicy = parseRendererPolicy(url.searchParams.get('rendererPolicy') ?? settings.rendererPolicy);
+  const safariSafeMode =
+    url.searchParams.get('safariSafeMode') === null
+      ? settings.safariSafeMode
+      : url.searchParams.get('safariSafeMode') !== '0';
   const debugFromQuery = url.searchParams.get('debug');
   const seed = parseSeedFromQuery(url.searchParams.get('seed'));
 
@@ -265,6 +337,21 @@ export function parseOptions(locationHref: string, storage: Storage): QueryOptio
   const environmentContrast = Number.isFinite(contrastRaw) ? clamp(contrastRaw, 0.8, 1.25) : settings.environmentContrast;
   const materialDetail = parseMaterialDetail(url.searchParams.get('materialDetail') ?? settings.materialDetail);
   const clarityPreset = parseClarityPreset(url.searchParams.get('clarityPreset') ?? settings.clarityPreset);
+  const textureDetail = parseTextureDetail(url.searchParams.get('textureDetail') ?? settings.textureDetail);
+  const edgeAntialiasing = parseEdgeAntialiasingMode(
+    url.searchParams.get('edgeAntialiasing') ?? settings.edgeAntialiasing
+  );
+  const resolutionProfile = parseResolutionProfile(url.searchParams.get('resolutionProfile') ?? settings.resolutionProfile);
+  const resolutionScaleParam = url.searchParams.get('resolutionScale');
+  const resolutionScaleRaw = resolutionScaleParam === null ? Number.NaN : Number(resolutionScaleParam);
+  const resolutionScale = Number.isFinite(resolutionScaleRaw)
+    ? clamp(resolutionScaleRaw, 0.7, 1.3)
+    : settings.resolutionScale;
+  const postFxSoftnessFromQuery = parsePercentFromQuery(url.searchParams.get('postFxSoftness'));
+  const desktopUltraLock =
+    url.searchParams.get('desktopUltraLock') === null
+      ? settings.desktopUltraLock
+      : url.searchParams.get('desktopUltraLock') !== '0';
   const showDamageNumbers =
     url.searchParams.get('damageNumbers') === null
       ? settings.showDamageNumbers
@@ -274,11 +361,14 @@ export function parseOptions(locationHref: string, storage: Storage): QueryOptio
       ? settings.showDirectionalIndicators
       : url.searchParams.get('indicators') !== '0';
 
-  const debugMode = debugFromQuery === '1' || (debugFromQuery !== '0' && storage.getItem(DEBUG_KEY) === '1');
-  storage.setItem(DEBUG_KEY, debugMode ? '1' : '0');
+  const debugStored = safeGetItem(storage, DEBUG_KEY) === '1';
+  const debugMode = debugFromQuery === '1' || (debugFromQuery !== '0' && (settings.debugOverlayEnabled || debugStored));
+  safeSetItem(storage, DEBUG_KEY, debugMode ? '1' : '0');
 
   return {
     rendererPreference,
+    rendererPolicy,
+    safariSafeMode,
     debugMode,
     seed,
     audioEnabled: audioFlagFromQuery ?? settings.audioEnabled,
@@ -304,6 +394,12 @@ export function parseOptions(locationHref: string, storage: Storage): QueryOptio
     gamma,
     environmentContrast,
     materialDetail,
-    clarityPreset
+    clarityPreset,
+    textureDetail,
+    edgeAntialiasing,
+    resolutionProfile,
+    resolutionScale,
+    postFxSoftness: postFxSoftnessFromQuery ?? settings.postFxSoftness,
+    desktopUltraLock
   };
 }

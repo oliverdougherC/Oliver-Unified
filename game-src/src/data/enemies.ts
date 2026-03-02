@@ -10,7 +10,7 @@ export const ENEMY_ARCHETYPES: Record<string, EnemyArchetype> = {
     maxHp: 34,
     radius: 13,
     speed: 150,
-    touchDamage: 6,
+    touchDamage: 4,
     xpDrop: 7,
     threat: 0.8,
     colorHex: 0x98c57d,
@@ -25,7 +25,7 @@ export const ENEMY_ARCHETYPES: Record<string, EnemyArchetype> = {
     maxHp: 28,
     radius: 11,
     speed: 196,
-    touchDamage: 6,
+    touchDamage: 4,
     xpDrop: 6,
     threat: 1.05,
     colorHex: 0xb2dd8f,
@@ -40,7 +40,7 @@ export const ENEMY_ARCHETYPES: Record<string, EnemyArchetype> = {
     maxHp: 20,
     radius: 9,
     speed: 238,
-    touchDamage: 5,
+    touchDamage: 3,
     xpDrop: 5,
     threat: 1,
     colorHex: 0xcef6b1,
@@ -55,7 +55,7 @@ export const ENEMY_ARCHETYPES: Record<string, EnemyArchetype> = {
     maxHp: 84,
     radius: 18,
     speed: 112,
-    touchDamage: 10,
+    touchDamage: 7,
     xpDrop: 13,
     threat: 2.3,
     colorHex: 0x7ea66a,
@@ -85,7 +85,7 @@ export const ENEMY_ARCHETYPES: Record<string, EnemyArchetype> = {
     maxHp: 54,
     radius: 13,
     speed: 138,
-    touchDamage: 9,
+    touchDamage: 7,
     xpDrop: 11,
     threat: 2.25,
     colorHex: 0xa5cd84,
@@ -113,15 +113,15 @@ export const ENEMY_ARCHETYPES: Record<string, EnemyArchetype> = {
     colorHex: 0xcbe8ad,
     weight: 0.42,
     spit: {
-      cooldown: 0.9,
+      cooldown: 1.18,
       range: 800,
-      projectileSpeed: 230,
-      projectileLifetime: 1.6,
-      projectileRadius: 8,
-      projectileDamage: 12,
-      hazardRadius: 74,
-      hazardDuration: 6,
-      hazardDamagePerSecond: 18
+      projectileSpeed: 196,
+      projectileLifetime: 1.48,
+      projectileRadius: 7,
+      projectileDamage: 10,
+      hazardRadius: 58,
+      hazardDuration: 4.2,
+      hazardDamagePerSecond: 12
     }
   },
   grave_bell: {
@@ -139,15 +139,15 @@ export const ENEMY_ARCHETYPES: Record<string, EnemyArchetype> = {
     colorHex: 0xb8d8c0,
     weight: 0.28,
     spit: {
-      cooldown: 1.22,
+      cooldown: 1.64,
       range: 860,
-      projectileSpeed: 210,
-      projectileLifetime: 1.8,
-      projectileRadius: 10,
-      projectileDamage: 15,
-      hazardRadius: 104,
-      hazardDuration: 7.8,
-      hazardDamagePerSecond: 20
+      projectileSpeed: 186,
+      projectileLifetime: 1.72,
+      projectileRadius: 9,
+      projectileDamage: 12,
+      hazardRadius: 78,
+      hazardDuration: 4.8,
+      hazardDamagePerSecond: 13
     }
   },
   shard_witch: {
@@ -165,15 +165,15 @@ export const ENEMY_ARCHETYPES: Record<string, EnemyArchetype> = {
     colorHex: 0xd5e6ff,
     weight: 0.25,
     spit: {
-      cooldown: 0.84,
+      cooldown: 1.2,
       range: 900,
-      projectileSpeed: 260,
-      projectileLifetime: 1.55,
-      projectileRadius: 7,
-      projectileDamage: 14,
-      hazardRadius: 66,
-      hazardDuration: 5.6,
-      hazardDamagePerSecond: 22
+      projectileSpeed: 224,
+      projectileLifetime: 1.42,
+      projectileRadius: 6,
+      projectileDamage: 11,
+      hazardRadius: 52,
+      hazardDuration: 3.9,
+      hazardDamagePerSecond: 14
     }
   },
   dusk_stalker: {
@@ -237,15 +237,15 @@ export const ENEMY_ARCHETYPES: Record<string, EnemyArchetype> = {
     weight: 0.06,
     isElite: true,
     spit: {
-      cooldown: 0.98,
+      cooldown: 1.46,
       range: 1020,
-      projectileSpeed: 360,
-      projectileLifetime: 2.7,
-      projectileRadius: 12,
-      projectileDamage: 20,
-      hazardRadius: 130,
-      hazardDuration: 9,
-      hazardDamagePerSecond: 26
+      projectileSpeed: 286,
+      projectileLifetime: 2.18,
+      projectileRadius: 10,
+      projectileDamage: 16,
+      hazardRadius: 92,
+      hazardDuration: 5.8,
+      hazardDamagePerSecond: 18
     }
   }
 };

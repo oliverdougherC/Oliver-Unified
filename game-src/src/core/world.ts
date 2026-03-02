@@ -127,12 +127,12 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
 
 function createDefaultPlayerStats(): PlayerStats {
   return {
-    maxHp: 170,
-    hp: 170,
+    maxHp: 210,
+    hp: 210,
     moveSpeed: 274,
     pickupRadius: 88,
-    regenPerSecond: 0,
-    contactInvuln: 0.36,
+    regenPerSecond: 0.35,
+    contactInvuln: 0.48,
     damageMultiplier: 1,
     cooldownMultiplier: 0,
     projectileSpeedMultiplier: 1,
@@ -236,6 +236,8 @@ export class GameWorld {
   hazardTickCooldown = 0;
   damageWindowCooldown = 0;
   damageWindowTaken = 0;
+  levelUpCooldown = 0;
+  levelUpXpGate = 0;
   spawnAccumulator = 0;
   chestPickupCooldown = 0;
   activeEventId: string | null = null;
@@ -343,6 +345,8 @@ export class GameWorld {
     this.hazardTickCooldown = 0;
     this.damageWindowCooldown = 0;
     this.damageWindowTaken = 0;
+    this.levelUpCooldown = 0;
+    this.levelUpXpGate = 0;
     this.spawnAccumulator = 0;
     this.chestPickupCooldown = 0;
     this.activeEventId = null;
@@ -511,7 +515,7 @@ export class GameWorld {
       dashWindup: 0,
       dashDuration: 0,
       dashDirection: { x: 0, y: 0 },
-      spitCooldown: archetype.spit ? randomCooldown(this.rng, archetype.spit.cooldown) : 0
+      spitCooldown: archetype.spit ? this.rng.float(archetype.spit.cooldown * 0.85, archetype.spit.cooldown * 1.35) : 0
     });
 
     this.totalSpawns += 1;
@@ -633,10 +637,13 @@ export class GameWorld {
   }
 
   spendXpForLevel(): boolean {
+    if (this.levelUpCooldown > 0) return false;
+    if (this.xp < this.levelUpXpGate) return false;
     if (this.xp < this.xpToNext) return false;
     this.xp -= this.xpToNext;
     this.level += 1;
     this.xpToNext = xpThresholdForLevel(this.level);
+    this.levelUpXpGate = 0;
     return true;
   }
 
@@ -691,6 +698,8 @@ export class GameWorld {
     this.chosenItems.push(choice.id);
     this.pendingLevelChoices = [];
     this.uiState = 'playing';
+    this.armLevelUpCooldown();
+    this.applyPostModalGrace(0.75);
   }
 
   beginChestChoices(choices: ChestChoice[]): void {
@@ -727,6 +736,7 @@ export class GameWorld {
 
     this.pendingChestChoices = [];
     this.uiState = 'playing';
+    this.applyPostModalGrace(0.75);
   }
 
   consumeNearbyChest(): void {
@@ -756,7 +766,9 @@ export class GameWorld {
     this.chestPickupCooldown = 0.25;
 
     const evolutionCandidates = this.getEvolutionCandidates();
-    if (evolutionCandidates.length > 0 && this.runTime >= 480) {
+    const shouldGuaranteeEvolution = Boolean(chest?.guaranteedEvolution && evolutionCandidates.length > 0);
+    const evolutionEligible = evolutionCandidates.length > 0 && (this.runTime >= 480 || shouldGuaranteeEvolution);
+    if (evolutionEligible) {
       const shuffled = [...evolutionCandidates].sort((a, b) => a.slotIndex - b.slotIndex);
       const picked: ChestChoice[] = [];
 
@@ -812,10 +824,26 @@ export class GameWorld {
     ];
 
     if (chest?.guaranteedEvolution) {
-      fallbackChoices[0].description = 'Guaranteed chest reward: massive XP burst.';
+      fallbackChoices[0].description = 'Guaranteed premium reward: massive XP burst.';
+      fallbackChoices[2].description = 'Guaranteed premium reward: catalyst rank or large fallback XP.';
     }
 
     this.beginChestChoices(fallbackChoices);
+  }
+
+  applyPostModalGrace(seconds: number, includeHazards = true): void {
+    const duration = Math.max(0, seconds);
+    if (duration <= 0) return;
+    this.contactCooldown = Math.max(this.contactCooldown, duration);
+    if (includeHazards) {
+      this.hazardTickCooldown = Math.max(this.hazardTickCooldown, duration);
+    }
+  }
+
+  private armLevelUpCooldown(): void {
+    const xpBuffer = Math.max(8, Math.round(this.xpToNext * 0.08));
+    this.levelUpCooldown = Math.max(this.levelUpCooldown, 0.75);
+    this.levelUpXpGate = Math.max(this.levelUpXpGate, this.xp + xpBuffer);
   }
 
   getEvolutionCandidates(): Array<{
@@ -1066,6 +1094,7 @@ export class GameWorld {
 
     this.contactCooldown = Math.max(0, this.contactCooldown - dt);
     this.hazardTickCooldown = Math.max(0, this.hazardTickCooldown - dt);
+    this.levelUpCooldown = Math.max(0, this.levelUpCooldown - dt);
     this.damageWindowCooldown = Math.max(0, this.damageWindowCooldown - dt);
     if (this.damageWindowCooldown <= 0) {
       this.damageWindowTaken = 0;

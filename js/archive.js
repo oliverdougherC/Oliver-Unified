@@ -25,8 +25,13 @@ function initSearch() {
     // Reset filter buttons
     document.querySelectorAll('.filter-tag').forEach(btn => {
       btn.classList.remove('active');
+      btn.setAttribute('aria-pressed', 'false');
     });
-    document.querySelector('.filter-tag[data-filter="all"]')?.classList.add('active');
+    const allBtn = document.querySelector('.filter-tag[data-filter="all"]');
+    if (allBtn) {
+      allBtn.classList.add('active');
+      allBtn.setAttribute('aria-pressed', 'true');
+    }
 
     let visibleCount = 0;
 
@@ -67,8 +72,12 @@ function initFilters() {
     button.addEventListener('click', () => {
       const filter = button.dataset.filter;
 
-      filterButtons.forEach(btn => btn.classList.remove('active'));
+      filterButtons.forEach(btn => {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+      });
       button.classList.add('active');
+      button.setAttribute('aria-pressed', 'true');
 
       if (searchInput) searchInput.value = '';
 

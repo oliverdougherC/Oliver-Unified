@@ -4,7 +4,8 @@ import {
   ColorMatrixFilter,
   Container,
   Graphics,
-  NoiseFilter
+  NoiseFilter,
+  Sprite
 } from 'pixi.js';
 import { ENEMY_ARCHETYPES } from '../data/enemies';
 import { GameWorld } from '../core/world';
@@ -12,8 +13,10 @@ import { createVisualTheme } from './visualTheme';
 import { PainterlyBiomeComposer } from './painterlyBiomeComposer';
 import { LightingPipeline } from './lightingPipeline';
 import { createEnemySprite } from './enemySpriteFactory';
+import { bakeTexturePack, type BakedTexturePack } from './textureBaker';
 import { ReadabilityGovernor } from './readabilityGovernor';
 import type {
+  EdgeAntialiasingMode,
   LightingRuntimeSettings,
   EnemyRole,
   IRenderAdapter,
@@ -24,10 +27,14 @@ import type {
   RenderPassMetrics,
   RenderPerformanceSnapshot,
   RendererKind,
+  RendererPolicy,
   RendererPreference,
+  TextureDetail,
   VisualRuntimeSettings,
   VisualThemeTokens
 } from '../types';
+
+type RenderNode = Graphics | Sprite;
 
 function createCircleGraphic(radius: number, fill: number, stroke: number, strokeWidth = 2): Graphics {
   const graphic = new Graphics();
@@ -168,8 +175,10 @@ function createEnemyGraphic(
   stroke: number,
   isElite: boolean,
   crownColor: number,
-  outlineStrength: number
-): Graphics {
+  outlineStrength: number,
+  texturePack: BakedTexturePack | null,
+  textureDetail: TextureDetail
+): RenderNode {
   return createEnemySprite({
     role,
     radius,
@@ -177,12 +186,28 @@ function createEnemyGraphic(
     stroke,
     isElite,
     crownColor,
-    outlineStrength
+    outlineStrength,
+    texturePack,
+    textureDetail
   });
 }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function mixColor(base: number, overlay: number, t: number): number {
+  const ratio = clamp(t, 0, 1);
+  const br = (base >> 16) & 0xff;
+  const bg = (base >> 8) & 0xff;
+  const bb = base & 0xff;
+  const or = (overlay >> 16) & 0xff;
+  const og = (overlay >> 8) & 0xff;
+  const ob = overlay & 0xff;
+  const r = Math.round(br + (or - br) * ratio);
+  const g = Math.round(bg + (og - bg) * ratio);
+  const b = Math.round(bb + (ob - bb) * ratio);
+  return (r << 16) | (g << 8) | b;
 }
 
 function percentile(values: number[], q: number): number {
@@ -249,7 +274,7 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
   private overlayLayer = new Container();
 
   private backdropGraphic: Graphics | null = null;
-  private playerGraphic: Graphics | null = null;
+  private playerGraphic: RenderNode | null = null;
   private playerAuraGraphic: Graphics | null = null;
   private damageVignette: Graphics | null = null;
   private eventAuraGraphic: Graphics | null = null;
@@ -261,11 +286,16 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
   private fogFieldGraphic: Graphics | null = null;
 
   private rendererKind: RendererKind = 'webgl';
+  private rendererPolicy: RendererPolicy = 'auto';
+  private safariSafeMode = true;
+  private safariLikeBrowser = false;
   private quality: QualityTier = 'high';
   private reducedMotion = false;
   private motionScale = 1;
   private visualSettings: VisualRuntimeSettings = {
     visualPreset: 'bioluminescent',
+    rendererPolicy: 'auto',
+    safariSafeMode: true,
     sceneStyle: 'painterly_forest',
     combatReadabilityMode: 'auto',
     colorVisionMode: 'normal',
@@ -275,29 +305,38 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     hazardOpacity: 0.9,
     hitFlashStrength: 0.9,
     enemyOutlineStrength: 1,
-    backgroundDensity: 0.78,
-    atmosphereStrength: 0.62,
+    backgroundDensity: 0.72,
+    atmosphereStrength: 0.42,
     showDamageNumbers: false,
     showDirectionalIndicators: true,
     lightingQuality: 'high',
     shadowQuality: 'soft',
-    fogQuality: 'volumetric',
-    bloomStrength: 0.6,
+    fogQuality: 'layered',
+    bloomStrength: 0.4,
     gamma: 1,
     environmentContrast: 1,
     materialDetail: 'full',
-    clarityPreset: 'balanced'
+    clarityPreset: 'balanced',
+    textureDetail: 'ultra',
+    edgeAntialiasing: 'fxaa',
+    resolutionProfile: 'balanced',
+    resolutionScale: 1,
+    postFxSoftness: 0.15,
+    desktopUltraLock: true
   };
   private lightingSettings: LightingRuntimeSettings = {
     lightingQuality: 'high',
     shadowQuality: 'soft',
-    fogQuality: 'volumetric',
-    bloomStrength: 0.6,
+    fogQuality: 'layered',
+    bloomStrength: 0.4,
     gamma: 1,
     environmentContrast: 1,
     materialDetail: 'full',
     clarityPreset: 'balanced'
   };
+  private texturePack: BakedTexturePack | null = null;
+  private desktopUltraProfile = true;
+  private currentResolution = 1;
   private theme: VisualThemeTokens = createVisualTheme('normal');
   private painterlyBiome = new PainterlyBiomeComposer();
   private lightingPipeline = new LightingPipeline();
@@ -318,20 +357,30 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
   private webgpuNoiseFilter: NoiseFilter | null = null;
   private webgpuGradeFilter: ColorMatrixFilter | null = null;
 
-  private enemyGraphics = new Map<number, Graphics>();
+  private enemyGraphics = new Map<number, RenderNode>();
   private enemyPrevHp = new Map<number, number>();
   private enemyHitPulse = new Map<number, number>();
-  private projectileGraphics = new Map<number, Graphics>();
-  private enemyProjectileGraphics = new Map<number, Graphics>();
-  private hazardGraphics = new Map<number, Graphics>();
-  private chestGraphics = new Map<number, Graphics>();
-  private xpGraphics = new Map<number, Graphics>();
+  private projectileGraphics = new Map<number, RenderNode>();
+  private enemyProjectileGraphics = new Map<number, RenderNode>();
+  private hazardGraphics = new Map<number, RenderNode>();
+  private chestGraphics = new Map<number, RenderNode>();
+  private xpGraphics = new Map<number, RenderNode>();
 
   private budgetTier: RenderBudgetTier = 'ultra';
   private budgetFlags: RenderBudgetFlags = BUDGET_FLAGS.ultra;
   private lastTierChangeAt = 0;
+  private lastBudgetEvalAt = 0;
+  private lastBackdropDrawAt = 0;
+  private lastBackdropCameraX = Number.NaN;
+  private lastBackdropCameraY = Number.NaN;
+  private lastBackdropEventId: string | null = null;
+  private cameraVelocitySq = 0;
+  private lastCameraX = Number.NaN;
+  private lastCameraY = Number.NaN;
 
   private frameSamples: number[] = [];
+  private frameUpdateMs = 0;
+  private frameUpdateSteps = 0;
   private smoothedFrameMs = 0;
   private hudSyncMs = 0;
   private visibleEntities = 0;
@@ -340,9 +389,17 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     budgetTier: 'ultra',
     frameTimeMs: 0,
     smoothedFrameTimeMs: 0,
+    updateMs: 0,
+    updateSteps: 0,
     visibleEntities: 0,
     culledEntities: 0,
     drawCallsEstimate: 0,
+    pixelCount: 0,
+    targetResolution: 1,
+    actualCanvasToCssRatio: 1,
+    backdropChunkCount: 0,
+    backdropCardsDrawn: 0,
+    backdropDrawCommandsEstimate: 0,
     timings: {
       backdropMs: 0,
       entitiesMs: 0,
@@ -359,38 +416,120 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     },
     activeLights: 0,
     activeShadowCasters: 0,
+    lightingSampleCount: 0,
     rolling: {
       p50FrameMs: 0,
       p95FrameMs: 0
     }
   };
 
+  private isSafariLikeBrowser(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent.toLowerCase();
+    return ua.includes('safari') && !ua.includes('chrome') && !ua.includes('android');
+  }
+
+  private getDeviceCapabilityProfile(): { scalar: number; resolutionCap: number; ultraEligible: boolean } {
+    if (typeof window === 'undefined') {
+      return { scalar: 1, resolutionCap: 1.75, ultraEligible: true };
+    }
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    const cores = nav.hardwareConcurrency ?? 4;
+    const memory = nav.deviceMemory ?? 4;
+    const coarsePointer = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+    const touchPoints = nav.maxTouchPoints ?? 0;
+    const mobileLike = coarsePointer || touchPoints > 1;
+
+    let scalar = 1;
+    if (cores <= 4) scalar *= 0.84;
+    else if (cores >= 8) scalar *= 1.06;
+    if (memory <= 4) scalar *= 0.86;
+    else if (memory >= 8) scalar *= 1.05;
+    if (this.reducedMotion) scalar *= 0.92;
+    if (this.safariSafeMode) scalar *= 0.9;
+
+    const ultraEligible = !mobileLike && cores >= 8 && memory >= 8;
+    return {
+      scalar: clamp(scalar, 0.68, 1.25),
+      resolutionCap: this.safariSafeMode ? (mobileLike ? 1.5 : 1.75) : mobileLike ? 2 : 2.5,
+      ultraEligible
+    };
+  }
+
+  private edgeAaScale(mode: EdgeAntialiasingMode): number {
+    if (mode === 'supersample') return 1.18;
+    return 1;
+  }
+
+  private computeTargetResolution(): number {
+    if (typeof window === 'undefined') return 1;
+    const dpr = window.devicePixelRatio || 1;
+    const aaScale = this.edgeAaScale(this.visualSettings.edgeAntialiasing);
+    const capability = this.getDeviceCapabilityProfile();
+    const profileScalar =
+      this.visualSettings.resolutionProfile === 'quality'
+        ? 1.12
+        : this.visualSettings.resolutionProfile === 'performance'
+          ? 0.82
+          : 1;
+    const resolutionScale = clamp(this.visualSettings.resolutionScale, 0.7, 1.3);
+    return clamp(dpr * resolutionScale * capability.scalar * profileScalar * aaScale, 1, capability.resolutionCap);
+  }
+
+  private syncRendererResolution(): void {
+    if (!this.app || !this.mountEl) return;
+    const target = this.computeTargetResolution();
+    this.currentResolution = target;
+    const renderer = this.app.renderer as unknown as {
+      resolution?: number;
+      resize: (w: number, h: number, resolution?: number) => void;
+    };
+    if (typeof renderer.resize === 'function') {
+      renderer.resize(this.mountEl.clientWidth, this.mountEl.clientHeight, target);
+    }
+    if (typeof renderer.resolution === 'number') {
+      renderer.resolution = target;
+    }
+  }
+
   async init(options: {
     mount: HTMLElement;
     requestedRenderer: RendererPreference;
+    rendererPolicy: RendererPolicy;
+    safariSafeMode: boolean;
     reducedMotion: boolean;
   }): Promise<RendererKind> {
     this.mountEl = options.mount;
     this.mountEl.innerHTML = '';
     this.reducedMotion = options.reducedMotion;
+    this.rendererPolicy = options.rendererPolicy;
+    this.safariSafeMode = options.safariSafeMode;
+    this.safariLikeBrowser = this.isSafariLikeBrowser();
+    this.desktopUltraProfile = this.visualSettings.desktopUltraLock && this.getDeviceCapabilityProfile().ultraEligible;
     this.readabilityGovernor.reset();
 
     const requested = options.requestedRenderer;
-    if (requested === 'webgpu' || requested === 'auto') {
-      const ok = await this.tryInitRenderer('webgpu', options.mount, options.reducedMotion);
-      if (ok) {
-        this.rendererKind = 'webgpu';
-        return this.rendererKind;
-      }
+    const effectivePolicy =
+      this.safariSafeMode && this.safariLikeBrowser && requested === 'auto' ? 'prefer_webgl' : this.rendererPolicy;
+    const initOrder: RendererKind[] = [];
+    if (requested === 'webgpu') {
+      initOrder.push('webgpu', 'webgl');
+    } else if (requested === 'webgl') {
+      initOrder.push('webgl', 'webgpu');
+    } else if (effectivePolicy === 'prefer_webgl') {
+      initOrder.push('webgl', 'webgpu');
+    } else {
+      initOrder.push('webgpu', 'webgl');
     }
 
-    const fallbackOk = await this.tryInitRenderer('webgl', options.mount, options.reducedMotion);
-    if (!fallbackOk) {
-      throw new Error('Unable to initialize either WebGPU or WebGL renderer.');
+    for (const candidate of initOrder) {
+      const ok = await this.tryInitRenderer(candidate, options.mount, options.reducedMotion);
+      if (!ok) continue;
+      this.rendererKind = candidate;
+      return this.rendererKind;
     }
 
-    this.rendererKind = 'webgl';
-    return this.rendererKind;
+    throw new Error('Unable to initialize either WebGPU or WebGL renderer.');
   }
 
   private async tryInitRenderer(
@@ -399,17 +538,24 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     reducedMotion: boolean
   ): Promise<boolean> {
     try {
+      const resolution = this.computeTargetResolution();
       this.reducedMotion = reducedMotion;
+      this.currentResolution = resolution;
       this.app = new Application();
       await this.app.init({
         preference,
         resizeTo: mount,
-        antialias: true,
+        antialias: this.visualSettings.edgeAntialiasing !== 'off',
+        autoDensity: true,
+        resolution,
         backgroundAlpha: 0,
         powerPreference: 'high-performance'
       });
 
       mount.appendChild(this.app.canvas);
+      this.app.canvas.style.imageRendering = 'auto';
+      this.app.canvas.style.width = '100%';
+      this.app.canvas.style.height = '100%';
       this.app.stage.addChild(
         this.backdropLayer,
         this.shadowLayer,
@@ -423,7 +569,7 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       this.backdropGraphic = new Graphics();
       this.backdropLayer.addChild(this.backdropGraphic);
 
-      this.playerGraphic = createCircleGraphic(15, this.theme.player.fill, this.theme.player.stroke, 3);
+      this.playerGraphic = this.createPlayerVisual();
       this.worldLayer.addChild(this.playerGraphic);
 
       this.playerAuraGraphic = new Graphics();
@@ -457,6 +603,7 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       this.overlayLayer.addChild(this.fogFieldGraphic);
 
       this.createAmbientMotes(preference, reducedMotion);
+      this.refreshTexturePack();
       this.configureRendererSpecificFx(preference);
       return true;
     } catch {
@@ -466,8 +613,12 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
   }
 
   private configureRendererSpecificFx(preference: RendererKind): void {
+    const softness = clamp(this.visualSettings.postFxSoftness, 0, 1);
+    const cinematicLook =
+      this.visualSettings.clarityPreset === 'cinematic' || this.visualSettings.resolutionProfile === 'quality';
     if (preference !== 'webgpu') {
-      this.fxLayer.filters = [new BlurFilter({ strength: 1.1, quality: 2 })];
+      const blurStrength = cinematicLook && this.visualSettings.edgeAntialiasing !== 'off' ? 0.08 * softness : 0;
+      this.fxLayer.filters = blurStrength > 0 ? [new BlurFilter({ strength: blurStrength, quality: 2 })] : [];
       this.overlayLayer.filters = [];
       this.worldLayer.filters = [];
       this.webgpuNoiseFilter = null;
@@ -475,11 +626,16 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       return;
     }
 
-    const fogBlur = new BlurFilter({ strength: 1.8, quality: 2 });
-    this.fxLayer.filters = [fogBlur];
+    const fogBlurStrength = cinematicLook ? 0.42 * softness : 0;
+    this.fxLayer.filters = fogBlurStrength > 0 ? [new BlurFilter({ strength: fogBlurStrength, quality: 2 })] : [];
 
     this.webgpuNoiseFilter = new NoiseFilter({
-      noise: 0.04,
+      noise:
+        this.safariSafeMode && !cinematicLook
+          ? 0
+          : cinematicLook
+            ? clamp(0.006 + softness * 0.008, 0.004, 0.014)
+            : clamp(0.001 + softness * 0.004, 0, 0.004),
       seed: 0.23
     });
     this.overlayLayer.filters = [this.webgpuNoiseFilter];
@@ -488,10 +644,64 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     this.webgpuGradeFilter.brightness(this.lightingSettings.gamma, false);
     this.webgpuGradeFilter.contrast(this.lightingSettings.environmentContrast - 1, false);
     this.webgpuGradeFilter.saturate(
-      this.lightingSettings.clarityPreset === 'competitive' ? 0.08 : 0.2,
+      this.lightingSettings.clarityPreset === 'competitive' ? 0.08 : 0.12,
       false
     );
+    this.webgpuGradeFilter.contrast(0.05, false);
     this.worldLayer.filters = [this.webgpuGradeFilter];
+  }
+
+  private effectiveTextureDetail(): TextureDetail {
+    if (!this.desktopUltraProfile && this.visualSettings.textureDetail === 'ultra') {
+      return 'high';
+    }
+    return this.visualSettings.textureDetail;
+  }
+
+  private createPlayerVisual(): RenderNode {
+    if (this.texturePack && this.effectiveTextureDetail() !== 'low') {
+      const sprite = new Sprite(this.texturePack.player.base);
+      sprite.anchor.set(0.5);
+      const sourceDiameter = Math.max(1, this.texturePack.player.base.width);
+      const targetDiameter = 30;
+      const scale = targetDiameter / sourceDiameter;
+      sprite.scale.set(scale);
+      return sprite;
+    }
+    return createCircleGraphic(15, this.theme.player.fill, this.theme.player.stroke, 3.8);
+  }
+
+  private destroyTexturePack(pack: BakedTexturePack | null): void {
+    if (!pack) return;
+    pack.player.base.destroy(true);
+    pack.player.aura.destroy(true);
+    for (const role of Object.keys(pack.enemies) as EnemyRole[]) {
+      pack.enemies[role].base.destroy(true);
+      pack.enemies[role].glow.destroy(true);
+      pack.enemies[role].elite.destroy(true);
+    }
+    pack.projectiles.allied.destroy(true);
+    pack.projectiles.enemy.destroy(true);
+    pack.hazards.ring.destroy(true);
+    pack.hazards.core.destroy(true);
+    pack.pickups.chest.destroy(true);
+    pack.pickups.xp.destroy(true);
+  }
+
+  private refreshTexturePack(): void {
+    const detail = this.effectiveTextureDetail();
+    const nextPack = bakeTexturePack(this.theme, detail);
+    if (!nextPack) {
+      this.destroyTexturePack(this.texturePack);
+      this.texturePack = null;
+      return;
+    }
+    if (this.texturePack?.key === nextPack.key) {
+      this.destroyTexturePack(nextPack);
+      return;
+    }
+    this.destroyTexturePack(this.texturePack);
+    this.texturePack = nextPack;
   }
 
   private createAmbientMotes(preference: RendererKind, reducedMotion: boolean): void {
@@ -519,8 +729,9 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       this.playerGraphic.destroy();
       this.playerGraphic = null;
     }
+    this.refreshTexturePack();
     if (this.app) {
-      this.playerGraphic = createCircleGraphic(15, this.theme.player.fill, this.theme.player.stroke, 3);
+      this.playerGraphic = this.createPlayerVisual();
       this.worldLayer.addChild(this.playerGraphic);
     }
 
@@ -549,10 +760,26 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     this.motionScale = clamp(scale, 0, 1);
   }
 
+  setUpdateTelemetry(updateMs: number, updateSteps: number): void {
+    this.frameUpdateMs = Math.max(0, updateMs);
+    this.frameUpdateSteps = Math.max(0, Math.floor(updateSteps));
+  }
+
   setVisualSettings(settings: VisualRuntimeSettings): void {
     const previousColorMode = this.visualSettings.colorVisionMode;
     const previousOutlineStrength = this.visualSettings.enemyOutlineStrength;
+    const previousTextureDetail = this.visualSettings.textureDetail;
+    const previousEdgeAA = this.visualSettings.edgeAntialiasing;
+    const previousResolutionProfile = this.visualSettings.resolutionProfile;
+    const previousResolutionScale = this.visualSettings.resolutionScale;
+    const previousPostFxSoftness = this.visualSettings.postFxSoftness;
+    const previousDesktopUltraLock = this.visualSettings.desktopUltraLock;
+    const previousRendererPolicy = this.visualSettings.rendererPolicy;
+    const previousSafariSafeMode = this.visualSettings.safariSafeMode;
     this.visualSettings = settings;
+    this.rendererPolicy = settings.rendererPolicy;
+    this.safariSafeMode = settings.safariSafeMode;
+    this.desktopUltraProfile = settings.desktopUltraLock && this.getDeviceCapabilityProfile().ultraEligible;
     this.lightingSettings = {
       lightingQuality: settings.lightingQuality,
       shadowQuality: settings.shadowQuality,
@@ -568,15 +795,29 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     this.lightingPipeline.setSettings(this.lightingSettings);
     if (
       previousColorMode !== settings.colorVisionMode ||
-      Math.abs(previousOutlineStrength - settings.enemyOutlineStrength) > 0.001
+      Math.abs(previousOutlineStrength - settings.enemyOutlineStrength) > 0.001 ||
+      previousTextureDetail !== settings.textureDetail
     ) {
       this.resetGraphicsForThemeSwap();
+    }
+    if (
+      previousEdgeAA !== settings.edgeAntialiasing ||
+      previousResolutionProfile !== settings.resolutionProfile ||
+      Math.abs(previousResolutionScale - settings.resolutionScale) > 0.001 ||
+      Math.abs(previousPostFxSoftness - settings.postFxSoftness) > 0.001 ||
+      previousDesktopUltraLock !== settings.desktopUltraLock ||
+      previousRendererPolicy !== settings.rendererPolicy ||
+      previousSafariSafeMode !== settings.safariSafeMode
+    ) {
+      this.syncRendererResolution();
+      this.configureRendererSpecificFx(this.rendererKind);
     }
     if (this.webgpuGradeFilter) {
       this.webgpuGradeFilter.reset();
       this.webgpuGradeFilter.brightness(this.lightingSettings.gamma, false);
       this.webgpuGradeFilter.contrast(this.lightingSettings.environmentContrast - 1, false);
-      this.webgpuGradeFilter.saturate(this.lightingSettings.clarityPreset === 'competitive' ? 0.08 : 0.2, false);
+      this.webgpuGradeFilter.saturate(this.lightingSettings.clarityPreset === 'competitive' ? 0.08 : 0.12, false);
+      this.webgpuGradeFilter.contrast(0.05, false);
     }
   }
 
@@ -587,12 +828,14 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       this.webgpuGradeFilter.reset();
       this.webgpuGradeFilter.brightness(settings.gamma, false);
       this.webgpuGradeFilter.contrast(settings.environmentContrast - 1, false);
-      this.webgpuGradeFilter.saturate(settings.clarityPreset === 'competitive' ? 0.08 : 0.2, false);
+      this.webgpuGradeFilter.saturate(settings.clarityPreset === 'competitive' ? 0.08 : 0.12, false);
+      this.webgpuGradeFilter.contrast(0.05, false);
     }
   }
 
   async prewarmVisualAssets(): Promise<void> {
-    // Geometry is generated lazily during sync; keep this hook for future atlas preloading.
+    // Prime nearby backdrop chunks so startup doesn't visibly stream cards in.
+    this.painterlyBiome.prewarm(0, 0);
     return Promise.resolve();
   }
 
@@ -628,8 +871,13 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
   render(world: GameWorld, _alpha: number, frameTimeMs: number): void {
     if (!this.app || !this.playerGraphic) return;
     const renderStart = performance.now();
+    const nowMs = renderStart;
+    const canvas = this.app.canvas;
+    const cssWidth = Math.max(1, canvas.clientWidth || this.app.screen.width);
+    const actualCanvasToCssRatio = canvas.width / cssWidth;
 
     this.updateBudget(frameTimeMs);
+    this.applyClarityGuard(actualCanvasToCssRatio);
     this.smoothedFrameMs = this.smoothedFrameMs * 0.88 + frameTimeMs * 0.12;
     this.frameSamples.push(frameTimeMs);
     if (this.frameSamples.length > 180) {
@@ -646,55 +894,86 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     this.lightingPipeline.setReadabilityMultiplier(this.readabilitySnapshot.appliedOverrides.fogMultiplier);
 
     const playerPos = world.getPlayerPosition();
+    if (Number.isFinite(this.lastCameraX) && Number.isFinite(this.lastCameraY)) {
+      const dx = playerPos.x - this.lastCameraX;
+      const dy = playerPos.y - this.lastCameraY;
+      this.cameraVelocitySq = dx * dx + dy * dy;
+    } else {
+      this.cameraVelocitySq = 0;
+    }
+    this.lastCameraX = playerPos.x;
+    this.lastCameraY = playerPos.y;
+
     const baseCenterX = this.app.screen.width / 2;
     const baseCenterY = this.app.screen.height / 2;
-    const shake = this.getShakeOffset(world, frameTimeMs);
+    const shake = this.getShakeOffset(world, frameTimeMs, nowMs);
     const centerX = baseCenterX + shake.x;
     const centerY = baseCenterY + shake.y;
 
     this.visibleEntities = 0;
     this.culledEntities = 0;
     this.lightingPipeline.clearDynamicData();
-    this.collectLightingData(world, playerPos, frameTimeMs);
+    this.collectLightingData(world, playerPos, frameTimeMs, nowMs);
+    this.lightingPipeline.prepareSamplingGrid({
+      width: this.app.screen.width,
+      height: this.app.screen.height,
+      cameraX: playerPos.x,
+      cameraY: playerPos.y,
+      centerX,
+      centerY,
+      budgetTier: this.budgetTier,
+      safariSafeMode: this.safariSafeMode
+    });
 
     const backdropStart = performance.now();
-    this.drawBackdrop(world, playerPos, frameTimeMs);
+    this.drawBackdrop(world, playerPos, frameTimeMs, nowMs);
     const backdropMs = performance.now() - backdropStart;
 
     this.playerGraphic.position.set(centerX, centerY);
 
     const entitiesStart = performance.now();
     this.syncEnemyGraphics(world, playerPos, centerX, centerY);
-    this.syncProjectileGraphics(world, playerPos, centerX, centerY);
-    this.syncEnemyProjectileGraphics(world, playerPos, centerX, centerY);
-    this.syncHazardGraphics(world, playerPos, centerX, centerY, frameTimeMs);
-    this.syncChestGraphics(world, playerPos, centerX, centerY, frameTimeMs);
-    this.syncXpGraphics(world, playerPos, centerX, centerY, frameTimeMs);
+    this.syncProjectileGraphics(world, playerPos, centerX, centerY, nowMs);
+    this.syncEnemyProjectileGraphics(world, playerPos, centerX, centerY, nowMs);
+    this.syncHazardGraphics(world, playerPos, centerX, centerY, frameTimeMs, nowMs);
+    this.syncChestGraphics(world, playerPos, centerX, centerY, frameTimeMs, nowMs);
+    this.syncXpGraphics(world, playerPos, centerX, centerY, frameTimeMs, nowMs);
     this.updateEnemyHitPulses(frameTimeMs);
     const entitiesMs = performance.now() - entitiesStart;
 
     const overlaysStart = performance.now();
-    this.syncDashTelegraphs(world, playerPos, centerX, centerY);
+    this.syncDashTelegraphs(world, playerPos, centerX, centerY, nowMs);
     this.syncDirectionalIndicators(world, playerPos, centerX, centerY);
-    this.syncPlayerAura(world, centerX, centerY, frameTimeMs);
+    this.syncPlayerAura(world, centerX, centerY, frameTimeMs, nowMs);
     this.syncLighting(world, playerPos, centerX, centerY, frameTimeMs);
-    this.syncScreenOverlay(world, frameTimeMs);
-    this.updateAmbientMotes(playerPos, frameTimeMs);
-    this.updateWebGpuFx(world, frameTimeMs);
+    this.syncScreenOverlay(world, frameTimeMs, nowMs);
+    this.updateAmbientMotes(playerPos, frameTimeMs, nowMs);
+    this.updateWebGpuFx(world, frameTimeMs, nowMs);
     const overlaysMs = performance.now() - overlaysStart;
 
     const totalMs = performance.now() - renderStart;
+    const pixelCount = canvas.width * canvas.height;
+    const backdropStats = this.painterlyBiome.getStats();
+    const lightCounts = this.lightingPipeline.getCounts();
     this.renderPerf = {
       budgetTier: this.budgetTier,
       frameTimeMs,
       smoothedFrameTimeMs: this.smoothedFrameMs,
+      updateMs: this.frameUpdateMs,
+      updateSteps: this.frameUpdateSteps,
       visibleEntities: this.visibleEntities,
       culledEntities: this.culledEntities,
       drawCallsEstimate:
         this.visibleEntities +
         (this.budgetFlags.ambientMotes ? Math.ceil(this.motes.length * 0.5) : 0) +
-        this.lightingPipeline.getCounts().lights +
+        lightCounts.lights +
         10,
+      pixelCount,
+      targetResolution: this.currentResolution,
+      actualCanvasToCssRatio,
+      backdropChunkCount: backdropStats.chunkCount,
+      backdropCardsDrawn: backdropStats.drawnCards,
+      backdropDrawCommandsEstimate: backdropStats.drawCommandsEstimate,
       timings: {
         backdropMs,
         entitiesMs,
@@ -703,8 +982,9 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
         totalMs
       },
       passes: this.lightingPipeline.getMetrics(),
-      activeLights: this.lightingPipeline.getCounts().lights,
-      activeShadowCasters: this.lightingPipeline.getCounts().shadowCasters,
+      activeLights: lightCounts.lights,
+      activeShadowCasters: lightCounts.shadowCasters,
+      lightingSampleCount: this.lightingPipeline.getSampleCount(),
       rolling: {
         p50FrameMs: percentile(this.frameSamples, 0.5),
         p95FrameMs: percentile(this.frameSamples, 0.95)
@@ -712,9 +992,26 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     };
   }
 
+  private applyClarityGuard(actualCanvasToCssRatio: number): void {
+    const expectedMin = this.currentResolution * 0.95;
+    const baseFlags = BUDGET_FLAGS[this.budgetTier];
+    if (actualCanvasToCssRatio >= expectedMin) {
+      this.budgetFlags = baseFlags;
+      return;
+    }
+    this.budgetFlags = {
+      ...baseFlags,
+      parallaxBackdrop: false,
+      secondaryGlows: false,
+      trailFx: false,
+      overlayNoise: false
+    };
+  }
+
   private updateBudget(frameTimeMs: number): void {
     const now = performance.now();
-    if (now - this.lastTierChangeAt < 900) return;
+    if (now - this.lastBudgetEvalAt < 250) return;
+    this.lastBudgetEvalAt = now;
 
     const p95 = percentile(this.frameSamples.length > 8 ? this.frameSamples : [frameTimeMs], 0.95);
     let target: RenderBudgetTier = 'ultra';
@@ -725,26 +1022,76 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
 
     if (this.quality === 'medium' && target === 'ultra') target = 'high';
     if (this.quality === 'low' && (target === 'ultra' || target === 'high')) target = 'medium';
+    if (this.desktopUltraProfile && this.visualSettings.desktopUltraLock && this.quality === 'high' && target !== 'ultra') {
+      target = 'high';
+    }
     if (this.reducedMotion && (target === 'ultra' || target === 'high')) target = 'medium';
 
-    if (target !== this.budgetTier) {
+    if (target !== this.budgetTier && now - this.lastTierChangeAt >= 900) {
       this.budgetTier = target;
       this.budgetFlags = BUDGET_FLAGS[target];
       this.lastTierChangeAt = now;
     }
   }
 
-  private drawBackdrop(world: GameWorld, camera: { x: number; y: number }, frameTimeMs: number): void {
+  private drawBackdrop(world: GameWorld, camera: { x: number; y: number }, frameTimeMs: number, nowMs: number): void {
     if (!this.app || !this.backdropGraphic) return;
+    const eventId = world.activeEventId;
+    const dx = Number.isFinite(this.lastBackdropCameraX) ? camera.x - this.lastBackdropCameraX : Number.POSITIVE_INFINITY;
+    const dy = Number.isFinite(this.lastBackdropCameraY) ? camera.y - this.lastBackdropCameraY : Number.POSITIVE_INFINITY;
+    const stationary = dx * dx + dy * dy < 18;
+    const stableCamera = this.cameraVelocitySq < 24;
+    const refreshMs =
+      this.budgetTier === 'ultra'
+        ? 34
+        : this.budgetTier === 'high'
+          ? 46
+          : this.budgetTier === 'medium'
+            ? 66
+            : this.budgetTier === 'low'
+              ? 110
+              : 150;
+    if (
+      this.lastBackdropEventId === eventId &&
+      stationary &&
+      stableCamera &&
+      nowMs - this.lastBackdropDrawAt < refreshMs &&
+      frameTimeMs < 28
+    ) {
+      return;
+    }
     const w = this.app.screen.width;
     const h = this.app.screen.height;
     const eventColor = EVENT_AURA_COLORS[world.activeEventId ?? ''] ?? this.theme.backdrop.eventTint;
+    if (!this.budgetFlags.parallaxBackdrop) {
+      this.backdropGraphic.clear();
+      this.backdropGraphic.rect(0, 0, w, h);
+      this.backdropGraphic.fill({ color: 0x03070d, alpha: 1 });
+      this.backdropGraphic.roundRect(-20, h * 0.08, w + 40, h * 0.22, 32);
+      this.backdropGraphic.fill({ color: this.theme.backdrop.fog, alpha: 0.06 });
+      this.backdropGraphic.roundRect(-20, h * 0.68, w + 40, h * 0.26, 30);
+      this.backdropGraphic.fill({ color: this.theme.backdrop.vines, alpha: 0.05 });
+      if (eventColor !== 0) {
+        this.backdropGraphic.roundRect(-20, -10, w + 40, 78, 28);
+        this.backdropGraphic.fill({ color: eventColor, alpha: 0.04 });
+      }
+      this.painterlyBiome.setStaticStats();
+      this.lastBackdropDrawAt = nowMs;
+      this.lastBackdropCameraX = camera.x;
+      this.lastBackdropCameraY = camera.y;
+      this.lastBackdropEventId = eventId;
+      return;
+    }
+    const maxCards =
+      this.budgetTier === 'low' ? 220 : this.budgetTier === 'medium' ? 380 : this.budgetTier === 'high' ? 620 : 860;
+    const chunkBuildBudget =
+      this.budgetTier === 'low' ? 2 : this.budgetTier === 'medium' ? 3 : this.budgetTier === 'high' ? 4 : 6;
     this.painterlyBiome.draw(this.backdropGraphic, {
       width: w,
       height: h,
       cameraX: camera.x,
       cameraY: camera.y,
-      timeMs: performance.now(),
+      timeMs: nowMs,
       theme: this.theme,
       budgetTier: this.budgetTier,
       suppressionTier: this.readabilitySnapshot.activeSuppressionTier,
@@ -752,11 +1099,17 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       motionScale: this.motionScale,
       backgroundDensity: this.visualSettings.backgroundDensity * this.readabilitySnapshot.appliedOverrides.backgroundDensityMultiplier,
       atmosphereStrength: this.visualSettings.atmosphereStrength * this.readabilitySnapshot.appliedOverrides.atmosphereMultiplier,
-      eventTint: eventColor
+      eventTint: eventColor,
+      maxCards,
+      chunkBuildBudget
     });
+    this.lastBackdropDrawAt = nowMs;
+    this.lastBackdropCameraX = camera.x;
+    this.lastBackdropCameraY = camera.y;
+    this.lastBackdropEventId = eventId;
   }
 
-  private getShakeOffset(world: GameWorld, frameTimeMs: number): { x: number; y: number } {
+  private getShakeOffset(world: GameWorld, frameTimeMs: number, nowMs: number): { x: number; y: number } {
     if (this.reducedMotion || this.motionScale <= 0 || this.visualSettings.screenShake <= 0) {
       return { x: 0, y: 0 };
     }
@@ -766,14 +1119,14 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     if (world.damageFlashTimer <= 0) return { x: 0, y: 0 };
 
     const intensity = Math.min(1, world.damageFlashTimer / 0.2) * 6 * this.motionScale * this.visualSettings.screenShake;
-    const t = performance.now() * (0.018 + frameTimeMs * 0.00001);
+    const t = nowMs * (0.018 + frameTimeMs * 0.00001);
     return {
       x: Math.sin(t * 3.4) * intensity,
       y: Math.cos(t * 2.8) * intensity
     };
   }
 
-  private collectLightingData(world: GameWorld, playerPos: { x: number; y: number }, frameTimeMs: number): void {
+  private collectLightingData(world: GameWorld, playerPos: { x: number; y: number }, frameTimeMs: number, _nowMs: number): void {
     const eventColor = EVENT_AURA_COLORS[world.activeEventId ?? ''] ?? this.theme.player.aura;
     const fxMultiplier = this.readabilitySnapshot.appliedOverrides.nonEssentialGlowMultiplier;
     this.lightingPipeline.addLight({
@@ -938,6 +1291,8 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       reducedMotion: this.reducedMotion || this.budgetTier === 'minimal',
       rendererKind: this.rendererKind,
       budgetTier: this.budgetTier,
+      safariSafeMode: this.safariSafeMode,
+      cameraVelocitySq: this.cameraVelocitySq,
       theme: this.theme
     });
   }
@@ -951,6 +1306,15 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       y >= -padding - radius &&
       y <= this.app.screen.height + padding + radius
     );
+  }
+
+  private setNodeScale(node: RenderNode, targetDiameter: number, multiplier: number): void {
+    if (node instanceof Sprite) {
+      const baseScale = targetDiameter / Math.max(1, node.texture.width);
+      node.scale.set(baseScale * multiplier);
+      return;
+    }
+    node.scale.set(multiplier);
   }
 
   private syncEnemyGraphics(world: GameWorld, camera: { x: number; y: number }, centerX: number, centerY: number): void {
@@ -975,7 +1339,9 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
           isElite ? this.theme.elite.stroke : palette.stroke,
           isElite,
           this.theme.elite.crown,
-          this.visualSettings.enemyOutlineStrength
+          this.visualSettings.enemyOutlineStrength,
+          this.texturePack,
+          this.effectiveTextureDetail()
         );
         this.enemyGraphics.set(enemyId, graphic);
         this.worldLayer.addChild(graphic);
@@ -1001,16 +1367,34 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       const dy = pos.y - camera.y;
       const distSq = dx * dx + dy * dy;
       const far = distSq > 1150 * 1150;
+      const closeThreat = distSq < 260 * 260;
       const hitPulse = far ? 0 : this.enemyHitPulse.get(enemyId) ?? 0;
       const windupPulse = far ? 0 : enemyComp.dashWindup > 0 ? (enemyComp.dashWindup / 0.6) * 0.2 : 0;
       const velocity = world.velocities.get(enemyId);
       const lightAmount = this.lightingPipeline.sampleIlluminance(pos.x, pos.y);
+      const proximityBoost = closeThreat ? 0.1 : 0;
+      if (graphic instanceof Sprite && this.texturePack && this.effectiveTextureDetail() !== 'low') {
+        const textureSet = this.texturePack.enemies[role];
+        if (isElite) {
+          graphic.texture = textureSet.elite;
+        } else if (closeThreat || hitPulse > 0.05 || enemyComp.dashWindup > 0) {
+          graphic.texture = textureSet.glow;
+        } else {
+          graphic.texture = textureSet.base;
+        }
+      }
 
       graphic.visible = true;
       graphic.position.set(sx, sy);
-      graphic.alpha = far ? 0.9 : Math.min(1, 0.93 + hitPulse * 0.22 + lightAmount * 0.06);
-      graphic.scale.set(1.06 + hitPulse * 0.72 + windupPulse + (isElite && !far ? 0.08 : 0));
-      graphic.tint = 0xffffff;
+      graphic.alpha = far ? 0.9 : Math.min(1, 0.9 + proximityBoost + hitPulse * 0.22 + lightAmount * 0.06);
+      this.setNodeScale(
+        graphic,
+        radius * 2.2,
+        1.06 + proximityBoost * 0.7 + hitPulse * 0.72 + windupPulse + (isElite && !far ? 0.08 : 0)
+      );
+      const litTint = mixColor(0xffffff, this.theme.player.aura, clamp((lightAmount - 0.32) * 0.45, 0, 0.42));
+      const threatTint = closeThreat && !isElite ? mixColor(litTint, 0xfff0d2, 0.28) : litTint;
+      graphic.tint = isElite ? mixColor(threatTint, this.theme.elite.crown, 0.2) : threatTint;
       if (velocity && (velocity.x !== 0 || velocity.y !== 0) && role !== 'tank' && role !== 'disruptor') {
         graphic.rotation = Math.atan2(velocity.y, velocity.x) + Math.PI / 2;
       }
@@ -1030,7 +1414,8 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     world: GameWorld,
     camera: { x: number; y: number },
     centerX: number,
-    centerY: number
+    centerY: number,
+    nowMs: number
   ): void {
     for (const projectileId of world.projectiles) {
       let graphic = this.projectileGraphics.get(projectileId);
@@ -1041,13 +1426,19 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       if (!pos || !projectile) continue;
 
       if (!graphic) {
-        graphic = new Graphics();
-        drawCrystalProjectile(
-          graphic,
-          radius,
-          projectile.colorHex || this.theme.projectiles.allied,
-          this.theme.projectiles.alliedStroke
-        );
+        if (this.texturePack && this.effectiveTextureDetail() !== 'low') {
+          graphic = new Sprite(this.texturePack.projectiles.allied);
+          graphic.anchor.set(0.5);
+          graphic.tint = projectile.colorHex || this.theme.projectiles.allied;
+        } else {
+          graphic = new Graphics();
+          drawCrystalProjectile(
+            graphic,
+            radius,
+            projectile.colorHex || this.theme.projectiles.allied,
+            this.theme.projectiles.alliedStroke
+          );
+        }
         this.projectileGraphics.set(projectileId, graphic);
         this.combatLayer.addChild(graphic);
       }
@@ -1062,7 +1453,7 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
 
       const lifeRatio = Math.max(0, 1 - projectile.age / projectile.lifetime);
       const wobble = this.budgetFlags.trailFx && !this.reducedMotion
-        ? 1 + Math.sin((projectileId + performance.now() * 0.012) * 0.7) * 0.1 * this.motionScale
+        ? 1 + Math.sin((projectileId + nowMs * 0.012) * 0.7) * 0.1 * this.motionScale
         : 1;
       const lightAmount = this.lightingPipeline.sampleIlluminance(pos.x, pos.y);
 
@@ -1072,7 +1463,7 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
         graphic.rotation = Math.atan2(velocity.y, velocity.x);
       }
       graphic.alpha = 0.78 + lifeRatio * 0.2 + lightAmount * 0.05;
-      graphic.scale.set((0.84 + lifeRatio * 0.32) * wobble);
+      this.setNodeScale(graphic, radius * 2.6, (0.84 + lifeRatio * 0.32) * wobble);
       this.visibleEntities += 1;
     }
 
@@ -1087,7 +1478,8 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     world: GameWorld,
     camera: { x: number; y: number },
     centerX: number,
-    centerY: number
+    centerY: number,
+    nowMs: number
   ): void {
     for (const projectileId of world.enemyProjectiles) {
       let graphic = this.enemyProjectileGraphics.get(projectileId);
@@ -1098,8 +1490,13 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       if (!pos || !projectile) continue;
 
       if (!graphic) {
-        graphic = new Graphics();
-        drawHostileProjectile(graphic, radius, this.theme.projectiles.enemy, this.theme.projectiles.enemyStroke);
+        if (this.texturePack && this.effectiveTextureDetail() !== 'low') {
+          graphic = new Sprite(this.texturePack.projectiles.enemy);
+          graphic.anchor.set(0.5);
+        } else {
+          graphic = new Graphics();
+          drawHostileProjectile(graphic, radius, this.theme.projectiles.enemy, this.theme.projectiles.enemyStroke);
+        }
         this.enemyProjectileGraphics.set(projectileId, graphic);
         this.combatLayer.addChild(graphic);
       }
@@ -1114,7 +1511,7 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
 
       const lifeRatio = Math.max(0, 1 - projectile.age / projectile.lifetime);
       const pulse = this.budgetFlags.trailFx && !this.reducedMotion
-        ? 0.95 + Math.sin(performance.now() * 0.015 + projectileId) * 0.09
+        ? 0.95 + Math.sin(nowMs * 0.015 + projectileId) * 0.09
         : 1;
       const lightAmount = this.lightingPipeline.sampleIlluminance(pos.x, pos.y);
       graphic.visible = true;
@@ -1123,7 +1520,7 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
         graphic.rotation = Math.atan2(velocity.y, velocity.x);
       }
       graphic.alpha = 0.72 + lifeRatio * 0.24 + lightAmount * 0.05;
-      graphic.scale.set((0.84 + lifeRatio * 0.25) * pulse);
+      this.setNodeScale(graphic, radius * 2.7, (0.84 + lifeRatio * 0.25) * pulse);
       this.visibleEntities += 1;
     }
 
@@ -1139,7 +1536,8 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     camera: { x: number; y: number },
     centerX: number,
     centerY: number,
-    frameTimeMs: number
+    frameTimeMs: number,
+    nowMs: number
   ): void {
     for (const hazardId of world.hazards) {
       let graphic = this.hazardGraphics.get(hazardId);
@@ -1149,7 +1547,13 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       if (!pos || !hazard) continue;
 
       if (!graphic) {
-        graphic = createHazardGraphic(radius, this.theme);
+        if (this.texturePack && this.effectiveTextureDetail() !== 'low') {
+          graphic = new Sprite(this.texturePack.hazards.ring);
+          graphic.anchor.set(0.5);
+          graphic.tint = this.theme.hazards.stroke;
+        } else {
+          graphic = createHazardGraphic(radius, this.theme);
+        }
         this.hazardGraphics.set(hazardId, graphic);
         this.combatLayer.addChild(graphic);
       }
@@ -1165,14 +1569,14 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       const lifeRatio = Math.max(0, 1 - hazard.age / hazard.lifetime);
       const pulse = this.reducedMotion || !this.budgetFlags.secondaryGlows
         ? 0
-        : Math.sin((performance.now() + hazardId) * 0.006) * 0.08 * this.motionScale;
+        : Math.sin((nowMs + hazardId) * 0.006) * 0.08 * this.motionScale;
       const flicker = frameTimeMs < 30 && this.budgetFlags.trailFx ? 0.06 : 0;
       const lightAmount = this.lightingPipeline.sampleIlluminance(pos.x, pos.y);
       graphic.visible = true;
       graphic.position.set(sx, sy);
-      graphic.rotation = (performance.now() * 0.0005 + hazardId * 0.13) % (Math.PI * 2);
+      graphic.rotation = (nowMs * 0.0005 + hazardId * 0.13) % (Math.PI * 2);
       graphic.alpha = (0.6 + lifeRatio * 0.28 + flicker + lightAmount * 0.04) * this.visualSettings.hazardOpacity;
-      graphic.scale.set(0.93 + pulse);
+      this.setNodeScale(graphic, radius * 2.2, 0.93 + pulse);
       this.visibleEntities += 1;
     }
 
@@ -1188,7 +1592,8 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     camera: { x: number; y: number },
     centerX: number,
     centerY: number,
-    frameTimeMs: number
+    frameTimeMs: number,
+    nowMs: number
   ): void {
     for (const chestId of world.chests) {
       let graphic = this.chestGraphics.get(chestId);
@@ -1196,7 +1601,12 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       if (!pos) continue;
 
       if (!graphic) {
-        graphic = createChestGraphic(this.theme);
+        if (this.texturePack && this.effectiveTextureDetail() !== 'low') {
+          graphic = new Sprite(this.texturePack.pickups.chest);
+          graphic.anchor.set(0.5);
+        } else {
+          graphic = createChestGraphic(this.theme);
+        }
         this.chestGraphics.set(chestId, graphic);
         this.worldLayer.addChild(graphic);
       }
@@ -1211,13 +1621,13 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
 
       const pulse = this.reducedMotion || !this.budgetFlags.secondaryGlows
         ? 1
-        : 1 + Math.sin((performance.now() + chestId) * 0.005) * 0.09;
+        : 1 + Math.sin((nowMs + chestId) * 0.005) * 0.09;
       const lightAmount = this.lightingPipeline.sampleIlluminance(pos.x, pos.y);
       graphic.visible = true;
       graphic.position.set(sx, sy);
-      graphic.rotation = Math.sin((performance.now() + chestId * 13) * 0.0012) * 0.03;
+      graphic.rotation = Math.sin((nowMs + chestId * 13) * 0.0012) * 0.03;
       graphic.alpha = frameTimeMs < 30 ? 0.94 + lightAmount * 0.06 : 0.88 + lightAmount * 0.08;
-      graphic.scale.set(pulse);
+      this.setNodeScale(graphic, 42, pulse);
       this.visibleEntities += 1;
     }
 
@@ -1233,7 +1643,8 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     camera: { x: number; y: number },
     centerX: number,
     centerY: number,
-    frameTimeMs: number
+    frameTimeMs: number,
+    nowMs: number
   ): void {
     for (const xpId of world.xpOrbs) {
       let graphic = this.xpGraphics.get(xpId);
@@ -1241,7 +1652,12 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       if (!pos) continue;
 
       if (!graphic) {
-        graphic = createXpGraphic(this.theme.pickups.xpFill, this.theme.pickups.xpStroke);
+        if (this.texturePack && this.effectiveTextureDetail() !== 'low') {
+          graphic = new Sprite(this.texturePack.pickups.xp);
+          graphic.anchor.set(0.5);
+        } else {
+          graphic = createXpGraphic(this.theme.pickups.xpFill, this.theme.pickups.xpStroke);
+        }
         this.xpGraphics.set(xpId, graphic);
         this.worldLayer.addChild(graphic);
       }
@@ -1255,15 +1671,15 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       }
 
       const wobble = this.budgetFlags.trailFx && !this.reducedMotion
-        ? 1 + Math.sin((xpId + performance.now() * 0.007) * 0.8) * 0.08 * this.motionScale
+        ? 1 + Math.sin((xpId + nowMs * 0.007) * 0.8) * 0.08 * this.motionScale
         : 1;
       const glint = frameTimeMs < 22 && this.budgetFlags.secondaryGlows ? 0.08 : 0;
       const lightAmount = this.lightingPipeline.sampleIlluminance(pos.x, pos.y);
       graphic.visible = true;
       graphic.position.set(sx, sy);
-      graphic.rotation = (performance.now() * 0.0011 + xpId * 0.21) % (Math.PI * 2);
+      graphic.rotation = (nowMs * 0.0011 + xpId * 0.21) % (Math.PI * 2);
       graphic.alpha = 0.84 + glint + lightAmount * 0.06;
-      graphic.scale.set(wobble);
+      this.setNodeScale(graphic, 16, wobble);
       this.visibleEntities += 1;
     }
 
@@ -1274,7 +1690,13 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     }
   }
 
-  private syncDashTelegraphs(world: GameWorld, camera: { x: number; y: number }, centerX: number, centerY: number): void {
+  private syncDashTelegraphs(
+    world: GameWorld,
+    camera: { x: number; y: number },
+    centerX: number,
+    centerY: number,
+    nowMs: number
+  ): void {
     if (!this.dashTelegraphGraphic) return;
     this.dashTelegraphGraphic.clear();
 
@@ -1295,7 +1717,7 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       const lineLength = 140 + progress * 230;
       const ex = sx + component.dashDirection.x * lineLength;
       const ey = sy + component.dashDirection.y * lineLength;
-      const pulse = this.reducedMotion ? 0 : Math.sin(performance.now() * 0.018 + enemyId) * 0.08;
+      const pulse = this.reducedMotion ? 0 : Math.sin(nowMs * 0.018 + enemyId) * 0.08;
       const alpha = 0.22 + progress * 0.48;
       const perpX = -component.dashDirection.y;
       const perpY = component.dashDirection.x;
@@ -1388,13 +1810,13 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     }
   }
 
-  private syncPlayerAura(world: GameWorld, centerX: number, centerY: number, frameTimeMs: number): void {
+  private syncPlayerAura(world: GameWorld, centerX: number, centerY: number, frameTimeMs: number, nowMs: number): void {
     if (!this.playerAuraGraphic) return;
     const aura = this.playerAuraGraphic;
     const highMotion = !this.reducedMotion && this.budgetFlags.secondaryGlows && this.motionScale > 0;
     const eventColor = world.activeEventId ? EVENT_AURA_COLORS[world.activeEventId] || this.theme.player.aura : this.theme.player.aura;
     const damagePulse = Math.max(0, Math.min(1, world.damageFlashTimer / 0.2));
-    const baseRadius = 14 + (highMotion ? Math.sin(performance.now() * 0.006) * 1.5 * this.motionScale : 0);
+    const baseRadius = 14 + (highMotion ? Math.sin(nowMs * 0.006) * 1.5 * this.motionScale : 0);
     const auraRadius = baseRadius + damagePulse * (1.2 + 1.2 * this.motionScale);
 
     aura.clear();
@@ -1412,7 +1834,7 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     }
   }
 
-  private syncScreenOverlay(world: GameWorld, frameTimeMs: number): void {
+  private syncScreenOverlay(world: GameWorld, frameTimeMs: number, nowMs: number): void {
     if (!this.app || !this.damageVignette || !this.eventAuraGraphic || !this.impactGlowGraphic) return;
     const w = this.app.screen.width;
     const h = this.app.screen.height;
@@ -1422,7 +1844,7 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     const auraColor = world.activeEventId ? EVENT_AURA_COLORS[world.activeEventId] || this.theme.backdrop.eventTint : this.theme.backdrop.eventTint;
     const eventStrength = world.activeEventId ? 1 : 0;
     const auraAlphaBase = this.budgetFlags.secondaryGlows ? 0.06 : 0.04;
-    const pulse = this.reducedMotion ? 0 : Math.sin(performance.now() * 0.0014) * 0.03 * this.motionScale;
+    const pulse = this.reducedMotion ? 0 : Math.sin(nowMs * 0.0014) * 0.03 * this.motionScale;
     const auraAlpha = eventStrength > 0 ? Math.max(0, auraAlphaBase + pulse) : 0;
 
     this.eventAuraGraphic.clear();
@@ -1477,7 +1899,7 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     }
   }
 
-  private updateAmbientMotes(playerPos: { x: number; y: number }, frameTimeMs: number): void {
+  private updateAmbientMotes(playerPos: { x: number; y: number }, frameTimeMs: number, nowMs: number): void {
     if (this.motes.length === 0) return;
     if (!this.budgetFlags.ambientMotes || this.quality === 'low' || this.readabilitySnapshot.activeSuppressionTier === 'hard') {
       for (const mote of this.motes) mote.visible = false;
@@ -1494,8 +1916,8 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       if (!mote.visible) continue;
 
       const drift = frameTimeMs * 0.005 * this.motionScale;
-      mote.x += Math.sin((i + performance.now() * 0.0003) * 0.8) * drift;
-      mote.y += Math.cos((i + performance.now() * 0.00025) * 0.9) * drift;
+      mote.x += Math.sin((i + nowMs * 0.0003) * 0.8) * drift;
+      mote.y += Math.cos((i + nowMs * 0.00025) * 0.9) * drift;
 
       if (mote.x > playerPos.x + 1900) mote.x -= 3800;
       if (mote.x < playerPos.x - 1900) mote.x += 3800;
@@ -1506,29 +1928,39 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     }
   }
 
-  private updateWebGpuFx(world: GameWorld, frameTimeMs: number): void {
+  private updateWebGpuFx(world: GameWorld, frameTimeMs: number, nowMs: number): void {
     if (!this.webgpuNoiseFilter || this.rendererKind !== 'webgpu') return;
+    const cinematicLook =
+      this.visualSettings.clarityPreset === 'cinematic' || this.visualSettings.resolutionProfile === 'quality';
+    if (this.safariSafeMode && !cinematicLook) {
+      this.webgpuNoiseFilter.noise = 0;
+      return;
+    }
     if (!this.budgetFlags.overlayNoise || this.reducedMotion || this.motionScale <= 0) {
-      this.webgpuNoiseFilter.noise = 0.01;
+      this.webgpuNoiseFilter.noise = cinematicLook ? 0.006 : 0.002;
       return;
     }
 
     const qualityScalar =
       this.lightingSettings.lightingQuality === 'cinematic'
-        ? 1.18
+        ? 0.94
         : this.lightingSettings.lightingQuality === 'high'
-          ? 1
+          ? 0.88
           : this.lightingSettings.lightingQuality === 'medium'
-            ? 0.8
-            : 0.62;
+            ? 0.72
+            : 0.56;
     const targetNoise =
-      (this.budgetTier === 'ultra' ? 0.052 : this.budgetTier === 'high' ? 0.036 : 0.024) *
+      (this.budgetTier === 'ultra' ? 0.011 : this.budgetTier === 'high' ? 0.0086 : 0.0062) *
       qualityScalar *
-      (0.65 + this.lightingSettings.bloomStrength * 0.55) *
+      (0.34 + this.lightingSettings.bloomStrength * 0.22) *
       this.readabilitySnapshot.appliedOverrides.nonEssentialGlowMultiplier;
-    const eventBoost = world.activeEventId ? 0.014 : 0;
-    this.webgpuNoiseFilter.noise = (targetNoise + eventBoost) * Math.max(0.24, this.motionScale);
-    this.webgpuNoiseFilter.seed = (performance.now() * 0.00002 + frameTimeMs * 0.0005) % 1;
+    const eventBoost = world.activeEventId ? 0.0018 : 0;
+    this.webgpuNoiseFilter.noise = clamp(
+      (targetNoise + eventBoost) * Math.max(0.24, this.motionScale),
+      0.0018,
+      cinematicLook ? 0.012 : 0.004
+    );
+    this.webgpuNoiseFilter.seed = (nowMs * 0.00002 + frameTimeMs * 0.0005) % 1;
   }
 
   destroy(): void {
@@ -1560,6 +1992,8 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
       this.app.destroy(true, { children: true });
       this.app = null;
     }
+    this.destroyTexturePack(this.texturePack);
+    this.texturePack = null;
 
     if (this.mountEl) {
       this.mountEl.innerHTML = '';
@@ -1579,6 +2013,15 @@ export class PixiRenderAdapter implements IRenderAdapter<GameWorld> {
     this.motes = [];
     this.webgpuNoiseFilter = null;
     this.webgpuGradeFilter = null;
+    this.lastBudgetEvalAt = 0;
+    this.lastTierChangeAt = 0;
+    this.lastBackdropDrawAt = 0;
+    this.lastBackdropCameraX = Number.NaN;
+    this.lastBackdropCameraY = Number.NaN;
+    this.lastBackdropEventId = null;
+    this.cameraVelocitySq = 0;
+    this.lastCameraX = Number.NaN;
+    this.lastCameraY = Number.NaN;
     this.readabilityGovernor.reset();
   }
 }

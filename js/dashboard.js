@@ -92,6 +92,11 @@ function fetchWithTimeout(url, timeoutMs) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
+  // Note: mode:'no-cors' returns opaque responses — all non-network-error
+  // responses (including 4xx/5xx) resolve successfully. This means we can
+  // only distinguish "server reachable" (resolves) from "unreachable/timed
+  // out" (throws). For a personal uptime indicator this is an acceptable
+  // tradeoff without a CORS-enabled proxy on each service.
   return fetch(url, {
     method: 'GET',
     mode: 'no-cors',

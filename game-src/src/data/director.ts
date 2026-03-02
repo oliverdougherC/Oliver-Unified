@@ -5,25 +5,25 @@ export const DIRECTOR_BANDS: DirectorBand[] = [
     id: 'awakening',
     startTime: 0,
     endTime: 60,
-    targetEnemiesMin: 8,
-    targetEnemiesMax: 18,
-    targetThreatMin: 10,
-    targetThreatMax: 22,
+    targetEnemiesMin: 4,
+    targetEnemiesMax: 9,
+    targetThreatMin: 6,
+    targetThreatMax: 11,
     projectileHazardMin: 0,
     projectileHazardMax: 2,
-    baseSpawnInterval: 0.38
+    baseSpawnInterval: 0.56
   },
   {
     id: 'wild_hunt',
     startTime: 60,
     endTime: 180,
-    targetEnemiesMin: 18,
-    targetEnemiesMax: 38,
-    targetThreatMin: 24,
-    targetThreatMax: 48,
+    targetEnemiesMin: 8,
+    targetEnemiesMax: 20,
+    targetThreatMin: 12,
+    targetThreatMax: 26,
     projectileHazardMin: 2,
     projectileHazardMax: 8,
-    baseSpawnInterval: 0.24
+    baseSpawnInterval: 0.38
   },
   {
     id: 'chaos_bloom',

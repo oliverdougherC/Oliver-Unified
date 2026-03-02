@@ -10,14 +10,15 @@ import {
   parseCombatReadabilityMode,
   parseClarityPreset,
   parseSceneStyle,
-  loadSettings,
   parseColorVisionMode,
   parseFogQuality,
+  parseEdgeAntialiasingMode,
   parseLightingQuality,
   parseMaterialDetail,
   parseOptions,
   parseRendererPreference,
   parseShadowQuality,
+  parseTextureDetail,
   saveSettings,
   type RuntimeSettingsPayload
 } from './runtime/settings';
@@ -48,19 +49,8 @@ function formatRunTime(seconds: number): string {
 }
 
 function chooseQuality(smoothedMs: number, current: QualityTier): QualityTier {
-  if (current === 'high') {
-    if (smoothedMs > 24) return 'low';
-    if (smoothedMs > 19) return 'medium';
-    return current;
-  }
-
-  if (current === 'medium') {
-    if (smoothedMs > 24) return 'low';
-    if (smoothedMs < 16) return 'high';
-    return current;
-  }
-
-  if (smoothedMs < 18) return 'medium';
+  // Keep quality user-driven; avoid automatic runtime downgrades that can make visuals look muddy.
+  void smoothedMs;
   return current;
 }
 
@@ -70,6 +60,13 @@ function keyToMovementFlag(key: string): 'up' | 'down' | 'left' | 'right' | null
   if (key === 'a' || key === 'arrowleft') return 'left';
   if (key === 'd' || key === 'arrowright') return 'right';
   return null;
+}
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 }
 
 function requireElement<T extends HTMLElement>(id: string): T {
@@ -95,7 +92,6 @@ function createBuildSlotTile(): InventoryTileRefs {
 
 async function main(): Promise<void> {
   const options = parseOptions(window.location.href, localStorage);
-  const bootSettings = loadSettings(localStorage);
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const world = new GameWorld(options.seed, prefersReducedMotion);
@@ -126,6 +122,9 @@ async function main(): Promise<void> {
   const settingsMotionIntensity = requireElement<HTMLInputElement>('settingsMotionIntensity');
   const settingsMotionIntensityValue = requireElement<HTMLElement>('settingsMotionIntensityValue');
   const settingsRendererPreference = requireElement<HTMLSelectElement>('settingsRendererPreference');
+  const settingsTextureDetail = requireElement<HTMLSelectElement>('settingsTextureDetail');
+  const settingsEdgeAntialiasing = requireElement<HTMLSelectElement>('settingsEdgeAntialiasing');
+  const settingsDesktopUltraLock = requireElement<HTMLInputElement>('settingsDesktopUltraLock');
   const settingsColorVision = requireElement<HTMLSelectElement>('settingsColorVision');
   const settingsCombatReadabilityMode = requireElement<HTMLSelectElement>('settingsCombatReadabilityMode');
   const settingsUiScale = requireElement<HTMLInputElement>('settingsUiScale');
@@ -157,6 +156,7 @@ async function main(): Promise<void> {
   const settingsClarityPreset = requireElement<HTMLSelectElement>('settingsClarityPreset');
   const settingsDamageNumbers = requireElement<HTMLInputElement>('settingsDamageNumbers');
   const settingsDirectionalIndicators = requireElement<HTMLInputElement>('settingsDirectionalIndicators');
+  const settingsDebugOverlay = requireElement<HTMLInputElement>('settingsDebugOverlay');
   const restartRunBtn = requireElement<HTMLButtonElement>('restartRunBtn');
   const runSummary = requireElement<HTMLElement>('runSummary');
   const debugPanel = requireElement<HTMLElement>('debugPanel');
@@ -201,6 +201,8 @@ async function main(): Promise<void> {
   let lastLevelSignature = '';
   let lastChestSignature = '';
   let preferredRenderer = options.rendererPreference;
+  let rendererPolicy = options.rendererPolicy;
+  let safariSafeMode = options.safariSafeMode;
   let audioEnabled = options.audioEnabled;
   let audioVolume = options.audioVolume;
   let motionScale = options.motionScale;
@@ -222,8 +224,15 @@ async function main(): Promise<void> {
   let environmentContrast = options.environmentContrast;
   let materialDetail = options.materialDetail;
   let clarityPreset = options.clarityPreset;
+  let textureDetail = options.textureDetail;
+  let edgeAntialiasing = options.edgeAntialiasing;
+  let resolutionProfile = options.resolutionProfile;
+  let resolutionScale = options.resolutionScale;
+  let postFxSoftness = options.postFxSoftness;
+  let desktopUltraLock = options.desktopUltraLock;
   let showDamageNumbers = options.showDamageNumbers;
   let showDirectionalIndicators = options.showDirectionalIndicators;
+  let debugOverlayEnabled = options.debugMode;
   let previousShotsFired = 0;
   let previousPlayerHitCount = 0;
   let previousLevelUpOfferedCount = 0;
@@ -233,11 +242,13 @@ async function main(): Promise<void> {
   let lastHeavyHudSyncAt = 0;
   let hudSyncMs = 0;
 
-  world.setQuality(bootSettings.quality);
+  world.setQuality('high');
 
   function persistSettings(quality: QualityTier): void {
     const next: RuntimeSettingsPayload = {
       rendererPreference: preferredRenderer,
+      rendererPolicy,
+      safariSafeMode,
       quality,
       audioEnabled,
       audioVolume,
@@ -261,10 +272,31 @@ async function main(): Promise<void> {
       environmentContrast,
       materialDetail,
       clarityPreset,
+      textureDetail,
+      edgeAntialiasing,
+      resolutionProfile,
+      resolutionScale,
+      postFxSoftness,
+      desktopUltraLock,
       showDamageNumbers,
-      showDirectionalIndicators
+      showDirectionalIndicators,
+      debugOverlayEnabled
     };
     saveSettings(localStorage, next);
+  }
+
+  function syncDebugVisibility(): void {
+    debugPanel.classList.toggle('hidden', !debugOverlayEnabled);
+  }
+
+  function createRandomSeed(): number {
+    if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
+      const value = new Uint32Array(1);
+      window.crypto.getRandomValues(value);
+      return value[0] || 1337;
+    }
+    const mixed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
+    return mixed || 1337;
   }
 
   function applyVisualSettings(): void {
@@ -275,6 +307,8 @@ async function main(): Promise<void> {
     renderer.setMotionScale(effectiveMotionScale);
     renderer.setVisualSettings({
       visualPreset: 'bioluminescent',
+      rendererPolicy,
+      safariSafeMode,
       sceneStyle,
       combatReadabilityMode,
       colorVisionMode,
@@ -295,7 +329,13 @@ async function main(): Promise<void> {
       gamma,
       environmentContrast,
       materialDetail,
-      clarityPreset
+      clarityPreset,
+      textureDetail,
+      edgeAntialiasing,
+      resolutionProfile,
+      resolutionScale,
+      postFxSoftness,
+      desktopUltraLock
     });
 
     renderer.setLightingSettings({
@@ -333,6 +373,9 @@ async function main(): Promise<void> {
     settingsMotionIntensityValue.textContent = `${Math.round(motionScale * 100)}%`;
 
     settingsRendererPreference.value = preferredRenderer;
+    settingsTextureDetail.value = textureDetail === 'low' ? 'medium' : textureDetail;
+    settingsEdgeAntialiasing.value = edgeAntialiasing;
+    settingsDesktopUltraLock.checked = desktopUltraLock;
     settingsColorVision.value = colorVisionMode;
     settingsCombatReadabilityMode.value = combatReadabilityMode;
     settingsUiScale.value = String(Math.round(uiScale * 100));
@@ -362,12 +405,15 @@ async function main(): Promise<void> {
     settingsClarityPreset.value = clarityPreset;
     settingsDamageNumbers.checked = showDamageNumbers;
     settingsDirectionalIndicators.checked = showDirectionalIndicators;
+    settingsDebugOverlay.checked = debugOverlayEnabled;
   }
 
   try {
     const rendererKind = await renderer.init({
       mount: gameRoot,
       requestedRenderer: options.rendererPreference,
+      rendererPolicy,
+      safariSafeMode,
       reducedMotion: prefersReducedMotion
     });
 
@@ -388,9 +434,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (options.debugMode) {
-    debugPanel.classList.remove('hidden');
-  }
+  syncDebugVisibility();
 
   syncTopChromeOffsets();
   if (typeof ResizeObserver !== 'undefined') {
@@ -427,7 +471,11 @@ async function main(): Promise<void> {
       button.type = 'button';
       button.className = 'upgrade-btn';
       button.dataset.rarity = choiceRarity(choice);
-      button.innerHTML = `<strong>${index + 1}. ${choice.title}</strong><span>${choice.description}</span>`;
+      const title = document.createElement('strong');
+      title.textContent = `${index + 1}. ${choice.title}`;
+      const description = document.createElement('span');
+      description.textContent = choice.description;
+      button.append(title, description);
       button.addEventListener('click', () => {
         world.applyLevelChoice(choice.id);
         levelUpModal.classList.add('hidden');
@@ -448,7 +496,11 @@ async function main(): Promise<void> {
       button.type = 'button';
       button.className = 'upgrade-btn';
       button.dataset.rarity = choice.choiceType === 'evolve' ? 'legendary' : 'epic';
-      button.innerHTML = `<strong>${index + 1}. ${choice.title}</strong><span>${choice.description}</span>`;
+      const title = document.createElement('strong');
+      title.textContent = `${index + 1}. ${choice.title}`;
+      const description = document.createElement('span');
+      description.textContent = choice.description;
+      button.append(title, description);
       button.addEventListener('click', () => {
         world.applyChestChoice(choice.id);
         chestModal.classList.add('hidden');
@@ -502,6 +554,7 @@ async function main(): Promise<void> {
 
     if (pausedBySettings && world.uiState === 'paused' && !document.hidden) {
       pausedBySettings = false;
+      world.applyPostModalGrace(0.5, false);
       resumeRun();
     } else {
       pausedBySettings = false;
@@ -537,6 +590,7 @@ async function main(): Promise<void> {
 
     const hpRatio = world.playerStats.maxHp > 0 ? world.playerStats.hp / world.playerStats.maxHp : 1;
     hudHpChip.classList.toggle('danger', hpRatio <= 0.3);
+    gameShell.classList.toggle('low-hp', hpRatio <= 0.3);
     const ratio = world.xpToNext > 0 ? Math.min(1, world.xp / world.xpToNext) : 0;
     const nextXpWidth = `${ratio * 100}%`;
     if (hudCache.xpWidth !== nextXpWidth) {
@@ -665,7 +719,7 @@ async function main(): Promise<void> {
   }
 
   function syncDebug(stats: LoopStats): void {
-    if (debugPanel.classList.contains('hidden')) return;
+    if (!debugOverlayEnabled) return;
 
     const enemyPoolStats = world.enemyPool.getStats();
     const projectilePoolStats = world.projectilePool.getStats();
@@ -686,6 +740,7 @@ async function main(): Promise<void> {
       `motion: ${Math.round(motionScale * 100)}%`,
       `fps: ${stats.fps.toFixed(1)}`,
       `frame: ${stats.smoothedFrameTimeMs.toFixed(2)}ms`,
+      `update: ${stats.updateMs.toFixed(2)}ms / steps ${stats.updateSteps}`,
       `quality: ${world.quality}`,
       `budget tier: ${perf.budgetTier}`,
       `render p50/p95: ${perf.rolling.p50FrameMs.toFixed(2)} / ${perf.rolling.p95FrameMs.toFixed(2)}ms`,
@@ -699,6 +754,11 @@ async function main(): Promise<void> {
       `scene: ${sceneStyle} / readability ${combatReadabilityMode} / outline ${enemyOutlineStrength.toFixed(2)} / bg ${backgroundDensity.toFixed(2)} / atmosphere ${atmosphereStrength.toFixed(2)}`,
       `suppression: ${readability.activeSuppressionTier} (${readability.threatLevel.toFixed(2)})`,
       `lighting: ${lightingQuality} / shadows ${shadowQuality} / fog ${fogQuality} / gamma ${gamma.toFixed(2)} / contrast ${environmentContrast.toFixed(2)} / material ${materialDetail}`,
+      `textures: ${textureDetail} / aa ${edgeAntialiasing} / profile ${resolutionProfile} / scale ${resolutionScale.toFixed(2)} / softness ${postFxSoftness.toFixed(2)} / ultra lock ${desktopUltraLock ? 'on' : 'off'}`,
+      `resolution: target ${perf.targetResolution.toFixed(2)} / pixels ${(perf.pixelCount / 1_000_000).toFixed(2)}MP`,
+      `canvas ratio: ${perf.actualCanvasToCssRatio.toFixed(2)} / lighting samples ${perf.lightingSampleCount}`,
+      `backdrop cache/cards: ${perf.backdropChunkCount}/${perf.backdropCardsDrawn}`,
+      `backdrop cmd est: ${perf.backdropDrawCommandsEstimate} / update ms ${perf.updateMs.toFixed(2)} / steps ${perf.updateSteps}`,
       `event: ${world.activeEventId ?? 'none'}`,
       `phase: ${world.director.phaseId}`,
       `intensity: ${world.director.intensity.toFixed(2)}`,
@@ -777,6 +837,7 @@ async function main(): Promise<void> {
       persistSettings(nextQuality);
     }
 
+    renderer.setUpdateTelemetry(stats.updateMs, stats.updateSteps);
     renderer.render(world, 0, stats.smoothedFrameTimeMs);
     syncAudioCues();
     syncHud();
@@ -787,6 +848,7 @@ async function main(): Promise<void> {
   const loop = new FixedStepLoop({
     fixedDelta: world.config.fixedDelta,
     maxDelta: world.config.maxDelta,
+    maxSubSteps: 3,
     onUpdate: (dt) => stepSimulation(dt),
     onRender: (_alpha, stats) => renderFrame(stats)
   });
@@ -904,6 +966,8 @@ async function main(): Promise<void> {
         targetThreat: Number(world.director.targetThreat.toFixed(1))
       },
       visualSettings: {
+        rendererPolicy,
+        safariSafeMode,
         colorVisionMode,
         sceneStyle,
         combatReadabilityMode,
@@ -922,7 +986,13 @@ async function main(): Promise<void> {
         gamma: Number(gamma.toFixed(2)),
         environmentContrast: Number(environmentContrast.toFixed(2)),
         materialDetail,
-        clarityPreset
+        clarityPreset,
+        textureDetail,
+        edgeAntialiasing,
+        resolutionProfile,
+        resolutionScale: Number(resolutionScale.toFixed(2)),
+        postFxSoftness: Number(postFxSoftness.toFixed(2)),
+        desktopUltraLock
       },
       renderPerf,
       readability: renderer.getReadabilitySnapshot(),
@@ -965,7 +1035,9 @@ async function main(): Promise<void> {
       renderFrame({
         frameTimeMs: frameMs,
         smoothedFrameTimeMs: frameMs,
-        fps: 1000 / frameMs
+        fps: 1000 / frameMs,
+        updateMs: frameMs,
+        updateSteps: steps
       });
     };
   }
@@ -1018,6 +1090,27 @@ async function main(): Promise<void> {
 
   settingsMotionIntensity.addEventListener('input', () => {
     motionScale = clamp(Number(settingsMotionIntensity.value) / 100, 0, 1);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsTextureDetail.addEventListener('change', () => {
+    textureDetail = parseTextureDetail(settingsTextureDetail.value);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsEdgeAntialiasing.addEventListener('change', () => {
+    edgeAntialiasing = parseEdgeAntialiasingMode(settingsEdgeAntialiasing.value);
+    applyVisualSettings();
+    syncSettingsControls();
+    persistSettings(world.quality);
+  });
+
+  settingsDesktopUltraLock.addEventListener('change', () => {
+    desktopUltraLock = settingsDesktopUltraLock.checked;
     applyVisualSettings();
     syncSettingsControls();
     persistSettings(world.quality);
@@ -1143,6 +1236,8 @@ async function main(): Promise<void> {
       shadowQuality = 'soft';
       fogQuality = 'volumetric';
       bloomStrength = Math.max(0.68, bloomStrength);
+      postFxSoftness = Math.max(0.45, postFxSoftness);
+      resolutionProfile = 'quality';
       environmentContrast = Math.max(1, environmentContrast);
       combatReadabilityMode = 'off';
       backgroundDensity = Math.max(backgroundDensity, 0.88);
@@ -1152,6 +1247,8 @@ async function main(): Promise<void> {
       shadowQuality = 'hard';
       fogQuality = 'layered';
       bloomStrength = Math.min(0.35, bloomStrength);
+      postFxSoftness = Math.min(0.08, postFxSoftness);
+      resolutionProfile = 'performance';
       environmentContrast = Math.max(1.12, environmentContrast);
       hitFlashStrength = Math.min(hitFlashStrength, 0.65);
       combatReadabilityMode = 'always_on';
@@ -1163,6 +1260,8 @@ async function main(): Promise<void> {
       shadowQuality = 'soft';
       fogQuality = 'volumetric';
       bloomStrength = clamp(bloomStrength, 0.45, 0.75);
+      postFxSoftness = clamp(postFxSoftness, 0.1, 0.25);
+      resolutionProfile = 'balanced';
       environmentContrast = clamp(environmentContrast, 0.95, 1.15);
       combatReadabilityMode = 'auto';
       backgroundDensity = clamp(backgroundDensity, 0.6, 0.84);
@@ -1187,6 +1286,12 @@ async function main(): Promise<void> {
     persistSettings(world.quality);
   });
 
+  settingsDebugOverlay.addEventListener('change', () => {
+    debugOverlayEnabled = settingsDebugOverlay.checked;
+    syncDebugVisibility();
+    persistSettings(world.quality);
+  });
+
   settingsPresetPainterlyBalanced.addEventListener('click', () => {
     sceneStyle = parseSceneStyle('painterly_forest');
     combatReadabilityMode = 'auto';
@@ -1197,6 +1302,9 @@ async function main(): Promise<void> {
     shadowQuality = 'soft';
     fogQuality = 'layered';
     bloomStrength = clamp(bloomStrength, 0.38, 0.6);
+    resolutionProfile = 'balanced';
+    resolutionScale = 1;
+    postFxSoftness = clamp(postFxSoftness, 0.12, 0.2);
     clarityPreset = 'balanced';
     applyVisualSettings();
     syncSettingsControls();
@@ -1213,6 +1321,9 @@ async function main(): Promise<void> {
     shadowQuality = 'hard';
     fogQuality = 'off';
     bloomStrength = Math.min(0.3, bloomStrength);
+    resolutionProfile = 'performance';
+    resolutionScale = Math.min(resolutionScale, 0.92);
+    postFxSoftness = Math.min(0.08, postFxSoftness);
     clarityPreset = 'competitive';
     applyVisualSettings();
     syncSettingsControls();
@@ -1238,6 +1349,12 @@ async function main(): Promise<void> {
   window.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     const movementFlag = keyToMovementFlag(key);
+    const restartShortcutAllowed =
+      !event.repeat &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      !isEditableTarget(event.target);
 
     if (settingsOpen) {
       if (key === 'escape' || key === 'o') {
@@ -1279,6 +1396,18 @@ async function main(): Promise<void> {
       }
       syncSettingsControls();
       persistSettings(world.quality);
+      event.preventDefault();
+      return;
+    }
+
+    if (key === 'r' && world.uiState !== 'boot' && restartShortcutAllowed) {
+      startRun(world.seed);
+      event.preventDefault();
+      return;
+    }
+
+    if (key === 'n' && world.uiState !== 'boot' && restartShortcutAllowed) {
+      startRun(createRandomSeed());
       event.preventDefault();
       return;
     }

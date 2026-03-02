@@ -11,6 +11,7 @@
     "game:typecheck": "tsc -p tsconfig.game.json --noEmit",
     "game:test": "vitest run --config vitest.game.config.mts",
     "game:check": "npm run game:typecheck && npm run game:test",
+    "game:perf": "node scripts/game-perf-gate.js",
     "lint": "node scripts/lint.js",
     "format": "node scripts/format.js --write",
     "format:check": "node scripts/format.js --check",

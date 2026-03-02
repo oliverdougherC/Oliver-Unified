@@ -23,7 +23,7 @@ export const WAVE_STAGES: WaveStage[] = [
     weights: {
       brambleling: 0.28,
       moss_hound: 0.3,
-      thorn_sentinel: 0.13,
+      thorn_guard: 0.13,
       elder_bark: 0.08,
       briar_lancer: 0.13,
       spore_channeler: 0.08
@@ -40,7 +40,7 @@ export const WAVE_STAGES: WaveStage[] = [
       brambleling: 0.13,
       moss_hound: 0.19,
       spore_wisp: 0.2,
-      thorn_sentinel: 0.15,
+      thorn_guard: 0.15,
       briar_lancer: 0.15,
       spore_channeler: 0.18
     }
@@ -56,7 +56,7 @@ export const WAVE_STAGES: WaveStage[] = [
       brambleling: 0.08,
       moss_hound: 0.13,
       spore_wisp: 0.23,
-      thorn_sentinel: 0.14,
+      thorn_guard: 0.14,
       elder_bark: 0.14,
       briar_lancer: 0.12,
       spore_channeler: 0.16

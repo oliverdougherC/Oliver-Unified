@@ -15,6 +15,7 @@
   <!-- Styles -->
   <link rel="stylesheet" href="../../css/design-system.css">
   <link rel="stylesheet" href="../../css/archive.css">
+  <link rel="stylesheet" href="../../css/cursor.css">
 </head>
 <body>
   <div class="noise-overlay"></div>
@@ -22,18 +23,29 @@
   <!-- Navigation -->
   <nav class="nav" id="nav">
     <div class="nav-inner container">
-      <a href="../../index.html" class="nav-logo">
+      <a href="../../index.html" class="nav-logo" data-cursor="hover">
         <span class="logo-text">O<span class="logo-d">D</span></span>
       </a>
-      <div class="nav-links" id="navLinks">
-        <a href="../../index.html" class="nav-link">Home</a>
-        <a href="../resume/index.html" class="nav-link">Resume</a>
-        <a href="../gallery/index.html" class="nav-link">Gallery</a>
-        <a href="../archive/index.html" class="nav-link active" aria-current="page">Archive</a>
-        <a href="../dashboard/index.html" class="nav-link">Services</a>
+
+      <!-- Fullscreen Menu Overlay -->
+      <div class="nav-overlay" id="navOverlay">
+        <div class="nav-overlay-bg"></div>
+        <div class="nav-links container" id="navLinks">
+          <div class="nav-menu-header">Menu</div>
+          <a href="../../index.html" class="nav-link nav-link--home" data-cursor="hover">Home</a>
+          <a href="../resume/index.html" class="nav-link nav-link--resume" data-cursor="hover">Resume</a>
+          <a href="../gallery/index.html" class="nav-link nav-link--gallery" data-cursor="hover">Gallery</a>
+          <a href="../archive/index.html" class="nav-link nav-link--archive active" aria-current="page" data-cursor="hover">Archive</a>
+          <a href="../dashboard/index.html" class="nav-link nav-link--dashboard" data-cursor="hover">Services</a>
+
+          <div class="nav-menu-footer">
+            <a href="mailto:oliverfdougherty@gmail.com" class="footer-link" data-cursor="hover">Contact</a>
+            <a href="https://github.com/oliverdougherC" class="footer-link" target="_blank" rel="noopener noreferrer" data-cursor="hover">Github</a>
+          </div>
+        </div>
       </div>
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
-        <span></span>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false" data-cursor="hover">
         <span></span>
         <span></span>
       </button>
@@ -78,12 +90,12 @@
             >
           </div>
           <div class="filter-tags">
-            <button class="filter-tag active" data-filter="all">All</button>
-            <button class="filter-tag" data-filter="video">Video</button>
-            <button class="filter-tag" data-filter="audio">Audio</button>
-            <button class="filter-tag" data-filter="networking">Networking</button>
-            <button class="filter-tag" data-filter="math">Mathematics</button>
-            <button class="filter-tag" data-filter="hardware">Hardware</button>
+            <button class="filter-tag active" data-filter="all" aria-pressed="true">All</button>
+            <button class="filter-tag" data-filter="video" aria-pressed="false">Video</button>
+            <button class="filter-tag" data-filter="audio" aria-pressed="false">Audio</button>
+            <button class="filter-tag" data-filter="networking" aria-pressed="false">Networking</button>
+            <button class="filter-tag" data-filter="math" aria-pressed="false">Mathematics</button>
+            <button class="filter-tag" data-filter="hardware" aria-pressed="false">Hardware</button>
           </div>
         </div>
       </div>
@@ -384,7 +396,7 @@
                   <line x1="12" y1="22.08" x2="12" y2="12"/>
                 </svg>
               </div>
-              <span class="report-category">Infrastructure</span>
+              <span class="report-category">Networking</span>
             </div>
             <h2 class="report-title">Kubernetes</h2>
             <p class="report-desc">Container orchestration platform. Pods, services, deployments, and cluster architecture for scalable applications.</p>
@@ -511,5 +523,8 @@
   <script src="../../js/year.js" defer></script>
   <script src="../../js/main.js" defer></script>
   <script src="../../js/archive.js" defer></script>
+
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-circle" id="cursorCircle"></div>
 </body>
 </html>

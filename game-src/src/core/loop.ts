@@ -2,11 +2,14 @@ export interface LoopStats {
   frameTimeMs: number;
   smoothedFrameTimeMs: number;
   fps: number;
+  updateMs: number;
+  updateSteps: number;
 }
 
 interface FixedStepLoopOptions {
   fixedDelta: number;
   maxDelta: number;
+  maxSubSteps?: number;
   onUpdate: (dt: number) => void;
   onRender: (alpha: number, stats: LoopStats) => void;
 }
@@ -17,8 +20,11 @@ export class FixedStepLoop {
   private accumulator = 0;
   private smoothedFrameTimeMs = 16.67;
   private running = false;
+  private maxSubSteps: number;
 
-  constructor(private readonly options: FixedStepLoopOptions) {}
+  constructor(private readonly options: FixedStepLoopOptions) {
+    this.maxSubSteps = Math.max(1, Math.floor(options.maxSubSteps ?? 3));
+  }
 
   start(): void {
     if (this.running) return;
@@ -49,9 +55,18 @@ export class FixedStepLoop {
     const deltaSeconds = Math.min(deltaSecondsRaw, this.options.maxDelta);
     this.accumulator += deltaSeconds;
 
-    while (this.accumulator >= this.options.fixedDelta) {
+    let updateMs = 0;
+    let updateSteps = 0;
+    while (this.accumulator >= this.options.fixedDelta && updateSteps < this.maxSubSteps) {
+      const updateStart = performance.now();
       this.options.onUpdate(this.options.fixedDelta);
+      updateMs += performance.now() - updateStart;
       this.accumulator -= this.options.fixedDelta;
+      updateSteps += 1;
+    }
+    if (this.accumulator >= this.options.fixedDelta) {
+      // Prevent spiral-of-death catch-up under sustained stalls; prefer responsive rendering.
+      this.accumulator = 0;
     }
 
     const frameTimeMs = deltaSeconds * 1000;
@@ -60,7 +75,9 @@ export class FixedStepLoop {
     this.options.onRender(this.accumulator / this.options.fixedDelta, {
       frameTimeMs,
       smoothedFrameTimeMs: this.smoothedFrameTimeMs,
-      fps: frameTimeMs > 0 ? 1000 / frameTimeMs : 60
+      fps: frameTimeMs > 0 ? 1000 / frameTimeMs : 60,
+      updateMs,
+      updateSteps
     });
 
     this.rafId = requestAnimationFrame(this.tick);

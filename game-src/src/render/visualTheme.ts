@@ -3,13 +3,13 @@ import type { ColorVisionMode, EnemyRole, VisualThemeTokens } from '../types';
 type EnemyPalette = Record<EnemyRole, { fill: number; stroke: number }>;
 
 const BASE_ENEMIES: EnemyPalette = {
-  swarmer: { fill: 0xff8f70, stroke: 0xffefe6 },
-  charger: { fill: 0x79a9ff, stroke: 0xebf3ff },
-  bruiser: { fill: 0xffc86b, stroke: 0xfff2da },
-  tank: { fill: 0xc98fff, stroke: 0xf8ecff },
-  sniper: { fill: 0x87f2b4, stroke: 0xecfff6 },
-  summoner: { fill: 0xed9cff, stroke: 0xffefff },
-  disruptor: { fill: 0xff6ea8, stroke: 0xffe4f0 }
+  swarmer: { fill: 0xff8b63, stroke: 0xfffaf4 },
+  charger: { fill: 0x67a2ff, stroke: 0xf4f9ff },
+  bruiser: { fill: 0xffbf5d, stroke: 0xfff7e4 },
+  tank: { fill: 0xc382ff, stroke: 0xfbf4ff },
+  sniper: { fill: 0x72f0b1, stroke: 0xf2fff8 },
+  summoner: { fill: 0xea8dff, stroke: 0xfff4ff },
+  disruptor: { fill: 0xff659f, stroke: 0xffedf5 }
 };
 
 const DEUTERANOPIA_ENEMIES: EnemyPalette = {
@@ -52,12 +52,12 @@ function enemyPalette(mode: ColorVisionMode): EnemyPalette {
 export function createVisualTheme(mode: ColorVisionMode): VisualThemeTokens {
   const enemies = enemyPalette(mode);
   return {
-    player: { fill: 0xc3fdff, stroke: 0xf6ffff, aura: 0x7bf7ff },
+    player: { fill: 0xe7ffff, stroke: 0xffffff, aura: 0x95feff },
     projectiles: {
-      allied: 0x95f2ff,
+      allied: 0x8ee9ff,
       alliedStroke: 0xf4ffff,
-      enemy: 0xff8150,
-      enemyStroke: 0xffe3ce
+      enemy: 0xff7b43,
+      enemyStroke: 0xfff0df
     },
     pickups: {
       xpFill: 0x7f5cff,
@@ -71,8 +71,8 @@ export function createVisualTheme(mode: ColorVisionMode): VisualThemeTokens {
       stroke: 0xffefcb
     },
     telegraph: {
-      line: 0xffbd4a,
-      ring: 0xffe4a3
+      line: 0xffc25b,
+      ring: 0xfff0c6
     },
     enemies,
     elite: {
@@ -80,12 +80,12 @@ export function createVisualTheme(mode: ColorVisionMode): VisualThemeTokens {
       crown: 0xffd16a
     },
     backdrop: {
-      floor: 0x04060d,
-      canopy: 0x0f1d2e,
-      fog: 0x12374a,
-      vines: 0x145c4e,
-      grade: 0x97f8d7,
-      eventTint: 0xffcd8c
+      floor: 0x02050b,
+      canopy: 0x0d1b2b,
+      fog: 0x143a4f,
+      vines: 0x156756,
+      grade: 0xa6ffd9,
+      eventTint: 0xffd89f
     }
   };
 }

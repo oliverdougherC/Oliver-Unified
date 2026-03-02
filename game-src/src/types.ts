@@ -1,5 +1,6 @@
 export type RendererKind = 'webgpu' | 'webgl';
 export type RendererPreference = 'auto' | RendererKind;
+export type RendererPolicy = 'auto' | 'prefer_webgl' | 'prefer_webgpu';
 export type QualityTier = 'high' | 'medium' | 'low';
 export type UIState = 'boot' | 'playing' | 'paused' | 'levelup' | 'chest' | 'gameover';
 export type VisualPreset = 'bioluminescent';
@@ -13,6 +14,9 @@ export type ShadowQuality = 'soft' | 'hard' | 'off';
 export type FogQuality = 'volumetric' | 'layered' | 'off';
 export type MaterialDetail = 'full' | 'reduced';
 export type ClarityPreset = 'cinematic' | 'balanced' | 'competitive';
+export type TextureDetail = 'ultra' | 'high' | 'medium' | 'low';
+export type EdgeAntialiasingMode = 'off' | 'fxaa' | 'supersample';
+export type ResolutionProfile = 'quality' | 'balanced' | 'performance';
 export type MaterialKind = 'bark' | 'moss' | 'stone' | 'fungal' | 'arcane' | 'flesh' | 'energy';
 
 export type EntityKind =
@@ -252,6 +256,8 @@ export interface RunSnapshot {
 
 export interface QueryOptions {
   rendererPreference: RendererPreference;
+  rendererPolicy: RendererPolicy;
+  safariSafeMode: boolean;
   debugMode: boolean;
   seed: number;
   audioEnabled: boolean;
@@ -278,10 +284,18 @@ export interface QueryOptions {
   environmentContrast: number;
   materialDetail: MaterialDetail;
   clarityPreset: ClarityPreset;
+  textureDetail: TextureDetail;
+  edgeAntialiasing: EdgeAntialiasingMode;
+  resolutionProfile: ResolutionProfile;
+  resolutionScale: number;
+  postFxSoftness: number;
+  desktopUltraLock: boolean;
 }
 
 export interface VisualRuntimeSettings {
   visualPreset: VisualPreset;
+  rendererPolicy: RendererPolicy;
+  safariSafeMode: boolean;
   sceneStyle: SceneStyle;
   combatReadabilityMode: CombatReadabilityMode;
   colorVisionMode: ColorVisionMode;
@@ -303,6 +317,12 @@ export interface VisualRuntimeSettings {
   environmentContrast: number;
   materialDetail: MaterialDetail;
   clarityPreset: ClarityPreset;
+  textureDetail: TextureDetail;
+  edgeAntialiasing: EdgeAntialiasingMode;
+  resolutionProfile: ResolutionProfile;
+  resolutionScale: number;
+  postFxSoftness: number;
+  desktopUltraLock: boolean;
 }
 
 export interface LightingRuntimeSettings {
@@ -378,9 +398,17 @@ export interface RenderPerformanceSnapshot {
   budgetTier: RenderBudgetTier;
   frameTimeMs: number;
   smoothedFrameTimeMs: number;
+  updateMs: number;
+  updateSteps: number;
   visibleEntities: number;
   culledEntities: number;
   drawCallsEstimate: number;
+  pixelCount: number;
+  targetResolution: number;
+  actualCanvasToCssRatio: number;
+  backdropChunkCount: number;
+  backdropCardsDrawn: number;
+  backdropDrawCommandsEstimate: number;
   timings: {
     backdropMs: number;
     entitiesMs: number;
@@ -391,6 +419,7 @@ export interface RenderPerformanceSnapshot {
   passes: RenderPassMetrics;
   activeLights: number;
   activeShadowCasters: number;
+  lightingSampleCount: number;
   rolling: {
     p50FrameMs: number;
     p95FrameMs: number;
@@ -427,6 +456,35 @@ export interface VisualThemeTokens {
   };
 }
 
+export type TextureHandle = string;
+
+export interface EnemyTextureHandles {
+  base: TextureHandle;
+  glow: TextureHandle;
+  elite: TextureHandle;
+}
+
+export interface TexturePack {
+  key: string;
+  player: {
+    base: TextureHandle;
+    aura: TextureHandle;
+  };
+  enemies: Record<EnemyRole, EnemyTextureHandles>;
+  projectiles: {
+    allied: TextureHandle;
+    enemy: TextureHandle;
+  };
+  hazards: {
+    ring: TextureHandle;
+    core: TextureHandle;
+  };
+  pickups: {
+    chest: TextureHandle;
+    xp: TextureHandle;
+  };
+}
+
 export interface IObjectPool<T> {
   acquire(): T;
   release(item: T): void;
@@ -442,9 +500,12 @@ export interface IRenderAdapter<TWorld> {
   init(options: {
     mount: HTMLElement;
     requestedRenderer: RendererPreference;
+    rendererPolicy: RendererPolicy;
+    safariSafeMode: boolean;
     reducedMotion: boolean;
   }): Promise<RendererKind>;
   render(world: TWorld, alpha: number, frameTimeMs: number): void;
+  setUpdateTelemetry(updateMs: number, updateSteps: number): void;
   setQuality(quality: QualityTier): void;
   setVisualSettings(settings: VisualRuntimeSettings): void;
   setLightingSettings(settings: LightingRuntimeSettings): void;

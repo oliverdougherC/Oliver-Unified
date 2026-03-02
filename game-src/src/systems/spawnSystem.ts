@@ -145,7 +145,7 @@ export class SpawnSystem implements ISystem<GameWorld> {
     const spawnInterval =
       band.baseSpawnInterval *
       world.spawnIntervalScale *
-      lerp(1.18, 0.54, pressureBlend);
+      lerp(1.32, 0.7, pressureBlend);
 
     world.spawnAccumulator += dt;
     world.threatLevel = currentThreat;

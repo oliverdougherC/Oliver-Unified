@@ -1,5 +1,6 @@
-import { Graphics } from 'pixi.js';
-import type { EnemyRole } from '../types';
+import { Graphics, Sprite } from 'pixi.js';
+import type { EnemyRole, TextureDetail } from '../types';
+import type { BakedTexturePack } from './textureBaker';
 import { luminanceDelta } from './visualTheme';
 
 export interface EnemySpriteFactoryParams {
@@ -10,6 +11,8 @@ export interface EnemySpriteFactoryParams {
   isElite: boolean;
   crownColor: number;
   outlineStrength: number;
+  texturePack?: BakedTexturePack | null;
+  textureDetail?: TextureDetail;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -43,7 +46,23 @@ function addEliteMarks(graphic: Graphics, radius: number, crownColor: number, st
   graphic.stroke({ width: 1.3, color: stroke, alpha: 0.84 });
 }
 
-export function createEnemySprite(params: EnemySpriteFactoryParams): Graphics {
+export function enemyTextureVariantForRole(role: EnemyRole, isElite: boolean): `${EnemyRole}.${'base' | 'elite'}` {
+  return `${role}.${isElite ? 'elite' : 'base'}`;
+}
+
+export function createEnemySprite(params: EnemySpriteFactoryParams): Graphics | Sprite {
+  if (params.texturePack && (params.textureDetail ?? 'ultra') !== 'low') {
+    const roleSet = params.texturePack.enemies[params.role];
+    const texture = params.isElite ? roleSet.elite : roleSet.base;
+    const sprite = new Sprite(texture);
+    const baseDiameter = Math.max(1, texture.width);
+    const targetDiameter = Math.max(8, params.radius * 2.2);
+    const scale = targetDiameter / baseDiameter;
+    sprite.anchor.set(0.5);
+    sprite.scale.set(scale);
+    return sprite;
+  }
+
   const graphic = new Graphics();
   const r = Math.max(7, params.radius);
   const fill = enforceBackdropContrast(params.fill);
@@ -56,15 +75,11 @@ export function createEnemySprite(params: EnemySpriteFactoryParams): Graphics {
   graphic.fill({ color: darkKeyline, alpha: 0.64 });
 
   if (params.role === 'charger') {
-    graphic.poly([
-      { x: 0, y: -r * 1.06 },
-      { x: r * 0.92, y: -r * 0.12 },
-      { x: r * 0.52, y: r * 0.96 },
-      { x: -r * 0.52, y: r * 0.96 },
-      { x: -r * 0.92, y: -r * 0.12 }
-    ]);
+    graphic.ellipse(0, 0, r * 0.94, r * 0.86);
     graphic.fill({ color: fill, alpha: 0.98 });
     graphic.stroke({ width: outlineWidth, color: stroke, alpha: 0.97 });
+    graphic.ellipse(0, -r * 0.38, r * 0.52, r * 0.34);
+    graphic.fill({ color: accent, alpha: 0.52 });
     graphic.poly([
       { x: -r * 0.25, y: -r * 1.22 },
       { x: -r * 0.03, y: -r * 0.66 },
@@ -76,6 +91,8 @@ export function createEnemySprite(params: EnemySpriteFactoryParams): Graphics {
       { x: r * 0.4, y: -r * 0.65 }
     ]);
     graphic.fill({ color: accent, alpha: 0.74 });
+    graphic.circle(0, r * 0.08, r * 0.26);
+    graphic.fill({ color: accent, alpha: 0.4 });
   } else if (params.role === 'tank') {
     graphic.roundRect(-r, -r * 0.9, r * 2, r * 1.8, r * 0.2);
     graphic.fill({ color: fill, alpha: 0.97 });
@@ -83,28 +100,31 @@ export function createEnemySprite(params: EnemySpriteFactoryParams): Graphics {
     graphic.rect(-r * 0.34, -r * 0.42, r * 0.68, r * 0.84);
     graphic.fill({ color: accent, alpha: 0.46 });
   } else if (params.role === 'sniper') {
+    graphic.circle(0, 0, r * 0.92);
+    graphic.fill({ color: fill, alpha: 0.97 });
+    graphic.stroke({ width: outlineWidth, color: stroke, alpha: 0.97 });
     graphic.poly([
-      { x: 0, y: -r * 1.02 },
-      { x: r * 0.84, y: 0 },
-      { x: 0, y: r * 1.02 },
-      { x: -r * 0.84, y: 0 }
+      { x: 0, y: -r * 0.7 },
+      { x: r * 0.7, y: 0 },
+      { x: 0, y: r * 0.7 },
+      { x: -r * 0.7, y: 0 }
     ]);
-    graphic.fill({ color: fill, alpha: 0.97 });
-    graphic.stroke({ width: outlineWidth, color: stroke, alpha: 0.97 });
-    graphic.circle(0, 0, r * 0.3);
-    graphic.fill({ color: accent, alpha: 0.72 });
+    graphic.stroke({ width: outlineWidth * 0.72, color: accent, alpha: 0.88 });
+    graphic.circle(0, 0, r * 0.28);
+    graphic.fill({ color: accent, alpha: 0.7 });
   } else if (params.role === 'summoner') {
-    const points: Array<{ x: number; y: number }> = [];
-    for (let i = 0; i < 12; i += 1) {
-      const angle = -Math.PI / 2 + (Math.PI * 2 * i) / 12;
-      const mag = i % 2 === 0 ? r : r * 0.54;
-      points.push({ x: Math.cos(angle) * mag, y: Math.sin(angle) * mag });
-    }
-    graphic.poly(points);
+    graphic.circle(0, 0, r * 0.9);
     graphic.fill({ color: fill, alpha: 0.97 });
     graphic.stroke({ width: outlineWidth, color: stroke, alpha: 0.97 });
-    graphic.circle(0, 0, r * 0.26);
-    graphic.fill({ color: accent, alpha: 0.78 });
+    graphic.circle(0, 0, r * 0.58);
+    graphic.stroke({ width: outlineWidth * 0.58, color: accent, alpha: 0.78 });
+    for (let i = 0; i < 6; i += 1) {
+      const angle = (Math.PI * 2 * i) / 6;
+      const px = Math.cos(angle) * r * 0.72;
+      const py = Math.sin(angle) * r * 0.72;
+      graphic.circle(px, py, r * 0.16);
+      graphic.fill({ color: accent, alpha: 0.6 });
+    }
   } else if (params.role === 'disruptor') {
     graphic.circle(0, 0, r * 0.94);
     graphic.stroke({ width: outlineWidth, color: stroke, alpha: 0.96 });
@@ -112,16 +132,12 @@ export function createEnemySprite(params: EnemySpriteFactoryParams): Graphics {
     graphic.fill({ color: fill, alpha: 0.92 });
     graphic.stroke({ width: outlineWidth * 0.65, color: accent, alpha: 0.75 });
   } else if (params.role === 'bruiser') {
-    graphic.poly([
-      { x: -r * 0.98, y: -r * 0.45 },
-      { x: -r * 0.35, y: -r * 0.96 },
-      { x: r * 0.38, y: -r * 0.96 },
-      { x: r * 0.98, y: -r * 0.28 },
-      { x: r * 0.78, y: r * 0.8 },
-      { x: -r * 0.72, y: r * 0.92 }
-    ]);
+    graphic.roundRect(-r * 0.96, -r * 0.84, r * 1.92, r * 1.68, r * 0.46);
     graphic.fill({ color: fill, alpha: 0.97 });
     graphic.stroke({ width: outlineWidth, color: stroke, alpha: 0.97 });
+    graphic.roundRect(-r * 0.84, -r * 0.58, r * 0.4, r * 1.1, r * 0.2);
+    graphic.roundRect(r * 0.44, -r * 0.58, r * 0.4, r * 1.1, r * 0.2);
+    graphic.fill({ color: mixColor(fill, 0x0d1117, 0.22), alpha: 0.62 });
     graphic.rect(-r * 0.16, -r * 0.35, r * 0.32, r * 0.7);
     graphic.fill({ color: accent, alpha: 0.58 });
   } else {

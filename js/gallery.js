@@ -357,11 +357,17 @@ function initLightbox() {
  * Uses known image dimensions from photos.json for a deterministic,
  * layout-independent calculation. Falls back to measuring after image load.
  */
+let measuring = false;
 function updateLightboxMeta() {
+  if (measuring) return;
+  measuring = true;
   const photo = gallery.photos[gallery.currentIndex];
   const image = document.getElementById('lightboxImage');
   const info = document.querySelector('.lightbox-info');
-  if (!photo || !image || !info) return;
+  if (!photo || !image || !info) {
+    measuring = false;
+    return;
+  }
 
   const vh = window.innerHeight;
   const vw = window.innerWidth;
@@ -382,6 +388,7 @@ function updateLightboxMeta() {
   if (!imgW || !imgH) {
     // Dimensions unknown - hide metadata to be safe
     info.classList.add('meta-hidden');
+    measuring = false;
     return;
   }
 
@@ -411,6 +418,7 @@ function updateLightboxMeta() {
     // Not enough room - hide metadata so image gets full space
     info.classList.add('meta-hidden');
   }
+  measuring = false;
 }
 
 /**
@@ -490,11 +498,23 @@ function openLightbox(index) {
   lightbox.classList.add('active');
   document.body.style.overflow = 'hidden';
 
+  const counter = document.getElementById('lightboxCounter');
+  if (counter) counter.textContent = `${index + 1} / ${gallery.photos.length}`;
+
   // Intelligently show/hide metadata based on available space.
   // Run immediately (dimensions are known from photos.json) and also
   // after image load as a safety net for edge cases.
   updateLightboxMeta();
   image.addEventListener('load', updateLightboxMeta, { once: true });
+  image.addEventListener('error', () => {
+    const info = document.querySelector('.lightbox-info');
+    if (info) {
+      info.classList.remove('meta-hidden');
+      const metaEl = document.getElementById('lightboxMeta');
+      if (metaEl) metaEl.innerHTML = '<span class="meta-item">Image failed to load</span>';
+    }
+    image.alt = 'Image failed to load';
+  }, { once: true });
 
   // Re-check on resize (e.g. rotating phone, resizing window)
   if (lightboxResizeHandler) {

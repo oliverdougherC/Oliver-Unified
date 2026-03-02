@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Manrope:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./src/styles.css">
+  <link rel="stylesheet" href="../css/cursor.css">
 </head>
 <body>
   <main class="game-shell" id="gameShell">
@@ -21,7 +22,8 @@
         <h1>Cataclysm Hunt</h1>
         <p>
           Move with <strong>WASD</strong>. Weapons auto-fire. Build up to <strong>4 weapons</strong>, stack catalysts,
-          and evolve late-game with elite chests. Press <strong>M</strong> to mute and <strong>O</strong> for settings.
+          and evolve late-game with elite chests. Press <strong>M</strong> to mute, <strong>O</strong> for settings,
+          <strong>R</strong> to restart, and <strong>N</strong> for a new seed.
         </p>
         <button class="btn-primary" id="startGameBtn" type="button">Begin Run</button>
       </div>
@@ -127,6 +129,30 @@
               <option value="webgpu">WebGPU</option>
               <option value="webgl">WebGL</option>
             </select>
+          </label>
+          <label class="setting-row" for="settingsTextureDetail">
+            <span>Texture Detail</span>
+            <select id="settingsTextureDetail">
+              <option value="ultra">Ultra</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+            </select>
+          </label>
+          <label class="setting-row" for="settingsEdgeAntialiasing">
+            <span>Edge Antialiasing</span>
+            <select id="settingsEdgeAntialiasing">
+              <option value="supersample">Supersample</option>
+              <option value="fxaa">FXAA</option>
+              <option value="off">Off</option>
+            </select>
+          </label>
+          <label class="setting-row" for="settingsDesktopUltraLock">
+            <span>Desktop Ultra Lock</span>
+            <input id="settingsDesktopUltraLock" type="checkbox" checked>
+          </label>
+          <label class="setting-row" for="settingsDebugOverlay">
+            <span>Debug Overlay</span>
+            <input id="settingsDebugOverlay" type="checkbox">
           </label>
 
           <p class="setting-group">Readability</p>

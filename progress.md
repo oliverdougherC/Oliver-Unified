@@ -313,3 +313,331 @@ Original prompt: What is the next logical step for our game. I want to make the 
   - New screenshot probe outputs:
     - `output/web-game-contrast-pass`
     - `output/web-game-contrast-pass-2`
+
+## 2026-03-02 forest arcana stabilization + qol/visual pass
+
+### Implementation update (in progress)
+
+- Phase 1 stability/correctness:
+  - Fixed `NumericIdPool.reset()` to restore `next` to constructor `start` (`src/core/objectPool.ts`).
+  - Added explicit budget evaluation cadence in renderer (`lastBudgetEvalAt`) so percentile work is throttled even when tier does not change (`src/render/pixiRenderAdapter.ts`).
+  - Added safe storage wrappers in settings runtime (`safeGetItem`, `safeSetItem`) and routed parse/load/save through them (`src/runtime/settings.ts`).
+  - Added `debugOverlayEnabled` to settings payload (v3-compatible default false).
+  - Fixed chest guarantee behavior:
+    - guaranteed chests now force evolution offers when candidates exist, independent of minute-8 gate.
+    - fallback copy now uses "Guaranteed premium reward" language when no evolution candidate exists.
+  - Replaced modal choice `innerHTML` with explicit `strong` + `span` text nodes (`src/main.ts`).
+
+- Phase 2 gameplay/QOL:
+  - Added `GameWorld.applyPostModalGrace(seconds, includeHazards = true)` and applied:
+    - 0.75s contact + hazard grace after level/chest selections.
+    - 0.5s contact-only grace when closing settings and resuming play.
+  - Added level-up interruption gate:
+    - cooldown timer + XP buffer (`levelUpCooldown`, `levelUpXpGate`) to prevent immediate re-pop modals.
+  - Added keyboard shortcuts:
+    - `R` = restart same seed
+    - `N` = new random seed
+  - Tuned early difficulty:
+    - softer first two director bands in `src/data/director.ts`.
+    - reduced touch damage on early archetypes in `src/data/enemies.ts`.
+
+- Phase 3 visual/QOL polish:
+  - Improved player/readability emphasis:
+    - stronger player stroke, close-threat enemy highlight, and proximity alpha/scale boost in renderer.
+  - Tuned painterly clarity defaults:
+    - lower default background density/atmosphere and layered fog defaults.
+    - reduced non-competitive saturation in WebGPU grading.
+  - Improved low-HP signaling with edge-only shell overlay and stronger HUD danger pulse.
+  - Improved modal backdrop/panel legibility and card text contrast.
+  - Added settings checkbox for debug overlay persistence (`index.html`, `main.ts`).
+
+- Phase 4 data hygiene:
+  - Aligned legacy wave weights to live enemy ids (`thorn_guard` instead of stale ids) in `src/data/waves.ts`.
+  - Added `game-src/docs/runtime-data-map.md` documenting runtime-critical vs legacy/test-only tables/paths.
+
+### Tests added/updated (pending run)
+
+- Added: `tests/objectPool.test.ts`
+- Added: `tests/render-budget.test.ts`
+- Added: `tests/chest-guarantee.test.ts`
+- Added: `tests/main-modal-safety.test.ts`
+- Updated: `tests/settings-runtime.test.ts`
+- Updated: `tests/waves.test.ts`
+
+### Next steps
+
+- Run `npm run game:check` and fix any compile/test failures.
+- Run `npm run smoke`.
+- Run Playwright gameplay probe and inspect screenshots/state/console for regressions in grace windows, restart hotkeys, and visual readability.
+
+### Verification update
+
+- `npm run game:check`: passing (19 files / 41 tests).
+- `npm run smoke`: passing.
+- `npm run game:build`: passing; updated `pages/game/assets` bundle.
+
+### Playwright probe update
+
+- Launched `npm run game:dev -- --host 127.0.0.1 --port 4173` and validated via Playwright MCP against `http://127.0.0.1:4173/`.
+- Verified runtime behavior:
+  - `R` restarts same-seed run.
+  - `N` rerolls seed (validated via debug seed value change).
+  - Post-level-up grace window prevented immediate HP loss in short window test (`hpBefore === hpShortlyAfter` over first 120ms).
+  - Settings close/resume path transitions through `paused -> playing` and applies contact grace hook without regressions.
+- Console gate:
+  - `browser_console_messages(level=error)` returned zero error messages after probe interactions.
+- Captured screenshots:
+  - Boot (clean defaults): `var/folders/l3/kq0r_qb136zdny5w_13ytp6w0000gn/T/playwright-mcp-output/1772468843561/page-2026-03-02T17-07-09-369Z.png`
+  - Level-up modal: `var/folders/l3/kq0r_qb136zdny5w_13ytp6w0000gn/T/playwright-mcp-output/1772468843561/page-2026-03-02T17-04-43-683Z.png`
+  - Combat pressure (paused capture): `var/folders/l3/kq0r_qb136zdny5w_13ytp6w0000gn/T/playwright-mcp-output/1772468843561/page-2026-03-02T17-06-14-578Z.png`
+  - Game-over modal: `var/folders/l3/kq0r_qb136zdny5w_13ytp6w0000gn/T/playwright-mcp-output/1772468843561/page-2026-03-02T17-05-10-640Z.png`
+- Chest modal screenshot was not reached in short deterministic probes (elite cadence + early deaths); chest logic is covered by new unit tests.
+
+### Additional survivability tuning pass
+
+- Deterministic movement probe after first tuning pass still ended at ~97.7s (below 2-3m target).
+- Applied an additional early-run forgiveness pass:
+  - `src/core/world.ts`: increased base HP to 210, increased base contact invulnerability to 0.48s, added light baseline regen (0.35/s).
+  - `src/data/director.ts`: further reduced awakening/wild_hunt enemy/threat envelopes and increased base spawn intervals.
+  - `src/systems/spawnSystem.ts`: slowed pressure-blended spawn cadence (`lerp(1.32, 0.7, pressureBlend)`).
+- Re-ran `npm run game:check` (passing) and deterministic movement probe.
+- Updated probe result:
+  - Survived `188.23s` (~3.1m), level 10, no console errors.
+  - This meets the "more forgiving first two minutes" target window for deterministic movement choreography.
+- Post-tuning verification rerun:
+  - `npm run smoke`: passing.
+  - `npm run game:build`: passing.
+
+## 2026-03-02 HUD sizing fix
+
+- Fixed oversized HP/Level/Enemies indicator pills caused by HUD row stretching in mixed-wrap layouts.
+- CSS updates in `game-src/src/styles.css`:
+  - Added `align-items: start` on `.hud` to prevent grid-item stretch to tallest row content.
+  - Added `align-items: flex-start` on `.hud-left, .hud-right`.
+  - Added `align-items: center`, `flex: 0 0 auto`, and `white-space: nowrap` on `.hud-chip` to preserve compact intrinsic sizing.
+- Verification:
+  - `npm run game:check` passed (19 files / 41 tests).
+  - Browser probe at `http://127.0.0.1:4173/` confirmed HP/Level/Enemies chip heights remain compact (~32.5px) across widths `826`, `760`, `680`, `620`.
+
+## 2026-03-02 restart + rendering clarity fix
+
+- Investigated unexpected run restarts: `world.resetRun()` is only called from `startRun()` in `main.ts`, and restart was bound directly to `r`/`n` keydown globally.
+- Added guardrails on restart shortcuts in `game-src/src/main.ts`:
+  - New helper `isEditableTarget()` for input/select/textarea/contenteditable detection.
+  - `R`/`N` shortcuts now require no modifiers (`meta/ctrl/alt`), non-repeating keydown, and non-editable event target.
+  - This prevents accidental restarts from key-repeat and browser-modified combos.
+- Improved renderer sharpness setup in `game-src/src/render/pixiRenderAdapter.ts`:
+  - Set Pixi init to `autoDensity: true` with DPI-aware `resolution` (`clamp(devicePixelRatio, 1, 2)`).
+  - Kept `antialias: true`.
+
+### Verification
+
+- `npm run game:check` passed (19 test files / 41 tests).
+- Browser probe on `http://127.0.0.1:4173`:
+  - Synthetic `keydown` with `{ key: 'r', repeat: true }` no longer restarted.
+  - Synthetic `keydown` with `{ key: 'r', ctrlKey: true }` no longer restarted.
+  - Plain `keydown` with `{ key: 'r' }` still restarts as intended.
+- WebGL context probe (`?renderer=webgl`) reports `antialias: true` via `getContextAttributes()`.
+
+## 2026-03-02 visual fidelity pass (user feedback: rough edges)
+
+- Applied a high-fidelity rendering pass to prioritize visual quality over dynamic downscaling.
+
+### Changes
+
+- `game-src/src/main.ts`
+  - Disabled automatic quality auto-downgrade logic in `chooseQuality` (quality now user-driven/stable at runtime).
+  - Start runs with `world.setQuality('high')` to avoid legacy persisted low-quality sessions.
+
+- `game-src/src/render/pixiRenderAdapter.ts`
+  - Increased DPI render resolution cap from `2` to `3` (`resolution = clamp(devicePixelRatio, 1, 3)`).
+  - Kept `antialias: true` and `autoDensity: true`.
+  - Reduced blur/grain softness:
+    - WebGL fx blur strength `1.1 -> 0.7`.
+    - WebGPU fx blur strength `1.8 -> 1.1`.
+    - WebGPU noise `0.04 -> 0.018`.
+  - Kept quality-high budget from collapsing to low tiers (`quality === 'high'` now clamps budget target to `high/ultra`).
+
+- `game-src/src/render/enemySpriteFactory.ts`
+  - Reworked roughest enemy body silhouettes to smoother curved forms (charger/sniper/summoner/bruiser) while preserving role identity markers.
+
+- `game-src/tests/render-budget.test.ts`
+  - Updated test setup to set `quality='medium'` so cadence assertion remains valid under new high-quality clamping policy.
+
+### Verification
+
+- `npm run game:check` passed (19 files / 41 tests).
+- Browser probe (`http://127.0.0.1:4173`):
+  - `render_game_to_text` reported `quality: "high"`, `budgetTier: "ultra"`.
+  - Canvas backing ratio observed at `2x` in probe environment (`width: 2560`, `clientWidth: 1280`).
+  - WebGL context attributes report `antialias: true`.
+  - Console error check returned 0 errors.
+- Gameplay screenshot after pass:
+  - `var/folders/l3/kq0r_qb136zdny5w_13ytp6w0000gn/T/playwright-mcp-output/1772468843561/page-2026-03-02T17-31-52-177Z.png`
+
+## 2026-03-02 visual quality overhaul continuation (massive pass)
+
+### Implementation update
+
+- Continued the desktop-first visual overhaul with a stronger texture + lighting quality pass.
+- `src/render/textureBaker.ts`
+  - Increased texture bake resolutions (`ultra` now 1536, `high` 1024, `medium` 768, `low` 512).
+  - Added high-quality canvas defaults (`lineJoin/lineCap` round, smoothing enabled, high smoothing quality when available).
+  - Added explicit texture sampling config on baked textures:
+    - `scaleMode = linear`
+    - `mipmapFilter = linear`
+    - `autoGenerateMipmaps = true`
+    - `antialias = true`
+    - `maxAnisotropy = 8`
+- `src/render/pixiRenderAdapter.ts`
+  - Increased AA resolution multipliers (`supersample` 1.8x, `fxaa` profile 1.25x).
+  - Tightened post-fx blur so image stays crisp (`supersample` path now no extra blur, lighter WebGPU fog blur).
+  - Applied additional grading contrast shaping for cleaner edge separation.
+  - Added dynamic enemy texture variant switching at runtime (`base`/`glow`/`elite`) based on threat/hit/windup state.
+  - Added light-aware tint mixing for improved rim/readability without flattening palette.
+  - Explicitly set canvas CSS rendering to avoid browser downscale artifacts.
+- `src/render/painterlyBiomeComposer.ts`
+  - Added atmospheric depth color mixing (far cards shift toward fog/grade colors).
+  - Added edge feathering pass to reduce card cutout look.
+  - Added trunk/root/moss soft contact occlusion underlays for grounding.
+  - Added specular-mask-aware highlight usage for richer material response.
+  - Added mid-band haze layer for depth continuity.
+- `src/render/lightingPipeline.ts`
+  - Raised light budgets in high/ultra tiers (`ultra` 72 lights, `high` 56) and increased shadow-light caps.
+  - Added rim-shell light stroke around lights for cleaner silhouette definition.
+  - Added contact-shadow blob pass from shadow casters.
+  - Added layered depth haze bands in fog composition.
+
+### Verification update
+
+- `npm run game:typecheck`: passing.
+- `npm run game:test`: passing (21 files / 46 tests).
+- `npm run game:check`: passing.
+- `npm run smoke`: passing.
+- `npm run game:build`: passing; refreshed `pages/game/assets`.
+
+### Browser probe + artifacts
+
+- Validated built game via Playwright MCP using a local static server session (`python3 -m http.server 4173 --directory pages`) and URL `http://127.0.0.1:4173/game/`.
+- Console gate: `browser_console_messages(level=error)` reported **0 errors**.
+- `render_game_to_text` probe snapshot confirmed:
+  - `visualSettings.textureDetail = "ultra"`
+  - `visualSettings.edgeAntialiasing = "supersample"`
+  - `visualSettings.desktopUltraLock = true`
+  - `quality = "high"`, `renderPerf.budgetTier = "ultra"` in sampled states.
+- Captured screenshots:
+  - `output/web-game-ultra-pass-shot-1.png` (combat HUD + baseline)
+  - `output/web-game-ultra-pass-shot-2-levelup.png` (level-up legibility)
+  - `output/web-game-ultra-pass-shot-3-levelup2.png` (level-up variant)
+  - `output/web-game-ultra-pass-shot-4-combat.png` (combat after upgrades)
+  - `output/web-game-ultra-pass-shot-5-settings.png` (runtime settings panel)
+
+### Remaining follow-up
+
+- If we want an even larger leap next pass: add a true full-scene offscreen supersample composite pass and optional shader FXAA filter path (current pass uses higher-resolution AA scaling and sharpened post stack).
+
+## 2026-03-02
+
+### Performance + clarity recovery pass
+
+- Added runtime settings/query support for `resolutionProfile`, `resolutionScale`, and `postFxSoftness`.
+- Added render perf snapshot fields for `pixelCount`, `targetResolution`, `backdropChunkCount`, and `backdropCardsDrawn` and surfaced them in debug overlay.
+- Reworked renderer resolution policy to capability-based scaling/caps (desktop/mobile-like caps) with balanced-by-default profile behavior.
+- Reduced default softness/haze contributions for sharper balanced output and preserved cinematic softness for explicit cinematic/quality modes.
+- Added painterly backdrop cache eviction and visible-window iteration; added backdrop redraw throttling for stable camera periods.
+- Updated lighting pipeline to bounded top-K light selection, low-light tile-assignment skip, and reduced fog/shadow cadence under stable camera.
+- Added/updated tests: settings runtime fields/parsing, painterly cache bounds, and lighting top-priority selection.
+- Added `scripts/game-perf-gate.js` and `npm run game:perf` for idle/move/combat scenarios with p95, clarity, and backdrop-drift thresholds.
+
+### Verification status
+
+- `npm run game:typecheck` passes.
+- `npm run game:test` passes (22 files / 48 tests).
+- `npm run game:perf -- --url http://127.0.0.1:5173/game-src/ --quick` fails in this sandbox due Playwright Chromium launch permission (`mach_port_rendezvous` / permission denied), not due app logic.
+
+### 2026-03-02 Safari recovery implementation update
+
+- Implemented renderer/runtime API additions:
+  - `rendererPolicy: 'auto' | 'prefer_webgl' | 'prefer_webgpu'`
+  - `safariSafeMode: boolean`
+- Added perf telemetry fields to render snapshot:
+  - `updateMs`, `updateSteps`, `backdropDrawCommandsEstimate`, `lightingSampleCount`, `actualCanvasToCssRatio`
+- Added query parsing support for `rendererPolicy` and `safariSafeMode` with backward-compatible defaults.
+- Updated loop resilience:
+  - Added max substep cap (`maxSubSteps`, default `3`) and accumulator drop under sustained stalls.
+- Updated renderer initialization policy:
+  - Safari-safe mode now prefers WebGL first for `renderer=auto` on Safari-like UAs.
+- Reduced default pixel pressure:
+  - Removed FXAA upscaling effect from resolution selection path.
+  - Added safe-mode caps (`desktop-like 1.75`, `mobile-like 1.5`).
+- Added clarity guard:
+  - If backing ratio drops below expected target, expensive non-essential effects are disabled before further resolution stress.
+- Backdrop optimization pass:
+  - Wired `parallaxBackdrop` budget flag into real behavior.
+  - `minimal` path now draws static gradient bands only.
+  - `low`/`medium` tiers use stricter redraw cadence and hard card caps.
+  - Added time-sliced chunk generation (`chunkBuildBudget`) and command estimate metric.
+- Lighting optimization pass:
+  - Added per-frame sampling grid (`prepareSamplingGrid`) to avoid repeated full light scans in per-entity loops.
+  - Added Safari-safe budget scaling and stronger fog/shadow cadence throttling.
+- Updated tests:
+  - `settings-runtime.test.ts` covers new settings/query fields.
+  - `render-budget.test.ts` now includes fixed-loop catch-up cap test.
+  - `painterly-biome-composer.test.ts` includes card-cap assertion and command metric sanity.
+  - `lighting-pipeline.test.ts` covers sampling grid + sample counter.
+- Updated perf gate script:
+  - Added `safari_safe_profile` scenario.
+  - Added gating for update-step pressure and backdrop command drift.
+
+Validation:
+- `npm run game:typecheck` ✅
+- `npm run game:test` ✅ (22 files / 50 tests)
+- `npm run game:build` ✅
+- `npm run game:perf -- --url http://127.0.0.1:5173/game-src/ --quick` ❌ blocked in this sandbox by Chromium launch permission (`mach_port_rendezvous` permission denied).
+- Additional post-implementation runtime probe executed via Playwright MCP against `http://localhost:5174/game-src/?renderer=auto&rendererPolicy=prefer_webgl&safariSafeMode=1`:
+  - Renderer selected: `webgl`.
+  - Target resolution average: `1.75` (safe cap path), canvas ratio average: `~1.75`.
+  - `updateSteps` p95 observed: `1`.
+  - Backdrop command estimate average sampled in this short run: `~4958`.
+- Captured verification screenshot: `output/safari-safe-verify.png`.
+- No browser console errors observed in this probe.
+- Skill client command attempt (`$WEB_GAME_CLIENT`) still fails in this environment due module resolution (`ERR_MODULE_NOT_FOUND: playwright`) from the skill directory.
+
+## 2026-03-02 startup pop-in + mortar fairness follow-up
+
+### User-reported issues
+
+- Startup visual pop-in was still noticeable as backdrop assets streamed in.
+- Midgame hostile mortar/spit behavior felt unavoidable and too punishing.
+
+### Implemented fixes
+
+- Backdrop prewarm path:
+  - Added `PainterlyBiomeComposer.prewarm(cameraX, cameraY)` and deterministic near-to-far chunk coverage ordering.
+  - Added startup full-coverage build in `ensureChunkCoverage` before returning to normal per-frame budgeted chunk builds.
+  - Wired renderer prewarm hook (`prewarmVisualAssets`) to call backdrop prewarm at run boot.
+- Spitter fairness pass (`EnemyAISystem`):
+  - Replaced perfect lock-on spit with intentionally imperfect aim (light prediction + guaranteed angular spread).
+  - Added close-range no-fire gate to prevent point-blank unavoidable spit.
+  - Added pressure throttling: if hostile projectile/hazard counts are already high, spitters defer shots instead of saturating.
+  - Increased post-shot cooldown scaling under pressure to limit runaway projectile spam.
+- Spitter tuning pass (`data/enemies.ts`):
+  - Reduced projectile speed, hazard radius, hazard duration, and hazard DPS across spitter archetypes.
+  - Increased cooldowns to reduce unavoidable overlap bursts (including elite shard witch).
+- Spawn fairness tweak (`core/world.ts`):
+  - Raised initial spitter cooldown window at spawn so newly spawned spitters are less likely to fire almost immediately.
+
+### Verification
+
+- `npm run game:test` passed (`23` files / `54` tests).
+- Added tests:
+  - `game-src/tests/enemy-ai-system.test.ts` (aim variance, pressure throttling, close-range no-fire).
+  - `game-src/tests/painterly-biome-composer.test.ts` startup prewarm assertion.
+- `npm run game:typecheck` passed.
+- `npm run game:build` passed.
+
+### Follow-up suggestions
+
+- If mortar pressure still feels high in real Safari sessions, next tuning lever is lowering `projectileCap`/`hazardCap` in `EnemyAISystem` by another 1-2 each for `>180s` bands.
+- Optional UX improvement: add a short ground telegraph fade-in before hazard activation for enemy spit impacts.
+- Attempted skill-mandated `$WEB_GAME_CLIENT` Playwright run on 2026-03-02 after this patch; blocked by missing `playwright` package in skill script environment (`ERR_MODULE_NOT_FOUND`). Retained verification via unit tests + typecheck + build.

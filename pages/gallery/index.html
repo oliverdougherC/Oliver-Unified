@@ -15,6 +15,7 @@
   <!-- Styles -->
   <link rel="stylesheet" href="../../css/design-system.css">
   <link rel="stylesheet" href="../../css/gallery.css">
+  <link rel="stylesheet" href="../../css/cursor.css">
 </head>
 <body>
   <div class="noise-overlay"></div>
@@ -22,18 +23,29 @@
   <!-- Navigation -->
   <nav class="nav" id="nav">
     <div class="nav-inner container">
-      <a href="../../index.html" class="nav-logo">
+      <a href="../../index.html" class="nav-logo" data-cursor="hover">
         <span class="logo-text">O<span class="logo-d">D</span></span>
       </a>
-      <div class="nav-links" id="navLinks">
-        <a href="../../index.html" class="nav-link">Home</a>
-        <a href="../resume/index.html" class="nav-link">Resume</a>
-        <a href="../gallery/index.html" class="nav-link active" aria-current="page">Gallery</a>
-        <a href="../archive/index.html" class="nav-link">Archive</a>
-        <a href="../dashboard/index.html" class="nav-link">Services</a>
+
+      <!-- Fullscreen Menu Overlay -->
+      <div class="nav-overlay" id="navOverlay">
+        <div class="nav-overlay-bg"></div>
+        <div class="nav-links container" id="navLinks">
+          <div class="nav-menu-header">Menu</div>
+          <a href="../../index.html" class="nav-link nav-link--home" data-cursor="hover">Home</a>
+          <a href="../resume/index.html" class="nav-link nav-link--resume" data-cursor="hover">Resume</a>
+          <a href="../gallery/index.html" class="nav-link nav-link--gallery active" aria-current="page" data-cursor="hover">Gallery</a>
+          <a href="../archive/index.html" class="nav-link nav-link--archive" data-cursor="hover">Archive</a>
+          <a href="../dashboard/index.html" class="nav-link nav-link--dashboard" data-cursor="hover">Services</a>
+
+          <div class="nav-menu-footer">
+            <a href="mailto:oliverfdougherty@gmail.com" class="footer-link" data-cursor="hover">Contact</a>
+            <a href="https://github.com/oliverdougherC" class="footer-link" target="_blank" rel="noopener noreferrer" data-cursor="hover">Github</a>
+          </div>
+        </div>
       </div>
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
-        <span></span>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false" data-cursor="hover">
         <span></span>
         <span></span>
       </button>
@@ -63,7 +75,7 @@
             <svg class="gallery-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <input type="text" class="gallery-search-input" id="gallerySearch" placeholder="Search by lens, ISO, aperture, etc." aria-label="Search photographs by metadata">
+            <input type="text" class="gallery-search-input" id="gallerySearch" placeholder="Search by lens, ISO, aperture, etc." aria-label="Search by lens, ISO, aperture, etc.">
           </div>
           <div class="gallery-count">
             <span id="photoCount">0</span> photographs
@@ -127,6 +139,7 @@
         </div>
       </div>
     </div>
+    <div class="lightbox-counter" id="lightboxCounter" role="status" aria-live="polite"></div>
   </div>
 
   <!-- Footer -->
@@ -141,5 +154,8 @@
   <script src="../../js/year.js" defer></script>
   <script src="../../js/main.js" defer></script>
   <script src="../../js/gallery.js" defer></script>
+
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-circle" id="cursorCircle"></div>
 </body>
 </html>

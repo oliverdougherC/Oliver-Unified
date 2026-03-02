@@ -2,6 +2,10 @@ import type { ISystem, Vec2 } from '../types';
 import { GameWorld } from '../core/world';
 import { ENEMY_ARCHETYPES } from '../data/enemies';
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
 function normalize(x: number, y: number): Vec2 {
   const mag = Math.hypot(x, y);
   if (mag < 0.0001) return { x: 0, y: 0 };
@@ -13,9 +17,51 @@ function setVelocity(velocity: Vec2, direction: Vec2, speed: number): void {
   velocity.y = direction.y * speed;
 }
 
+function rotate(vector: Vec2, radians: number): Vec2 {
+  const c = Math.cos(radians);
+  const s = Math.sin(radians);
+  return {
+    x: vector.x * c - vector.y * s,
+    y: vector.x * s + vector.y * c
+  };
+}
+
+function buildSpitterAimDirection(
+  world: GameWorld,
+  enemyPos: Vec2,
+  playerPos: Vec2,
+  playerVelocity: Vec2,
+  distance: number,
+  projectileSpeed: number,
+  spitRange: number,
+  isElite: boolean
+): Vec2 {
+  const leadSeconds = clamp(distance / Math.max(120, projectileSpeed), 0.05, 0.28);
+  const leadStrength = isElite ? 0.34 : 0.2;
+  const predictedX = playerPos.x + playerVelocity.x * leadSeconds * leadStrength;
+  const predictedY = playerPos.y + playerVelocity.y * leadSeconds * leadStrength;
+  const baseAim = normalize(predictedX - enemyPos.x, predictedY - enemyPos.y);
+  if (Math.hypot(baseAim.x, baseAim.y) < 0.0001) return baseAim;
+
+  const closeFactor = clamp(1 - distance / Math.max(1, spitRange), 0, 1);
+  const minSpreadDeg = isElite ? 2.2 : 3.4;
+  const maxSpreadDeg = (isElite ? 8.2 : 13.2) + closeFactor * (isElite ? 7.2 : 13.6);
+  const minSpread = (Math.PI / 180) * minSpreadDeg;
+  const maxSpread = (Math.PI / 180) * maxSpreadDeg;
+  const spread = world.rng.float(minSpread, maxSpread);
+  const signedSpread = world.rng.next() < 0.5 ? -spread : spread;
+
+  return rotate(baseAim, signedSpread);
+}
+
 export class EnemyAISystem implements ISystem<GameWorld> {
   update(dt: number, world: GameWorld): void {
     const playerPos = world.getPlayerPosition();
+    const playerVelocity = world.velocities.get(world.playerId) ?? { x: 0, y: 0 };
+    let projectedEnemyProjectileCount = world.enemyProjectiles.size;
+    const projectedHazardCount = world.hazards.size;
+    const projectileCap = world.runTime < 180 ? 9 : world.runTime < 420 ? 13 : 17;
+    const hazardCap = world.runTime < 180 ? 8 : world.runTime < 420 ? 11 : 15;
 
     for (const enemyId of world.enemies) {
       const enemyPos = world.positions.get(enemyId);
@@ -88,8 +134,24 @@ export class EnemyAISystem implements ISystem<GameWorld> {
           setVelocity(enemyVel, strafe, baseSpeed * 0.72);
         }
 
-        if (enemyData.spitCooldown <= 0 && distance <= archetype.spit.range * 1.3) {
-          world.spawnEnemyProjectile(enemyPos, toPlayer, {
+        const fireDistanceMin = Math.max(150, archetype.radius * 5.2);
+        if (enemyData.spitCooldown <= 0 && distance <= archetype.spit.range * 1.22 && distance >= fireDistanceMin) {
+          if (projectedEnemyProjectileCount >= projectileCap || projectedHazardCount >= hazardCap) {
+            enemyData.spitCooldown = world.rng.float(archetype.spit.cooldown * 0.9, archetype.spit.cooldown * 1.2);
+            continue;
+          }
+
+          const aimDirection = buildSpitterAimDirection(
+            world,
+            enemyPos,
+            playerPos,
+            playerVelocity,
+            distance,
+            archetype.spit.projectileSpeed,
+            archetype.spit.range,
+            Boolean(archetype.isElite)
+          );
+          const projectileId = world.spawnEnemyProjectile(enemyPos, aimDirection, {
             speed: archetype.spit.projectileSpeed,
             lifetime: archetype.spit.projectileLifetime,
             radius: archetype.spit.projectileRadius,
@@ -98,7 +160,13 @@ export class EnemyAISystem implements ISystem<GameWorld> {
             hazardDuration: archetype.spit.hazardDuration,
             hazardDamagePerSecond: archetype.spit.hazardDamagePerSecond
           });
-          enemyData.spitCooldown = world.rng.float(archetype.spit.cooldown * 0.82, archetype.spit.cooldown * 1.08);
+          if (projectileId >= 0) {
+            projectedEnemyProjectileCount += 1;
+          }
+          const pressure = projectedEnemyProjectileCount + projectedHazardCount;
+          const pressureCooldownScale = clamp(1 + Math.max(0, pressure - 10) * 0.045, 1, 1.45);
+          enemyData.spitCooldown =
+            world.rng.float(archetype.spit.cooldown * 0.96, archetype.spit.cooldown * 1.24) * pressureCooldownScale;
         }
         continue;
       }
