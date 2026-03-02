@@ -25,6 +25,16 @@ const gallery = {
   triggerElement: null // Stores the element that opened the lightbox for focus return
 };
 
+function updateRenderedPhotoCount() {
+  const countEl = document.getElementById('photoCount');
+  if (!countEl) return;
+
+  const visibleCards = document.querySelectorAll(
+    '.photo-card:not(.photo-card--broken):not(.search-hidden)'
+  ).length;
+  countEl.textContent = String(visibleCards);
+}
+
 /**
  * Initialize gallery - load photos from directory
  */
@@ -32,7 +42,6 @@ async function initGallery() {
   const grid = document.getElementById('galleryGrid');
   const loading = document.getElementById('galleryLoading');
   const empty = document.getElementById('galleryEmpty');
-  const countEl = document.getElementById('photoCount');
 
   try {
     const response = await fetch('../../photos/photos.json');
@@ -51,8 +60,6 @@ async function initGallery() {
       return;
     }
 
-    if (countEl) countEl.textContent = gallery.photos.length;
-
     // Use DocumentFragment for batch DOM insertion (single reflow)
     const fragment = document.createDocumentFragment();
     gallery.photos.forEach((photo, index) => {
@@ -60,6 +67,7 @@ async function initGallery() {
       fragment.appendChild(card);
     });
     grid.appendChild(fragment);
+    updateRenderedPhotoCount();
 
   } catch (error) {
     console.error('Error loading gallery:', error);
@@ -152,7 +160,7 @@ function resolveVariantPath(variant, format, basePath) {
  */
 function createPhotoCard(photo, index) {
   const card = document.createElement('div');
-  card.className = 'photo-card';
+  card.className = 'photo-card is-loading';
   card.dataset.index = index;
   card.setAttribute('tabindex', '0');
   card.setAttribute('role', 'button');
@@ -188,6 +196,30 @@ function createPhotoCard(photo, index) {
   }
   if (Number.isFinite(thumbWidth) && thumbWidth > 0) imageEl.width = thumbWidth;
   if (Number.isFinite(thumbHeight) && thumbHeight > 0) imageEl.height = thumbHeight;
+
+  const markLoaded = () => {
+    card.classList.remove('is-loading');
+    card.classList.add('is-loaded');
+  };
+
+  const markBroken = () => {
+    card.classList.remove('is-loading');
+    card.classList.add('photo-card--broken');
+    card.setAttribute('aria-hidden', 'true');
+    card.removeAttribute('tabindex');
+    updateRenderedPhotoCount();
+  };
+
+  imageEl.addEventListener('load', markLoaded, { once: true });
+  imageEl.addEventListener('error', markBroken, { once: true });
+
+  if (imageEl.complete) {
+    if (imageEl.naturalWidth > 0) {
+      markLoaded();
+    } else {
+      markBroken();
+    }
+  }
 
   if (thumbWebpSrcset) {
     const picture = document.createElement('picture');
@@ -615,7 +647,6 @@ function navigateLightbox(direction) {
  */
 function initGallerySearch() {
   const searchInput = document.getElementById('gallerySearch');
-  const countEl = document.getElementById('photoCount');
 
   if (!searchInput) return;
 
@@ -628,6 +659,7 @@ function initGallerySearch() {
       const index = parseInt(card.dataset.index, 10);
       const photo = gallery.photos[index];
       if (!photo) return;
+      if (card.classList.contains('photo-card--broken')) return;
 
       if (!normalizedQuery) {
         card.classList.remove('search-hidden');
@@ -655,7 +687,8 @@ function initGallerySearch() {
       }
     });
 
-    if (countEl) countEl.textContent = visibleCount;
+    const countEl = document.getElementById('photoCount');
+    if (countEl) countEl.textContent = String(visibleCount);
   }, 200);
 
   searchInput.addEventListener('input', (e) => {

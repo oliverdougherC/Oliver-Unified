@@ -172,6 +172,7 @@ a.contact-item:hover {
   border: 1px solid var(--color-border-glass);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-glass);
+  transition: all var(--duration-base) var(--ease-smooth);
 }
 
 .edu-header {
@@ -349,6 +350,7 @@ a.contact-item:hover {
   border: 1px solid var(--color-border-glass);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-glass);
+  transition: all var(--duration-base) var(--ease-smooth);
 }
 
 .exp-header {
@@ -408,6 +410,15 @@ a.contact-item:hover {
   border: 1px solid var(--color-border-glass);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-glass);
+  transition: all var(--duration-base) var(--ease-smooth);
+}
+
+.education-card:hover,
+.experience-card:hover,
+.sidebar-section:hover {
+  border-color: var(--color-border-emphasis);
+  border-left: 3px solid var(--color-accent);
+  box-shadow: var(--shadow-md);
 }
 
 .sidebar-section .section-heading {

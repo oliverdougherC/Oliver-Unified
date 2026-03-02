@@ -161,22 +161,47 @@
   position: relative;
   border-radius: var(--radius-2xl);
   overflow: hidden;
-  background: var(--color-surface);
+  background: transparent;
   cursor: pointer;
   transition: box-shadow var(--duration-slow) var(--ease-smooth);
   break-inside: avoid;
   margin-bottom: var(--space-6);
   display: inline-block;
   width: 100%;
+  box-shadow: none;
+}
+
+.photo-card.is-loaded {
+  background: var(--color-surface);
   box-shadow: 0 0 0 1px rgba(150, 147, 204, 0.12);
 }
 
-.photo-card:hover {
+.photo-card.is-loaded:hover,
+.photo-card.is-loaded:focus-visible {
   box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.4),
     0 0 60px rgba(150, 147, 204, 0.1);
 }
 
+.photo-card.is-loading {
+  background:
+    linear-gradient(110deg,
+      rgba(150, 147, 204, 0.06) 12%,
+      rgba(170, 167, 222, 0.12) 38%,
+      rgba(150, 147, 204, 0.06) 65%);
+  background-size: 220% 100%;
+  animation: card-shimmer 1.4s linear infinite;
+}
+
+.photo-card.photo-card--broken {
+  display: none !important;
+}
+
+@keyframes card-shimmer {
+  to {
+    background-position: -120% 0;
+  }
+}
 
 .photo-card::after {
   content: '';
@@ -190,7 +215,8 @@
   transition: opacity var(--duration-base) var(--ease-smooth);
 }
 
-.photo-card:hover::after {
+.photo-card.is-loaded:hover::after,
+.photo-card.is-loaded:focus-visible::after {
   opacity: 1;
 }
 
@@ -198,6 +224,12 @@
   width: 100%;
   height: auto;
   display: block;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-smooth);
+}
+
+.photo-card.is-loaded .photo-image {
+  opacity: 1;
 }
 
 .photo-card picture {

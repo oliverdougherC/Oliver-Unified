@@ -892,13 +892,6 @@ a:hover {
   color: #EBE4B3;
 }
 
-/* Keep current-page link visually distinct when not hovered */
-.nav-overlay .nav-link.active {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.1em;
-}
-
 /* Entrance animations */
 .nav-overlay.active .nav-menu-header {
   opacity: 1;
