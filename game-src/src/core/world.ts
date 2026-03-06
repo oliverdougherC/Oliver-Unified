@@ -9,6 +9,7 @@ import type {
   EnemyBehavior,
   EntityKind,
   GameConfig,
+  HazardTeam,
   InventorySlot,
   LevelUpChoice,
   PlayerStats,
@@ -16,7 +17,8 @@ import type {
   RendererKind,
   RunDirectorState,
   UIState,
-  Vec2
+  Vec2,
+  ViewportMetrics
 } from '../types';
 import { NumericIdPool } from './objectPool';
 import { xpThresholdForLevel } from './progression';
@@ -61,6 +63,8 @@ interface HazardComponent {
   damagePerSecond: number;
   age: number;
   lifetime: number;
+  team: HazardTeam;
+  armDelay: number;
 }
 
 interface ChestComponent {
@@ -99,6 +103,8 @@ export interface HazardSpawnConfig {
   radius: number;
   duration: number;
   damagePerSecond: number;
+  team: HazardTeam;
+  armDelay?: number;
 }
 
 export interface PlayerProjectileSpawnConfig {
@@ -216,6 +222,11 @@ export class GameWorld {
   quality: QualityTier = 'high';
   rendererKind: RendererKind | null = null;
   reducedMotion = false;
+  viewport: ViewportMetrics = {
+    cssWidth: 1280,
+    cssHeight: 720,
+    halfDiagonal: Math.hypot(640, 360)
+  };
 
   inventorySlots: InventorySlot[] = createDefaultInventory();
   catalystRanks = new Map<string, number>();
@@ -253,6 +264,8 @@ export class GameWorld {
   enemyShotsFired = 0;
   levelUpOfferedCount = 0;
   playerHitCount = 0;
+  totalDamageDealt = 0;
+  totalDamageTaken = 0;
   hazardsCreated = 0;
   threatLevel = 0;
   eliteKills = 0;
@@ -284,6 +297,20 @@ export class GameWorld {
 
   setRendererKind(kind: RendererKind): void {
     this.rendererKind = kind;
+  }
+
+  setViewport(metrics: ViewportMetrics): void {
+    const width = Number.isFinite(metrics.cssWidth) ? Math.max(1, metrics.cssWidth) : this.viewport.cssWidth;
+    const height = Number.isFinite(metrics.cssHeight) ? Math.max(1, metrics.cssHeight) : this.viewport.cssHeight;
+    const halfDiagonal =
+      Number.isFinite(metrics.halfDiagonal) && metrics.halfDiagonal > 0
+        ? metrics.halfDiagonal
+        : Math.hypot(width * 0.5, height * 0.5);
+    this.viewport = {
+      cssWidth: width,
+      cssHeight: height,
+      halfDiagonal
+    };
   }
 
   setQuality(tier: QualityTier): void {
@@ -362,6 +389,8 @@ export class GameWorld {
     this.enemyShotsFired = 0;
     this.levelUpOfferedCount = 0;
     this.playerHitCount = 0;
+    this.totalDamageDealt = 0;
+    this.totalDamageTaken = 0;
     this.hazardsCreated = 0;
     this.threatLevel = 0;
     this.eliteKills = 0;
@@ -592,7 +621,9 @@ export class GameWorld {
     this.hazardComponents.set(entityId, {
       damagePerSecond: config.damagePerSecond,
       age: 0,
-      lifetime: config.duration
+      lifetime: config.duration,
+      team: config.team,
+      armDelay: Math.max(0, config.armDelay ?? 0)
     });
 
     this.hazardsCreated += 1;
@@ -1053,6 +1084,7 @@ export class GameWorld {
 
     this.playerStats.hp -= clamped;
     this.damageWindowTaken += clamped;
+    this.totalDamageTaken += clamped;
     this.damageWindowCooldown = 0.5;
     this.damageFlashTimer = Math.max(this.damageFlashTimer, 0.2);
     this.playerHitCount += 1;
@@ -1087,6 +1119,11 @@ export class GameWorld {
     return dealt;
   }
 
+  recordDamageDealt(amount: number): void {
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    this.totalDamageDealt += amount;
+  }
+
   updateCooldowns(dt: number): void {
     for (let i = 0; i < this.weaponCooldownBySlot.length; i += 1) {
       this.weaponCooldownBySlot[i] = Math.max(0, this.weaponCooldownBySlot[i] - dt);
@@ -1117,6 +1154,14 @@ export class GameWorld {
 
   toRunSummaryText(): string {
     const evolvedCount = this.inventorySlots.filter((slot) => slot.isEvolved).length;
-    return `Survived ${this.runTime.toFixed(1)}s | Lvl ${this.level} | Kills ${this.kills} | Evolutions ${evolvedCount}`;
+    const dps = this.runTime > 0 ? this.totalDamageDealt / this.runTime : 0;
+    const buildSummary = this.inventorySlots
+      .filter((slot) => slot.itemId)
+      .map((slot) => {
+        const weaponName = slot.itemId ? WEAPON_ARCHETYPES[slot.itemId]?.name ?? slot.itemId : '-';
+        return `${weaponName} R${slot.rank}${slot.isEvolved ? '*' : ''}`;
+      })
+      .join(', ');
+    return `Survived ${this.runTime.toFixed(1)}s | Lvl ${this.level} | Kills ${this.kills} | Evolutions ${evolvedCount} | DPS ${dps.toFixed(1)} | Damage ${Math.round(this.totalDamageDealt)} dealt / ${Math.round(this.totalDamageTaken)} taken | Seed ${this.seed} | Build ${buildSummary || 'None'}`;
   }
 }

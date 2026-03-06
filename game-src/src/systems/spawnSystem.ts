@@ -23,7 +23,11 @@ function lerp(min: number, max: number, t: number): number {
 
 function spawnOffsetAroundPlayer(world: GameWorld): Vec2 {
   const angle = world.rng.float(0, Math.PI * 2);
-  const distance = world.rng.float(520, 840);
+  const spawnMargin = 140;
+  const ringThickness = 360;
+  const minSpawn = Math.max(520, world.viewport.halfDiagonal + spawnMargin);
+  const maxSpawn = Math.max(840, minSpawn + ringThickness);
+  const distance = world.rng.float(minSpawn, maxSpawn);
 
   return {
     x: Math.cos(angle) * distance,
@@ -162,7 +166,12 @@ export class SpawnSystem implements ISystem<GameWorld> {
 
       let archetypeId = pickEnemyArchetype(world, remainingThreat, forceElite);
       if (!archetypeId && forceElite) {
-        archetypeId = ELITE_ENEMY_IDS[world.rng.int(0, ELITE_ENEMY_IDS.length - 1)] ?? null;
+        const unlockedElites = ELITE_ENEMY_IDS.filter(
+          id => (ENEMY_ARCHETYPES[id]?.unlockTime ?? 0) <= world.runTime
+        );
+        if (unlockedElites.length > 0) {
+          archetypeId = unlockedElites[world.rng.int(0, unlockedElites.length - 1)] ?? null;
+        }
       }
 
       if (!archetypeId) continue;

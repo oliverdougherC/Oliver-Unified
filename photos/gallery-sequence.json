@@ -1,0 +1,499 @@
+{
+  "items": [
+    {
+      "id": "a7rii-335",
+      "title": "A7RII 335",
+      "src": {
+        "thumb": "../../photos/thumbs/a7rii_335.jpg",
+        "medium": "../../photos/medium/a7rii_335.jpg",
+        "large": "../../photos/large/a7rii_335.jpg",
+        "avif": "../../photos/large/a7rii_335.avif",
+        "webp": "../../photos/large/a7rii_335.webp"
+      },
+      "meta": {
+        "date": "2025-09-13",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Pacific Northwest",
+        "notes": "Compressed mountain layers and dusk haze."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": 0.005,
+        "tint": 0,
+        "exposure": 1.01
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "a7rii-474",
+      "title": "A7RII 474",
+      "src": {
+        "thumb": "../../photos/thumbs/a7rii_474.jpg",
+        "medium": "../../photos/medium/a7rii_474.jpg",
+        "large": "../../photos/large/a7rii_474.jpg",
+        "avif": "../../photos/large/a7rii_474.avif",
+        "webp": "../../photos/large/a7rii_474.webp"
+      },
+      "meta": {
+        "date": "2025-11-09",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Northern Range",
+        "notes": "Long reach compression with clean sky separation."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": 0.002,
+        "tint": -0.001,
+        "exposure": 1
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "dsc04084",
+      "title": "DSC04084",
+      "src": {
+        "thumb": "../../photos/thumbs/DSC04084.jpg",
+        "medium": "../../photos/medium/DSC04084.jpg",
+        "large": "../../photos/large/DSC04084.jpg",
+        "avif": "../../photos/large/DSC04084.avif",
+        "webp": "../../photos/large/DSC04084.webp"
+      },
+      "meta": {
+        "date": "2025-12-16",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Alpine Corridor",
+        "notes": "High shutter freeze with dense winter texture."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": -0.004,
+        "tint": 0.001,
+        "exposure": 1.02
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "dream-pond",
+      "title": "Dream Pond",
+      "src": {
+        "thumb": "../../photos/thumbs/Dream_Pond.jpg",
+        "medium": "../../photos/medium/Dream_Pond.jpg",
+        "large": "../../photos/large/Dream_Pond.jpg",
+        "avif": "../../photos/large/Dream_Pond.avif",
+        "webp": "../../photos/large/Dream_Pond.webp"
+      },
+      "meta": {
+        "date": "2025-06-30",
+        "lens": "FE 28-70mm F3.5-5.6 OSS",
+        "location": "Mirror Lake",
+        "notes": "Low-angle reflection with gentle tonal falloff."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": 0.004,
+        "tint": 0,
+        "exposure": 1.01
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "dsc04098",
+      "title": "DSC04098",
+      "src": {
+        "thumb": "../../photos/thumbs/DSC04098.jpg",
+        "medium": "../../photos/medium/DSC04098.jpg",
+        "large": "../../photos/large/DSC04098.jpg",
+        "avif": "../../photos/large/DSC04098.avif",
+        "webp": "../../photos/large/DSC04098.webp"
+      },
+      "meta": {
+        "date": "2025-12-16",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Valley Rim",
+        "notes": "Cloud break geometry with high dynamic range."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": -0.002,
+        "tint": -0.001,
+        "exposure": 1
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "dsc04102",
+      "title": "DSC04102",
+      "src": {
+        "thumb": "../../photos/thumbs/DSC04102.jpg",
+        "medium": "../../photos/medium/DSC04102.jpg",
+        "large": "../../photos/large/DSC04102.jpg",
+        "avif": "../../photos/large/DSC04102.avif",
+        "webp": "../../photos/large/DSC04102.webp"
+      },
+      "meta": {
+        "date": "2025-12-16",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Granite Basin",
+        "notes": "Compressed foreground ridges and steep side light."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": 0.001,
+        "tint": 0.001,
+        "exposure": 1.02
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "dsc04139",
+      "title": "DSC04139",
+      "src": {
+        "thumb": "../../photos/thumbs/DSC04139.jpg",
+        "medium": "../../photos/medium/DSC04139.jpg",
+        "large": "../../photos/large/DSC04139.jpg",
+        "avif": "../../photos/large/DSC04139.avif",
+        "webp": "../../photos/large/DSC04139.webp"
+      },
+      "meta": {
+        "date": "2025-12-16",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Open Range",
+        "notes": "Long focal compression with clear tonal layering."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": 0,
+        "tint": -0.001,
+        "exposure": 1
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "dsc04161",
+      "title": "DSC04161",
+      "src": {
+        "thumb": "../../photos/thumbs/DSC04161.jpg",
+        "medium": "../../photos/medium/DSC04161.jpg",
+        "large": "../../photos/large/DSC04161.jpg",
+        "avif": "../../photos/large/DSC04161.avif",
+        "webp": "../../photos/large/DSC04161.webp"
+      },
+      "meta": {
+        "date": "2025-12-16",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Pine Shelf",
+        "notes": "Foreground branch detail against distant wash."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": 0.003,
+        "tint": 0,
+        "exposure": 1.01
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "dsc04166",
+      "title": "DSC04166",
+      "src": {
+        "thumb": "../../photos/thumbs/DSC04166.jpg",
+        "medium": "../../photos/medium/DSC04166.jpg",
+        "large": "../../photos/large/DSC04166.jpg",
+        "avif": "../../photos/large/DSC04166.avif",
+        "webp": "../../photos/large/DSC04166.webp"
+      },
+      "meta": {
+        "date": "2025-12-16",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Timberline",
+        "notes": "Layered mountain silhouette with cold cast."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": -0.003,
+        "tint": -0.001,
+        "exposure": 1
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "dsc04179",
+      "title": "DSC04179",
+      "src": {
+        "thumb": "../../photos/thumbs/DSC04179.jpg",
+        "medium": "../../photos/medium/DSC04179.jpg",
+        "large": "../../photos/large/DSC04179.jpg",
+        "avif": "../../photos/large/DSC04179.avif",
+        "webp": "../../photos/large/DSC04179.webp"
+      },
+      "meta": {
+        "date": "2025-12-16",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Ridge Cut",
+        "notes": "Steep tonal contrast and directional cloud flow."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": 0.002,
+        "tint": 0,
+        "exposure": 1.01
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "dsc04205",
+      "title": "DSC04205",
+      "src": {
+        "thumb": "../../photos/thumbs/DSC04205.jpg",
+        "medium": "../../photos/medium/DSC04205.jpg",
+        "large": "../../photos/large/DSC04205.jpg",
+        "avif": "../../photos/large/DSC04205.avif",
+        "webp": "../../photos/large/DSC04205.webp"
+      },
+      "meta": {
+        "date": "2025-12-16",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Summit Shoulder",
+        "notes": "Fine atmospheric texture through cloud rift."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": -0.001,
+        "tint": 0.001,
+        "exposure": 1
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "dsc04209",
+      "title": "DSC04209",
+      "src": {
+        "thumb": "../../photos/thumbs/DSC04209.jpg",
+        "medium": "../../photos/medium/DSC04209.jpg",
+        "large": "../../photos/large/DSC04209.jpg",
+        "avif": "../../photos/large/DSC04209.avif",
+        "webp": "../../photos/large/DSC04209.webp"
+      },
+      "meta": {
+        "date": "2025-12-16",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Snowfield Pass",
+        "notes": "Long-lens clarity across layered terrain."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": 0.003,
+        "tint": 0,
+        "exposure": 1.02
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "dsc04229",
+      "title": "DSC04229",
+      "src": {
+        "thumb": "../../photos/thumbs/DSC04229.jpg",
+        "medium": "../../photos/medium/DSC04229.jpg",
+        "large": "../../photos/large/DSC04229.jpg",
+        "avif": "../../photos/large/DSC04229.avif",
+        "webp": "../../photos/large/DSC04229.webp"
+      },
+      "meta": {
+        "date": "2025-12-16",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Edge Basin",
+        "notes": "Delicate highlight separation and depth haze."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": 0,
+        "tint": -0.001,
+        "exposure": 1
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "dsc04549",
+      "title": "DSC04549",
+      "src": {
+        "thumb": "../../photos/thumbs/DSC04549.jpg",
+        "medium": "../../photos/medium/DSC04549.jpg",
+        "large": "../../photos/large/DSC04549.jpg",
+        "avif": "../../photos/large/DSC04549.avif",
+        "webp": "../../photos/large/DSC04549.webp"
+      },
+      "meta": {
+        "date": "2025-12-20",
+        "lens": "100-400mm F5-6.3 DG DN",
+        "location": "Dawn Divide",
+        "notes": "Cold early light with strong silhouette rhythm."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": -0.002,
+        "tint": 0,
+        "exposure": 1.01
+      },
+      "aspect": 1.5
+    },
+    {
+      "id": "hawaii-s25-121",
+      "title": "Hawaii S25 121",
+      "src": {
+        "thumb": "../../photos/thumbs/Hawaii_S25_121.jpg",
+        "medium": "../../photos/medium/Hawaii_S25_121.jpg",
+        "large": "../../photos/large/Hawaii_S25_121.jpg",
+        "avif": "../../photos/large/Hawaii_S25_121.avif",
+        "webp": "../../photos/large/Hawaii_S25_121.webp"
+      },
+      "meta": {
+        "date": "2025-12-11",
+        "lens": "Mobile Lens",
+        "location": "Oahu",
+        "notes": "Warm tonal gradient with coastal ambient haze."
+      },
+      "scene": {
+        "z": 0,
+        "scale": 1,
+        "x": 0,
+        "y": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0,
+        "opacity": 1
+      },
+      "colorGrade": {
+        "temperature": 0.006,
+        "tint": 0.001,
+        "exposure": 1.02
+      },
+      "aspect": 1.5
+    }
+  ]
+}
