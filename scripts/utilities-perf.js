@@ -400,7 +400,7 @@ async function main() {
     const slowPlayback = audioResults.find((result) => {
       const budget = isTallDprCase(result)
         ? { p95: 180, p99: 220, worst: 240 }
-        : { p95: 45, p99: 70, worst: 85 };
+        : { p95: 16, p99: 24, worst: 85 };
       return (
         result.rafP95FrameMs > budget.p95 ||
         result.rafP99FrameMs > budget.p99 ||

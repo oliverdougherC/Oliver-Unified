@@ -270,6 +270,41 @@ async function readCanvasPixels(page, id) {
   }, id);
 }
 
+async function readCanvasActiveBounds(page, id) {
+  return page.evaluate((canvasId) => {
+    const canvas = document.getElementById(canvasId);
+    if (!(canvas instanceof HTMLCanvasElement)) {
+      throw new Error(`Canvas not found: ${canvasId}`);
+    }
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error(`Unable to read canvas: ${canvasId}`);
+    }
+    const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let activePixels = 0;
+    let minX = canvas.width;
+    let maxX = -1;
+    for (let offset = 0; offset < data.length; offset += 4) {
+      const red = data[offset];
+      const green = data[offset + 1];
+      const blue = data[offset + 2];
+      if (red + green + blue <= 120) {
+        continue;
+      }
+      const pixelIndex = offset / 4;
+      const x = pixelIndex % canvas.width;
+      activePixels += 1;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+    }
+    return {
+      width: canvas.width,
+      activePixels,
+      horizontalSpread: maxX >= minX ? maxX - minX + 1 : 0
+    };
+  }, id);
+}
+
 async function readOverlayAlphaPixels(page) {
   return page.evaluate(() => {
     const canvas = document.getElementById('transformOverlayCanvas');
@@ -1923,9 +1958,15 @@ async function main() {
     await page.waitForTimeout(120);
     const prePlaybackWavePixels = await readCanvasPixels(page, 'audioFourierWaveCanvas');
     await ensureAudioFourierPlayback(page, 'built-in song preset playback restarts');
-    await page.waitForTimeout(350);
+    await page.waitForTimeout(1400);
     const playbackWavePixels = await readCanvasPixels(page, 'audioFourierWaveCanvas');
+    const playbackWaveBounds = await readCanvasActiveBounds(page, 'audioFourierWaveCanvas');
     assert(totalAbsoluteDifference(prePlaybackWavePixels, playbackWavePixels) > 0, 'Audio Fourier viewport should advance during playback.');
+    assert(playbackWaveBounds.activePixels > 100, 'Audio Fourier advancing viewport should remain visibly nonblank.');
+    assert(
+      playbackWaveBounds.horizontalSpread > playbackWaveBounds.width * 0.25,
+      `Audio Fourier advancing viewport should render waveform content across the canvas, not only the playhead (${JSON.stringify(playbackWaveBounds)}).`
+    );
     await page.fill('#audioFourierComponentSlider', '20');
     await page.waitForTimeout(120);
     const sliderDuringPlaybackState = await page.evaluate(() => ({
