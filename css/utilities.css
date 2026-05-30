@@ -487,6 +487,12 @@ html[data-active-utility] .nav-back-btn {
     transform var(--duration-fast) var(--ease-smooth);
 }
 
+/* Ensure dropdown options are readable in Chrome's native popup */
+.control-select option {
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
 .control-input {
   min-height: 3rem;
   padding: 0.75rem 1rem;
@@ -1019,6 +1025,12 @@ html[data-active-utility] .nav-back-btn {
   cursor: pointer;
   appearance: auto;
   text-align: left;
+}
+
+/* Ensure dropdown options are readable in Chrome's native popup */
+.control-select-minimal option {
+  background: #1a1a1a;
+  color: #ffffff;
 }
 
 .btn-primary-minimal {
