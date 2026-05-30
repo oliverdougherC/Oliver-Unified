@@ -56,6 +56,25 @@
     return match ? match[1].trim() : '';
   }
 
+  /* --- Sort posts newest first (date, then file createdAt) --- */
+  function sortPosts(list) {
+    return list.slice().sort(function (a, b) {
+      var tsA = a.date ? new Date(a.date).getTime() : 0;
+      var tsB = b.date ? new Date(b.date).getTime() : 0;
+      if (tsA !== tsB) {
+        if (tsA && tsB) return tsB - tsA;
+        if (tsA) return -1;
+        if (tsB) return 1;
+      }
+
+      var createdA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      var createdB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      if (createdA !== createdB) return createdB - createdA;
+
+      return a.filename.localeCompare(b.filename);
+    });
+  }
+
   /* --- Build sidebar --- */
   function buildSidebar() {
     var sidebar = document.querySelector('.blog-sidebar');
@@ -167,6 +186,7 @@
                 filename: entry.filename,
                 slug: entry.slug,
                 date: entry.date,
+                createdAt: entry.createdAt || null,
                 title: extractTitle(parsed.body),
                 body: parsed.body
               };
@@ -176,7 +196,7 @@
         return Promise.all(fetches);
       })
       .then(function (loadedPosts) {
-        posts = loadedPosts;
+        posts = sortPosts(loadedPosts);
 
         var slug = hashToSlug();
         if (!slug) {
