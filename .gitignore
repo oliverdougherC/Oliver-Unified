@@ -29,7 +29,6 @@ inspection_reports/
 /*.png
 server.log
 server.pid
-blogs/manifest.json
 *.log
 *.pid
 npm-debug.log*
