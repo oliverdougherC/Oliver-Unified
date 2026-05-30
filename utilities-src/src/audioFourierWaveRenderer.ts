@@ -11,6 +11,9 @@ export interface AudioWaveEnvelopeData {
 export interface AudioWaveRenderFrame {
   firstBucketIndex: number;
   pointCount: number;
+  /**
+   * Absolute source-sample index at the left edge of the waveform viewport.
+   */
   startSample: number;
   viewportSampleCount: number;
   isFullEnergy: boolean;
@@ -35,6 +38,17 @@ const WEBGL_MIN_WAVE_SCALE = 1;
 const CANVAS_MIN_WAVE_SCALE = 0.3;
 const WAVE_Y_SCALE = 0.84;
 
+interface ResolvedAudioWaveRenderFrame {
+  firstBucketIndex: number;
+  pointCount: number;
+  startSample: number;
+  viewportSampleCount: number;
+  bucketSampleCount: number;
+  isFullEnergy: boolean;
+  playheadX: number | null;
+  livePlayback: boolean;
+}
+
 export function resolveAudioWaveCanvasScale(
   cssWidth: number,
   cssHeight: number,
@@ -47,6 +61,22 @@ export function resolveAudioWaveCanvasScale(
   const baseScale = Math.max(1, Math.min(MAX_WAVE_DPR, devicePixelRatio || 1));
   const areaScale = Math.sqrt(maxBackingPixels / Math.max(1, width * height));
   return Math.max(minScale, Math.min(baseScale, areaScale));
+}
+
+export function resolveAudioWaveBucketX(
+  bucketIndex: number,
+  startSample: number,
+  viewportSampleCount: number,
+  bucketSampleCount: number,
+  canvasWidth: number
+) {
+  const safeBucketIndex = Math.max(0, Math.floor(finiteNumber(bucketIndex, 0)));
+  const safeStartSample = finiteNumber(startSample, 0);
+  const safeViewportSampleCount = Math.max(1, finiteNumber(viewportSampleCount, 1));
+  const safeBucketSampleCount = Math.max(1, Math.round(finiteNumber(bucketSampleCount, 1)));
+  const safeCanvasWidth = Math.max(0, finiteNumber(canvasWidth, 0));
+  const bucketStartSample = safeBucketIndex * safeBucketSampleCount;
+  return (bucketStartSample - safeStartSample) / safeViewportSampleCount * safeCanvasWidth;
 }
 
 function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, maxBackingPixels: number, minScale: number) {
@@ -62,6 +92,42 @@ function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, maxBackingPixels: 
   canvas.width = width;
   canvas.height = height;
   return true;
+}
+
+function finiteNumber(value: number, fallback: number) {
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function resolveEnvelopeBucketCount(data: AudioWaveEnvelopeData) {
+  const declaredBucketCount = Math.max(0, Math.floor(finiteNumber(data.bucketCount, 0)));
+  return Math.min(declaredBucketCount, data.originalAmplitudes.length, data.reconstructedAmplitudes.length);
+}
+
+function resolveAudioWaveAmplitude(amplitudes: Float32Array, bucketIndex: number) {
+  return Math.max(0, finiteNumber(amplitudes[bucketIndex] ?? 0, 0));
+}
+
+function resolveRenderFrame(
+  frame: AudioWaveRenderFrame,
+  data: AudioWaveEnvelopeData,
+  canvasWidth: number
+): ResolvedAudioWaveRenderFrame {
+  const bucketCount = resolveEnvelopeBucketCount(data);
+  const firstBucketIndex = clamp(Math.floor(finiteNumber(frame.firstBucketIndex, 0)), 0, bucketCount);
+  const pointCount = clamp(Math.floor(finiteNumber(frame.pointCount, 0)), 0, bucketCount - firstBucketIndex);
+  const rawPlayheadX = frame.playheadX;
+  return {
+    firstBucketIndex,
+    pointCount,
+    startSample: finiteNumber(frame.startSample, 0),
+    viewportSampleCount: Math.max(1, finiteNumber(frame.viewportSampleCount, 1)),
+    bucketSampleCount: Math.max(1, Math.round(finiteNumber(data.bucketSampleCount, 1))),
+    isFullEnergy: frame.isFullEnergy,
+    playheadX: rawPlayheadX === null || !Number.isFinite(rawPlayheadX)
+      ? null
+      : clamp(rawPlayheadX, 0, Math.max(0, finiteNumber(canvasWidth, 0))),
+    livePlayback: frame.livePlayback
+  };
 }
 
 class Canvas2dAudioWaveRenderer implements AudioWaveRenderer {
@@ -91,17 +157,16 @@ class Canvas2dAudioWaveRenderer implements AudioWaveRenderer {
       return;
     }
 
-    const pointCount = Math.max(0, Math.min(frame.pointCount, this.data.bucketCount - frame.firstBucketIndex));
+    const resolvedFrame = resolveRenderFrame(frame, this.data, this.canvas.width);
     this.clear();
-    if (pointCount <= 0) {
+    if (resolvedFrame.pointCount <= 0) {
       return;
     }
 
-    if (!frame.isFullEnergy) {
+    if (!resolvedFrame.isFullEnergy) {
       this.drawEnvelope(
         this.data.originalAmplitudes,
-        pointCount,
-        frame,
+        resolvedFrame,
         'rgba(255, 255, 255, 0.35)',
         'rgba(255, 255, 255, 0.45)',
         1.5,
@@ -110,15 +175,14 @@ class Canvas2dAudioWaveRenderer implements AudioWaveRenderer {
     }
     this.drawEnvelope(
       this.data.reconstructedAmplitudes,
-      pointCount,
-      frame,
+      resolvedFrame,
       'rgba(255, 255, 255, 0.18)',
       'rgba(255, 255, 255, 0.92)',
-      frame.livePlayback ? 1.5 : 2.5,
-      !frame.livePlayback
+      resolvedFrame.livePlayback ? 1.5 : 2.5,
+      !resolvedFrame.livePlayback
     );
-    if (frame.playheadX !== null) {
-      this.drawPlayhead(frame.playheadX, frame.livePlayback);
+    if (resolvedFrame.playheadX !== null) {
+      this.drawPlayhead(resolvedFrame.playheadX, resolvedFrame.livePlayback);
     }
   }
 
@@ -145,8 +209,7 @@ class Canvas2dAudioWaveRenderer implements AudioWaveRenderer {
 
   private drawEnvelope(
     amplitudes: Float32Array,
-    pointCount: number,
-    frame: AudioWaveRenderFrame,
+    frame: ResolvedAudioWaveRenderFrame,
     fillColor: string,
     strokeColor: string,
     lineWidth: number,
@@ -154,8 +217,7 @@ class Canvas2dAudioWaveRenderer implements AudioWaveRenderer {
   ) {
     const centerY = this.canvas.height / 2;
     const scaleY = this.canvas.height * 0.42;
-    const { firstBucketIndex, startSample, viewportSampleCount } = frame;
-    const bucketSampleCount = this.data?.bucketSampleCount ?? 1;
+    const { firstBucketIndex, pointCount, startSample, viewportSampleCount, bucketSampleCount } = frame;
     const stride = frame.livePlayback ? Math.max(1, Math.ceil(pointCount / 180)) : 1;
     const lastPointIndex = pointCount - 1;
 
@@ -170,8 +232,8 @@ class Canvas2dAudioWaveRenderer implements AudioWaveRenderer {
     this.context.beginPath();
     for (let index = 0; index < pointCount; index += stride) {
       const bucketIndex = firstBucketIndex + index;
-      const x = this.resolveBucketX(bucketIndex, startSample, viewportSampleCount, bucketSampleCount);
-      const y = centerY - amplitudes[bucketIndex] * scaleY;
+      const x = resolveAudioWaveBucketX(bucketIndex, startSample, viewportSampleCount, bucketSampleCount, this.canvas.width);
+      const y = centerY - resolveAudioWaveAmplitude(amplitudes, bucketIndex) * scaleY;
       if (index === 0) {
         this.context.moveTo(x, y);
       } else {
@@ -180,14 +242,14 @@ class Canvas2dAudioWaveRenderer implements AudioWaveRenderer {
     }
     if (lastPointIndex % stride !== 0) {
       const bucketIndex = firstBucketIndex + lastPointIndex;
-      const x = this.resolveBucketX(bucketIndex, startSample, viewportSampleCount, bucketSampleCount);
-      const y = centerY - amplitudes[bucketIndex] * scaleY;
+      const x = resolveAudioWaveBucketX(bucketIndex, startSample, viewportSampleCount, bucketSampleCount, this.canvas.width);
+      const y = centerY - resolveAudioWaveAmplitude(amplitudes, bucketIndex) * scaleY;
       this.context.lineTo(x, y);
     }
     for (let index = lastPointIndex; index >= 0; index -= stride) {
       const bucketIndex = firstBucketIndex + index;
-      const x = this.resolveBucketX(bucketIndex, startSample, viewportSampleCount, bucketSampleCount);
-      const y = centerY + amplitudes[bucketIndex] * scaleY;
+      const x = resolveAudioWaveBucketX(bucketIndex, startSample, viewportSampleCount, bucketSampleCount, this.canvas.width);
+      const y = centerY + resolveAudioWaveAmplitude(amplitudes, bucketIndex) * scaleY;
       this.context.lineTo(x, y);
     }
     this.context.closePath();
@@ -197,8 +259,8 @@ class Canvas2dAudioWaveRenderer implements AudioWaveRenderer {
       this.context.beginPath();
       for (let index = 0; index < pointCount; index += stride) {
         const bucketIndex = firstBucketIndex + index;
-        const x = this.resolveBucketX(bucketIndex, startSample, viewportSampleCount, bucketSampleCount);
-        const y = centerY + side * amplitudes[bucketIndex] * scaleY;
+        const x = resolveAudioWaveBucketX(bucketIndex, startSample, viewportSampleCount, bucketSampleCount, this.canvas.width);
+        const y = centerY + side * resolveAudioWaveAmplitude(amplitudes, bucketIndex) * scaleY;
         if (index === 0) {
           this.context.moveTo(x, y);
         } else {
@@ -207,8 +269,8 @@ class Canvas2dAudioWaveRenderer implements AudioWaveRenderer {
       }
       if (lastPointIndex % stride !== 0) {
         const bucketIndex = firstBucketIndex + lastPointIndex;
-        const x = this.resolveBucketX(bucketIndex, startSample, viewportSampleCount, bucketSampleCount);
-        const y = centerY + side * amplitudes[bucketIndex] * scaleY;
+        const x = resolveAudioWaveBucketX(bucketIndex, startSample, viewportSampleCount, bucketSampleCount, this.canvas.width);
+        const y = centerY + side * resolveAudioWaveAmplitude(amplitudes, bucketIndex) * scaleY;
         this.context.lineTo(x, y);
       }
       this.context.stroke();
@@ -228,11 +290,6 @@ class Canvas2dAudioWaveRenderer implements AudioWaveRenderer {
     this.context.lineTo(clampedX, this.canvas.height);
     this.context.stroke();
     this.context.restore();
-  }
-
-  private resolveBucketX(bucketIndex: number, startSample: number, viewportSampleCount: number, bucketSampleCount: number) {
-    const bucketStartSample = bucketIndex * bucketSampleCount;
-    return (bucketStartSample - startSample) / viewportSampleCount * this.canvas.width;
   }
 }
 
@@ -308,40 +365,40 @@ class WebGlAudioWaveRenderer implements AudioWaveRenderer {
     }
 
     this.ensureUploaded();
-    const pointCount = Math.max(0, Math.min(frame.pointCount, this.data.bucketCount - frame.firstBucketIndex));
+    const resolvedFrame = resolveRenderFrame(frame, this.data, this.canvas.width);
     this.clear();
-    if (pointCount <= 0) {
+    if (resolvedFrame.pointCount <= 0) {
       return;
     }
 
     this.gl.enable(this.gl.BLEND);
     this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
     this.gl.useProgram(this.envelopeProgram);
-    this.setEnvelopeUniforms(frame);
-    if (!frame.isFullEnergy) {
+    this.setEnvelopeUniforms(resolvedFrame);
+    if (!resolvedFrame.isFullEnergy) {
       this.drawEnvelopeBuffer(
         this.originalBuffer,
-        frame.firstBucketIndex,
-        pointCount,
+        resolvedFrame.firstBucketIndex,
+        resolvedFrame.pointCount,
         [1, 1, 1, 0.32]
       );
     }
-    if (!frame.livePlayback) {
+    if (!resolvedFrame.livePlayback) {
       this.drawEnvelopeBuffer(
         this.reconstructedBuffer,
-        frame.firstBucketIndex,
-        pointCount,
+        resolvedFrame.firstBucketIndex,
+        resolvedFrame.pointCount,
         [1, 1, 1, 0.12]
       );
     }
     this.drawEnvelopeBuffer(
       this.reconstructedBuffer,
-      frame.firstBucketIndex,
-      pointCount,
+      resolvedFrame.firstBucketIndex,
+      resolvedFrame.pointCount,
       [1, 1, 1, 0.72]
     );
-    if (frame.playheadX !== null) {
-      this.drawPlayhead(frame.playheadX, frame.livePlayback);
+    if (resolvedFrame.playheadX !== null) {
+      this.drawPlayhead(resolvedFrame.playheadX, resolvedFrame.livePlayback);
     }
   }
 
@@ -404,15 +461,16 @@ class WebGlAudioWaveRenderer implements AudioWaveRenderer {
     if (!this.data || this.uploadedRevision === this.data.revision) {
       return;
     }
-    this.uploadEnvelope(this.originalBuffer, this.data.originalAmplitudes, this.data.bucketCount);
-    this.uploadEnvelope(this.reconstructedBuffer, this.data.reconstructedAmplitudes, this.data.bucketCount);
+    const bucketCount = resolveEnvelopeBucketCount(this.data);
+    this.uploadEnvelope(this.originalBuffer, this.data.originalAmplitudes, bucketCount);
+    this.uploadEnvelope(this.reconstructedBuffer, this.data.reconstructedAmplitudes, bucketCount);
     this.uploadedRevision = this.data.revision;
   }
 
   private uploadEnvelope(buffer: WebGLBuffer, amplitudes: Float32Array, bucketCount: number) {
     const vertices = new Float32Array(bucketCount * 2 * 3);
     for (let bucketIndex = 0; bucketIndex < bucketCount; bucketIndex += 1) {
-      const amplitude = Math.max(0, amplitudes[bucketIndex] || 0);
+      const amplitude = resolveAudioWaveAmplitude(amplitudes, bucketIndex);
       const vertexOffset = bucketIndex * 6;
       vertices[vertexOffset] = bucketIndex;
       vertices[vertexOffset + 1] = 1;
@@ -436,10 +494,10 @@ class WebGlAudioWaveRenderer implements AudioWaveRenderer {
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, firstBucketIndex * 2, pointCount * 2);
   }
 
-  private setEnvelopeUniforms(frame: AudioWaveRenderFrame) {
+  private setEnvelopeUniforms(frame: ResolvedAudioWaveRenderFrame) {
     this.gl.uniform1f(this.requireUniform(this.envelopeProgram, 'u_startSample'), frame.startSample);
     this.gl.uniform1f(this.requireUniform(this.envelopeProgram, 'u_viewportSampleCount'), frame.viewportSampleCount);
-    this.gl.uniform1f(this.requireUniform(this.envelopeProgram, 'u_bucketSampleCount'), this.data?.bucketSampleCount ?? 1);
+    this.gl.uniform1f(this.requireUniform(this.envelopeProgram, 'u_bucketSampleCount'), frame.bucketSampleCount);
     this.gl.uniform1f(this.requireUniform(this.envelopeProgram, 'u_yScale'), WAVE_Y_SCALE);
   }
 

@@ -98,7 +98,7 @@ function formatFrequency(value: number) {
 const INITIAL_SLIDER_VALUE = 50;
 const PLAYBACK_FADE_SECONDS = 0.1;
 const PLAYBACK_START_DELAY_SECONDS = 0.035;
-const PLAYBACK_VISUAL_FRAME_MS = 125;
+const PLAYBACK_VISUAL_FRAME_MS = 0;
 const PLAYBACK_PROGRESS_UPDATE_MS = 100;
 const FULL_ENERGY_VISUAL_THRESHOLD = 0.999;
 const GAIN_RAMP_TIME_CONSTANT = 0.015;
@@ -182,6 +182,10 @@ export class AudioFourierController {
   private visualOriginalFrameScratch = new Float32Array(0);
   private visualMixFrameScratch = new Float32Array(0);
   private visualRevision = 0;
+  private fullSmoothedOriginal: Float32Array | null = null;
+  private mixedEnvelopeCache: Float32Array | null = null;
+  private mixedEnvelopeCacheKey = '';
+  private renderInProgress = false;
   private lastPlaybackProgressAt = 0;
   private lastPlaybackRenderAt = 0;
   private deferredWaveRenderTimeoutId = 0;
@@ -537,6 +541,9 @@ export class AudioFourierController {
     this.visualMixRawScratch = new Float32Array(0);
     this.visualOriginalFrameScratch = new Float32Array(0);
     this.visualMixFrameScratch = new Float32Array(0);
+    this.fullSmoothedOriginal = null;
+    this.mixedEnvelopeCache = null;
+    this.mixedEnvelopeCacheKey = '';
   }
 
   private invalidateComputedState(statusText: string) {
@@ -807,6 +814,17 @@ export class AudioFourierController {
     this.visualRevision = 0;
     this.playbackElapsedSeconds = 0;
     this.visualPlaybackElapsedSeconds = 0;
+
+    // Pre-compute full smoothed original envelope once
+    const bucketCount = result.metadata.envelopeBucketCount;
+    const fullOriginalRaw = new Float32Array(bucketCount);
+    for (let i = 0; i < bucketCount; i++) {
+      fullOriginalRaw[i] = Math.max(
+        Math.abs(result.originalEnvelopeMin[i] ?? 0),
+        Math.abs(result.originalEnvelopeMax[i] ?? 0)
+      );
+    }
+    this.fullSmoothedOriginal = writeSmoothedEnvelopeAmplitudes(fullOriginalRaw);
     this.syncDiagnostics(result, message.requestId);
     this.configureSlider();
     this.sampleRateLabel.textContent = `${result.metadata.proxySampleRate.toFixed(0)} Hz proxy`;
@@ -1216,9 +1234,10 @@ export class AudioFourierController {
           );
         }
       }
-      if (!this.lastPlaybackRenderAt || timestamp - this.lastPlaybackRenderAt >= PLAYBACK_VISUAL_FRAME_MS) {
-        this.lastPlaybackRenderAt = timestamp;
+      if (!this.renderInProgress) {
+        this.renderInProgress = true;
         this.renderWaveViewport(true);
+        this.renderInProgress = false;
       }
       if (!this.lastPlaybackProgressAt || timestamp - this.lastPlaybackProgressAt >= PLAYBACK_PROGRESS_UPDATE_MS) {
         this.lastPlaybackProgressAt = timestamp;
@@ -1280,7 +1299,7 @@ export class AudioFourierController {
   }
 
   private renderWaveViewport(livePlayback = false, showPlayhead = livePlayback) {
-    if (!this.activeResult) {
+    if (!this.activeResult || !this.fullSmoothedOriginal) {
       return;
     }
 
@@ -1295,49 +1314,81 @@ export class AudioFourierController {
     );
     const visualPointCount = Math.max(1, range.lastBucketIndex - range.firstBucketIndex);
     const isFullEnergy = result.energyPercent >= FULL_ENERGY_VISUAL_THRESHOLD;
-    this.ensureVisualScratch(visualPointCount);
 
-    for (let pointIndex = 0; pointIndex < visualPointCount; pointIndex += 1) {
-      const bucketIndex = range.firstBucketIndex + pointIndex;
-      const originalAmplitude = Math.max(
-        Math.abs(result.originalEnvelopeMin[bucketIndex] ?? 0),
-        Math.abs(result.originalEnvelopeMax[bucketIndex] ?? 0)
-      );
-      const mixedAmplitude = isFullEnergy
-        ? originalAmplitude
-        : this.resolveVisibleMixedAmplitude(bucketIndex);
-      this.visualOriginalRawScratch[pointIndex] = originalAmplitude;
-      this.visualMixRawScratch[pointIndex] = resolveHighEnergyVisualAmplitude(
-        originalAmplitude,
-        mixedAmplitude,
-        result.energyPercent
-      );
-    }
-
-    writeSmoothedEnvelopeAmplitudes(this.visualOriginalRawScratch, this.visualOriginalFrameScratch, visualPointCount);
-    writeSmoothedEnvelopeAmplitudes(this.visualMixRawScratch, this.visualMixFrameScratch, visualPointCount);
+    // Upload full pre-smoothed envelopes; WebGL selects the viewport via firstBucketIndex
     this.waveRenderer.setEnvelopeData({
-      originalAmplitudes: this.visualOriginalFrameScratch,
-      reconstructedAmplitudes: this.visualMixFrameScratch,
-      bucketCount: visualPointCount,
+      originalAmplitudes: this.fullSmoothedOriginal,
+      reconstructedAmplitudes: this.ensureMixedEnvelope(isFullEnergy),
+      bucketCount: result.metadata.envelopeBucketCount,
       bucketSampleCount: result.metadata.envelopeBucketSampleCount,
-      revision: this.visualRevision += 1
+      revision: this.visualRevision
     });
 
-    const viewportLocalStartSample = range.startSample - range.firstBucketIndex * result.metadata.envelopeBucketSampleCount;
     const playheadX = showPlayhead
       ? clamp((currentSeconds * result.metadata.proxySampleRate - range.startSample) / range.viewportSampleCount * this.waveCanvas.width, 0, this.waveCanvas.width)
       : null;
 
     this.waveRenderer.renderFrame({
-      firstBucketIndex: 0,
+      firstBucketIndex: range.firstBucketIndex,
       pointCount: visualPointCount,
-      startSample: viewportLocalStartSample,
+      startSample: range.startSample,
       viewportSampleCount: range.viewportSampleCount,
       isFullEnergy,
       playheadX,
       livePlayback
     });
+  }
+
+
+  private ensureMixedEnvelope(isFullEnergy: boolean): Float32Array {
+    if (!this.activeResult) {
+      return new Float32Array(0);
+    }
+
+    const result = this.activeResult;
+
+    if (isFullEnergy) {
+      // Mixed = original full envelope
+      return this.fullSmoothedOriginal!;
+    }
+
+    const cacheKey = encodeAudioFourierBandGainsCacheKey(result.bandGains);
+    if (this.mixedEnvelopeCache && this.mixedEnvelopeCacheKey === cacheKey) {
+      return this.mixedEnvelopeCache;
+    }
+
+    // Recompute full mixed envelope
+    const bucketCount = result.metadata.envelopeBucketCount;
+    const rawMixed = new Float32Array(bucketCount);
+    for (let i = 0; i < bucketCount; i++) {
+      let mixedMin = 0;
+      let mixedMax = 0;
+      for (let bandIndex = 0; bandIndex < result.bandGains.length; bandIndex++) {
+        const gain = Math.max(0, result.bandGains[bandIndex]);
+        if (gain === 0) {
+          continue;
+        }
+        const envelopeIndex = bandIndex * bucketCount + i;
+        mixedMin += (result.bandEnvelopeMin[envelopeIndex] ?? 0) * gain;
+        mixedMax += (result.bandEnvelopeMax[envelopeIndex] ?? 0) * gain;
+      }
+      const originalAmplitude = Math.max(
+        Math.abs(result.originalEnvelopeMin[i] ?? 0),
+        Math.abs(result.originalEnvelopeMax[i] ?? 0)
+      );
+      rawMixed[i] = resolveHighEnergyVisualAmplitude(
+        originalAmplitude,
+        Math.max(Math.abs(mixedMin), Math.abs(mixedMax)),
+        result.energyPercent
+      );
+    }
+
+    // Smooth the full mixed envelope once, then cache
+    this.mixedEnvelopeCache = writeSmoothedEnvelopeAmplitudes(rawMixed);
+    this.mixedEnvelopeCacheKey = cacheKey;
+    this.visualRevision += 1;
+
+    return this.mixedEnvelopeCache;
   }
 
   private renderCurrentViewport() {
