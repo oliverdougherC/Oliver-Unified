@@ -51,20 +51,30 @@ function main() {
 
     const content = fs.readFileSync(filePath, 'utf8');
     const frontmatter = parseFrontmatter(content);
+    const stats = fs.statSync(filePath);
+    const createdAtMs = stats.birthtimeMs || stats.ctimeMs || stats.mtimeMs;
 
     entries.push({
       filename: name,
       slug: slugify(name),
-      date: frontmatter.date || null
+      date: frontmatter.date || null,
+      createdAt: new Date(createdAtMs).toISOString()
     });
   }
 
   entries.sort((a, b) => {
     const tsA = a.date ? new Date(a.date).getTime() : 0;
     const tsB = b.date ? new Date(b.date).getTime() : 0;
-    if (tsA && tsB) return tsB - tsA;
-    if (tsA) return -1;
-    if (tsB) return 1;
+    if (tsA !== tsB) {
+      if (tsA && tsB) return tsB - tsA;
+      if (tsA) return -1;
+      if (tsB) return 1;
+    }
+
+    const createdA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const createdB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    if (createdA !== createdB) return createdB - createdA;
+
     return a.filename.localeCompare(b.filename);
   });
 
