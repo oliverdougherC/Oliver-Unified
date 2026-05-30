@@ -35,12 +35,29 @@ function parseFrontmatter(content) {
   return result;
 }
 
+function loadExistingManifest() {
+  if (!fs.existsSync(MANIFEST_PATH)) return {};
+  try {
+    const raw = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+    const map = {};
+    for (const entry of raw) {
+      if (entry.filename && entry.createdAt) {
+        map[entry.filename] = entry.createdAt;
+      }
+    }
+    return map;
+  } catch (_) {
+    return {};
+  }
+}
+
 function main() {
   if (!fs.existsSync(BLOGS_DIR)) {
     console.error('blogs/ directory not found');
     process.exit(1);
   }
 
+  const existingCreatedAt = loadExistingManifest();
   const entries = [];
 
   for (const name of fs.readdirSync(BLOGS_DIR)) {
@@ -51,14 +68,22 @@ function main() {
 
     const content = fs.readFileSync(filePath, 'utf8');
     const frontmatter = parseFrontmatter(content);
-    const stats = fs.statSync(filePath);
-    const createdAtMs = stats.birthtimeMs || stats.ctimeMs || stats.mtimeMs;
+
+    /* Preserve existing createdAt; only use filesystem birthtime for new files */
+    let createdAt;
+    if (existingCreatedAt[name]) {
+      createdAt = existingCreatedAt[name];
+    } else {
+      const stats = fs.statSync(filePath);
+      const createdAtMs = stats.birthtimeMs || stats.ctimeMs || stats.mtimeMs;
+      createdAt = new Date(createdAtMs).toISOString();
+    }
 
     entries.push({
       filename: name,
       slug: slugify(name),
       date: frontmatter.date || null,
-      createdAt: new Date(createdAtMs).toISOString()
+      createdAt: createdAt
     });
   }
 
