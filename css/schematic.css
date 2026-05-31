@@ -169,11 +169,11 @@ body.schematic-mode {
   will-change: opacity, filter;
 }
 
-.blueprint-title.is-blueprint-ready .blueprint-final-word {
-  animation: blueprintTitleMaterialize 720ms cubic-bezier(0.19, 1, 0.22, 1) calc(var(--dougherty-start) + var(--fill-start)) forwards;
+.blueprint-title.is-particle-complete .blueprint-final-word {
+  animation: blueprintTitleMaterialize 1200ms cubic-bezier(0.19, 1, 0.22, 1) forwards;
 }
 
-.blueprint-svg {
+.particle-canvas {
   position: absolute;
   top: 0;
   left: 0;
@@ -181,19 +181,12 @@ body.schematic-mode {
   display: block;
   width: 100%;
   height: 100%;
-  overflow: visible;
   pointer-events: none;
 }
 
-.blueprint-title.is-blueprint-complete .blueprint-svg {
+.blueprint-title.is-particle-complete .particle-canvas {
   opacity: 0;
-}
-
-.blueprint-drafting-layer {
-  opacity: 0;
-  animation:
-    blueprintGuidesIn 160ms linear var(--grid-start) forwards,
-    blueprintGuidesOut 520ms ease calc(var(--dougherty-start) + var(--guide-fade-start)) forwards;
+  transition: opacity 1s ease;
 }
 
 .blueprint-grid-line,
@@ -634,10 +627,10 @@ body.schematic-mode .tag:hover {
 
   .blueprint-final-word {
     opacity: 1 !important;
+    visibility: visible !important;
   }
 
-  .blueprint-svg,
-  .blueprint-drafting-layer,
+  .particle-canvas,
   .blueprint-outline-text {
     opacity: 0 !important;
   }
@@ -676,12 +669,12 @@ body.schematic-mode .tag:hover {
 
 html.skip-page-animation[data-page-id="home"] .blueprint-final-word {
   opacity: 1 !important;
+  visibility: visible !important;
   animation: none !important;
   filter: none !important;
 }
 
-html.skip-page-animation[data-page-id="home"] .blueprint-svg,
-html.skip-page-animation[data-page-id="home"] .blueprint-drafting-layer,
+html.skip-page-animation[data-page-id="home"] .particle-canvas,
 html.skip-page-animation[data-page-id="home"] .blueprint-outline-text {
   opacity: 0 !important;
   animation: none !important;

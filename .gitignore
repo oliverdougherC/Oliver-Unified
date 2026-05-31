@@ -25,6 +25,7 @@ inspection_reports/
 .pi/
 .pi-lens/
 .cursor/
+.antigravitycli/
 # PNG in root (intentional — no PNGs currently exist at repo root)
 /*.png
 server.log

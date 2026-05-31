@@ -10,7 +10,7 @@
 (function () {
   'use strict';
 
-  const DOUGHERTY_BLUEPRINT_SEQUENCE_MS = 7400;
+  const DOUGHERTY_PARTICLE_SEQUENCE_MS = 4000;
   let confettiFired = false;
   const FLASHLIGHT_MODE_STORAGE_KEY = 'od-flashlight-mode';
   const FLASHLIGHT_BATTERY_SESSION_KEY = 'od-flashlight-battery';
@@ -631,331 +631,199 @@
     });
   }
 
-  function initBlueprintWordmark() {
+  function initParticleWordmark() {
     const title = document.querySelector('.blueprint-title');
     const finalWord = title?.querySelector('.blueprint-final-word');
-    const svg = title?.querySelector('.blueprint-svg');
+    const canvas = title?.querySelector('.particle-canvas');
 
-    if (!title || !finalWord || !svg) return;
+    if (!title || !finalWord || !canvas) return;
 
-    if (prefersReducedMotion()) {
-      title.classList.add('is-blueprint-ready', 'is-blueprint-complete');
-      return;
-    }
-
-    if (shouldSkipPageAnimation()) {
-      title.classList.add('is-blueprint-complete');
+    if (prefersReducedMotion() || shouldSkipPageAnimation()) {
+      title.classList.add('is-particle-complete');
       return;
     }
 
     window.pageAnimations?.markSeen?.();
+    const ctx = canvas.getContext('2d', { alpha: true });
+    if (!ctx) return;
 
-    const SVG_NS = 'http://www.w3.org/2000/svg';
     const word = finalWord.textContent?.trim() || 'DOUGHERTY';
-    let completionTimer = null;
-    let lastSignature = '';
-
-    const getDpr = () => window.devicePixelRatio || 1;
-    const snap = (value, dpr = getDpr()) => Math.round(value * dpr) / dpr;
-
-    const createSvgElement = (tagName, attributes = {}) => {
-      const element = document.createElementNS(SVG_NS, tagName);
-      for (const [name, value] of Object.entries(attributes)) {
-        element.setAttribute(name, String(value));
-      }
-      return element;
-    };
-
-    const setLineMetrics = (line, x1, y1, x2, y2, delayMs) => {
-      const length = Math.hypot(x2 - x1, y2 - y1);
-      line.style.setProperty('--line-length', `${length}px`);
-      line.style.setProperty('--line-delay', `${Math.max(0, delayMs)}ms`);
-    };
-
-    const addLine = (group, className, x1, y1, x2, y2, delayMs, dpr) => {
-      const line = createSvgElement('line', {
-        class: `blueprint-grid-line ${className}`,
-        x1: snap(x1, dpr),
-        y1: snap(y1, dpr),
-        x2: snap(x2, dpr),
-        y2: snap(y2, dpr)
-      });
-      setLineMetrics(line, x1, y1, x2, y2, delayMs);
-      group.appendChild(line);
-    };
-
-    const measureCharacters = (wordText, box, dpr) => {
-      const textNode = Array.from(finalWord.childNodes).find((node) => node.nodeType === Node.TEXT_NODE);
-      if (!textNode || textNode.textContent.length < wordText.length) {
-        const fallbackWidth = box.width / wordText.length;
-        return Array.from(wordText, (char, index) => ({
-          char,
-          x: snap(fallbackWidth * index, dpr),
-          width: snap(fallbackWidth, dpr)
-        }));
-      }
-
-      return Array.from(wordText, (char, index) => {
-        const range = document.createRange();
-        range.setStart(textNode, index);
-        range.setEnd(textNode, index + 1);
-        const rect = range.getBoundingClientRect();
-        range.detach();
-
-        return {
-          char,
-          x: snap(rect.left - box.left, dpr),
-          width: snap(rect.width, dpr)
-        };
-      });
-    };
-
-    const measureLetterDash = (textNode, fontSizePx, dashFactor) => {
-      const fontDash = Math.round(fontSizePx * dashFactor);
-      try {
-        const bbox = textNode.getBBox();
-        const bboxDash = Math.round((bbox.width + bbox.height) * 3.5);
-        return Math.max(fontDash, bboxDash);
-      } catch (_error) {
-        return fontDash;
-      }
-    };
-
-    const renderOverlay = () => {
-      if (title.classList.contains('is-blueprint-complete')) return;
-      if (title.classList.contains('is-blueprint-ready')) return;
-
+    let particles = [];
+    let animationFrameId;
+    let isComplete = false;
+    
+    const startRender = () => {
+      const getDpr = () => window.devicePixelRatio || 1;
       const dpr = getDpr();
-      const box = finalWord.getBoundingClientRect();
-      let textBox = box;
-      try {
-        const range = document.createRange();
-        range.selectNodeContents(finalWord);
-        textBox = range.getBoundingClientRect();
-        range.detach();
-      } catch (error) {
-        textBox = box;
-      }
+      const rect = finalWord.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      
+      if (width === 0 || height === 0) return;
 
-      const width = snap(box.width, dpr);
-      const height = snap(box.height, dpr);
-      if (width <= 0 || height <= 0) return;
+      // Expand canvas slightly to allow particles to exist just outside the bounding box
+      const padX = width * 0.2;
+      const padY = height * 0.5;
+      const canvasWidth = width + padX * 2;
+      const canvasHeight = height + padY * 2;
+
+      canvas.width = canvasWidth * dpr;
+      canvas.height = canvasHeight * dpr;
+      // Adjust canvas CSS to center it over the word
+      canvas.style.width = `${canvasWidth}px`;
+      canvas.style.height = `${canvasHeight}px`;
+      canvas.style.left = `-${padX}px`;
+      canvas.style.top = `-${padY}px`;
+      ctx.scale(dpr, dpr);
 
       const wordStyle = window.getComputedStyle(finalWord);
-      const fontSizePx = Number.parseFloat(wordStyle.fontSize) || 16;
-      const characters = measureCharacters(word, box, dpr);
-      const signature = [
-        width,
-        height,
-        wordStyle.fontSize,
-        wordStyle.letterSpacing,
-        characters.map(({ x, width: characterWidth }) => `${x}:${characterWidth}`).join(',')
-      ].join('|');
+      const fontSize = wordStyle.fontSize || '16px';
+      const fontFamily = wordStyle.fontFamily || 'sans-serif';
+      const fontWeight = wordStyle.fontWeight || '800';
+      const letterSpacing = wordStyle.letterSpacing || 'normal';
 
-      if (signature === lastSignature) {
-        return;
-      }
-
-      lastSignature = signature;
-      title.classList.remove('is-blueprint-complete');
-      title.style.setProperty('--blueprint-font-size', wordStyle.fontSize);
-      title.style.setProperty('--blueprint-letter-spacing', wordStyle.letterSpacing);
-
-      svg.replaceChildren();
-      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-      svg.setAttribute('width', String(Math.round(width)));
-      svg.setAttribute('height', String(Math.round(height)));
-      svg.style.left = '0';
-      svg.style.top = '0';
-      svg.style.width = `${width}px`;
-      svg.style.height = `${height}px`;
-
-      const layer = createSvgElement('g', { class: 'blueprint-drafting-layer' });
-      const grid = createSvgElement('g', { class: 'blueprint-grid' });
-      const outline = createSvgElement('g', { class: 'blueprint-outline' });
-
-      const railInset = 0.75;
-      const top = snap(railInset, dpr);
-      const cap = snap(height * 0.26, dpr);
-      const center = snap(height * 0.55, dpr);
-      const lowerGuide = snap(height * 0.82, dpr);
-      const bottom = snap(height - railInset, dpr);
-
-      const baseLetterTiming = [
-        { delay: 0, duration: 2500, dash: 4.8 },
-        { delay: 430, duration: 2300, dash: 4.4 },
-        { delay: 850, duration: 2200, dash: 4.2 },
-        { delay: 1220, duration: 2400, dash: 4.8 },
-        { delay: 1650, duration: 2100, dash: 4.2 },
-        { delay: 2010, duration: 2050, dash: 4.0 },
-        { delay: 2350, duration: 2200, dash: 4.3 },
-        { delay: 2760, duration: 1800, dash: 3.6 },
-        { delay: 3100, duration: 1900, dash: 3.8 },
-        { delay: 3520, duration: 1150, dash: 2.2 }
-      ];
-
-      const getLetterTiming = (index, total) => {
-        if (total <= 1 || total === baseLetterTiming.length) {
-          return baseLetterTiming[index] || baseLetterTiming[baseLetterTiming.length - 1];
-        }
-
-        const position = index / (total - 1);
-        const mappedIndex = position * (baseLetterTiming.length - 1);
-        const lowerIndex = Math.floor(mappedIndex);
-        const upperIndex = Math.min(baseLetterTiming.length - 1, lowerIndex + 1);
-        const blend = mappedIndex - lowerIndex;
-        const lower = baseLetterTiming[lowerIndex];
-        const upper = baseLetterTiming[upperIndex];
-
-        return {
-          delay: lower.delay + (upper.delay - lower.delay) * blend,
-          duration: lower.duration + (upper.duration - lower.duration) * blend,
-          dash: lower.dash + (upper.dash - lower.dash) * blend
-        };
-      };
-
-      const baselineY = snap(textBox.top - box.top + fontSizePx * 0.82, dpr);
-      const letterNodes = characters.map(({ char, x }, index) => {
-        const timing = getLetterTiming(index, characters.length);
-        const outlineText = createSvgElement('text', {
-          class: 'blueprint-outline-text',
-          x: snap(x, dpr),
-          y: baselineY,
-          'text-anchor': 'start'
-        });
-        outlineText.style.setProperty('--letter-step', `${Math.max(0, timing.delay)}ms`);
-        outlineText.style.setProperty('--letter-duration', `${timing.duration}ms`);
-        outlineText.textContent = char;
-        outline.appendChild(outlineText);
-        return { outlineText, timing };
-      });
-      layer.appendChild(grid);
-      layer.appendChild(outline);
-      svg.appendChild(layer);
-
-      try {
-        const referenceText = letterNodes[0]?.outlineText;
-        if (referenceText) {
-          const svgTextBox = referenceText.getBBox();
-          const domTop = snap(textBox.top - box.top, dpr);
-          const yAdjust = snap(domTop - svgTextBox.y, dpr);
-          if (Math.abs(yAdjust) > 0.01) {
-            letterNodes.forEach(({ outlineText }) => {
-              const currentY = Number.parseFloat(outlineText.getAttribute('y') || '0');
-              outlineText.setAttribute('y', String(snap(currentY + yAdjust, dpr)));
+      const offCanvas = document.createElement('canvas');
+      const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+      offCanvas.width = width * dpr;
+      offCanvas.height = height * dpr;
+      offCtx.scale(dpr, dpr);
+      
+      offCtx.font = `${fontWeight} ${fontSize} ${fontFamily}`;
+      offCtx.fillStyle = '#000';
+      offCtx.textBaseline = 'alphabetic';
+      offCtx.letterSpacing = letterSpacing;
+      
+      const baselineY = height * 0.82; 
+      offCtx.fillText(word, 0, baselineY);
+      
+      const imgData = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height).data;
+      particles = [];
+      
+      const step = Math.max(2, Math.floor(dpr * 2)); 
+      
+      for (let y = 0; y < offCanvas.height; y += step) {
+        for (let x = 0; x < offCanvas.width; x += step) {
+          const alpha = imgData[(y * offCanvas.width + x) * 4 + 3];
+          if (alpha > 128) {
+            // Target coordinates adjusted for padding
+            const targetX = (x / dpr) + padX;
+            const targetY = (y / dpr) + padY;
+            
+            // Start positions randomly scattered around the screen
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * Math.max(width, height) * 1.5;
+            const originX = targetX + Math.cos(angle) * distance;
+            const originY = targetY + Math.sin(angle) * distance;
+            
+            particles.push({
+              x: originX,
+              y: originY,
+              targetX,
+              targetY,
+              vx: 0,
+              vy: 0,
+              delay: Math.random() * 500,
+              startTime: performance.now(),
+              // Give a small percentage of particles the flare color
+              color: Math.random() > 0.95 ? '#FF6700' : '#000000',
+              size: Math.random() * 0.8 + 0.4
             });
           }
         }
-      } catch (error) {
-        // getBBox can fail before layout; initial y estimate is sufficient.
       }
-
-      const letterBounds = letterNodes.map(({ outlineText }, index) => {
-        try {
-          const bbox = outlineText.getBBox();
-          return {
-            left: snap(bbox.x, dpr),
-            right: snap(bbox.x + bbox.width, dpr),
-            center: snap(bbox.x + bbox.width / 2, dpr)
-          };
-        } catch (_error) {
-          const character = characters[index];
-          return {
-            left: character.x,
-            right: snap(character.x + character.width, dpr),
-            center: snap(character.x + character.width / 2, dpr)
-          };
+      
+      particles.sort(() => Math.random() - 0.5);
+      
+      let animationStartTime = performance.now();
+      
+      const draw = (time) => {
+        if (isComplete) return;
+        
+        // Trail effect instead of full clear
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        
+        let allSettled = true;
+        const elapsed = time - animationStartTime;
+        
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          if (time - p.startTime < p.delay) {
+            allSettled = false;
+            continue;
+          }
+          
+          const dx = p.targetX - p.x;
+          const dy = p.targetY - p.y;
+          const dist = Math.hypot(dx, dy);
+          
+          // Noise/swirl effect during the early phase
+          let swirlX = 0;
+          let swirlY = 0;
+          
+          if (elapsed < 2500) {
+            // Magnetic swirling based on position
+            swirlX = Math.sin(p.y * 0.05 + time * 0.002) * 2;
+            swirlY = Math.cos(p.x * 0.05 + time * 0.002) * 2;
+          }
+          
+          // Spring mechanics increase over time for a "snapping" finish
+          const springForce = Math.min(0.15, 0.01 + (elapsed / 3000) * 0.14);
+          const friction = 0.82;
+          
+          p.vx += (dx * springForce) + swirlX;
+          p.vy += (dy * springForce) + swirlY;
+          p.vx *= friction;
+          p.vy *= friction;
+          
+          const prevX = p.x;
+          const prevY = p.y;
+          
+          p.x += p.vx;
+          p.y += p.vy;
+          
+          if (dist > 0.5 || Math.abs(p.vx) > 0.1 || Math.abs(p.vy) > 0.1) {
+            allSettled = false;
+          }
+          
+          // Draw as a streak/filing
+          ctx.beginPath();
+          ctx.moveTo(prevX - p.vx * 1.5, prevY - p.vy * 1.5);
+          ctx.lineTo(p.x, p.y);
+          ctx.strokeStyle = p.color;
+          ctx.lineWidth = p.size;
+          ctx.lineCap = 'round';
+          ctx.stroke();
         }
-      });
-      const guidePad = snap(Math.max(4, fontSizePx * 0.025), dpr);
-      const guideBoundaries = [
-        snap(Math.max(0, Math.min(characters[0]?.x || 0, (letterBounds[0]?.left || 0) - guidePad)), dpr)
-      ];
+        
+        if (allSettled && particles.length > 0) {
+          isComplete = true;
+          title.classList.add('is-particle-complete');
+          // Clear canvas once CSS animation takes over
+          ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        } else {
+          animationFrameId = requestAnimationFrame(draw);
+        }
+      };
 
-      for (let index = 1; index < letterBounds.length; index += 1) {
-        guideBoundaries.push(snap((letterBounds[index - 1].right + letterBounds[index].left) / 2, dpr));
-      }
+      animationFrameId = requestAnimationFrame(draw);
 
-      guideBoundaries.push(width);
-      guideBoundaries.forEach((x, index) => {
-        addLine(grid, 'blueprint-grid-line--major', x, top, x, bottom, index * 26, dpr);
-      });
-
-      for (let index = 0; index < letterBounds.length - 1; index += 1) {
-        const midpoint = snap((letterBounds[index].center + letterBounds[index + 1].center) / 2, dpr);
-        addLine(
-          grid,
-          'blueprint-grid-line--minor',
-          midpoint,
-          cap,
-          midpoint,
-          lowerGuide,
-          130 + index * 20,
-          dpr
-        );
-      }
-
-      addLine(grid, 'blueprint-grid-line--rail', 0, top, width, top, 40, dpr);
-      addLine(grid, 'blueprint-grid-line--rail', 0, bottom, width, bottom, 120, dpr);
-      addLine(grid, 'blueprint-grid-line--center', 0, center, width, center, 240, dpr);
-      addLine(grid, 'blueprint-grid-line--minor', 0, cap, width, cap, 300, dpr);
-      addLine(grid, 'blueprint-grid-line--minor', 0, lowerGuide, width, lowerGuide, 360, dpr);
-      layer.insertBefore(grid, outline);
-
-      const finalGap = Math.max(4, Math.round(fontSizePx * 0.14));
-      letterNodes.forEach(({ outlineText, timing }) => {
-        const letterDash = measureLetterDash(outlineText, fontSizePx, timing.dash);
-        const nearlyComplete = Math.max(Math.round(letterDash * 0.13), 4);
-        outlineText.style.setProperty('--letter-dash', `${letterDash}px`);
-        outlineText.style.setProperty('--letter-nearly-complete', `${nearlyComplete}px`);
-        outlineText.style.setProperty('--letter-final-gap', `${finalGap}px`);
-      });
-
-      title.classList.add('is-blueprint-ready');
-
-      if (completionTimer !== null) {
-        window.clearTimeout(completionTimer);
-      }
-      completionTimer = window.setTimeout(() => {
-        title.classList.add('is-blueprint-complete');
-        completionTimer = null;
-      }, DOUGHERTY_BLUEPRINT_SEQUENCE_MS);
-    };
-
-    let overlayFrame = 0;
-    let canRender = false;
-
-    const scheduleRenderOverlay = () => {
-      if (!canRender || overlayFrame) return;
-      overlayFrame = window.requestAnimationFrame(() => {
-        overlayFrame = 0;
-        renderOverlay();
-      });
-    };
-
-    const startRender = () => {
-      canRender = true;
-      scheduleRenderOverlay();
+      setTimeout(() => {
+        if (!isComplete) {
+          isComplete = true;
+          title.classList.add('is-particle-complete');
+          ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        }
+      }, DOUGHERTY_PARTICLE_SEQUENCE_MS);
     };
 
     if (document.fonts?.ready) {
       Promise.race([
         document.fonts.ready,
         new Promise((resolve) => window.setTimeout(resolve, 3000))
-      ]).then(startRender).catch((error) => {
-        console.warn('Blueprint wordmark font readiness failed; rendering with fallback metrics:', error);
-        startRender();
-      });
+      ]).then(startRender).catch(startRender);
     } else {
       startRender();
-    }
-
-    if ('ResizeObserver' in window) {
-      const observer = new ResizeObserver(scheduleRenderOverlay);
-      observer.observe(finalWord);
-      window.addEventListener('pagehide', () => observer.disconnect(), { once: true });
-    } else {
-      window.addEventListener('resize', debounce(scheduleRenderOverlay, 120));
     }
   }
 
@@ -1022,23 +890,10 @@
     let revealTimer = null;
     let revealed = false;
 
-    const finishBlueprintAnimations = () => {
+    const finishParticleAnimations = () => {
       const root = document.querySelector('.blueprint-title');
       if (!root) return;
-      if (typeof Element === 'undefined' || !Element.prototype.getAnimations) {
-        root.classList.add('is-blueprint-complete');
-        return;
-      }
-      const animations = root.getAnimations({ subtree: true });
-      for (const anim of animations) {
-        if (anim.playState === 'finished') continue;
-        try {
-          anim.finish();
-        } catch (error) {
-          console.debug('Unable to finish blueprint animation:', error);
-        }
-      }
-      root.classList.add('is-blueprint-complete');
+      root.classList.add('is-particle-complete');
     };
 
     const reveal = () => {
@@ -1059,7 +914,7 @@
       scrollFrame = window.requestAnimationFrame(() => {
         scrollFrame = 0;
         if (blueprint.getBoundingClientRect().bottom < 0) {
-          finishBlueprintAnimations();
+          finishParticleAnimations();
           reveal();
         }
       });
@@ -1067,8 +922,8 @@
 
     window.addEventListener('scroll', onScrollMaybePastDougherty, { passive: true });
 
-    // Deferred elements reveal when the blueprint completes
-    revealTimer = window.setTimeout(reveal, DOUGHERTY_BLUEPRINT_SEQUENCE_MS);
+    // Deferred elements reveal when the particle animation completes
+    revealTimer = window.setTimeout(reveal, DOUGHERTY_PARTICLE_SEQUENCE_MS);
   }
 
   /**
@@ -1331,7 +1186,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     initMotionPreference();
     initFlashlightMode();
-    initBlueprintWordmark();
+    initParticleWordmark();
     initHeroNavReveal();
     initDeferredImages();
     initScrollAnimations();
