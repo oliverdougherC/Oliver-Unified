@@ -170,10 +170,12 @@ body.schematic-mode {
   will-change: opacity, filter;
 }
 
-.blueprint-title.is-particle-complete .blueprint-final-word {
+.blueprint-title.is-particle-complete .blueprint-final-word,
+.blueprint-title.is-static-wordmark .blueprint-final-word {
   opacity: 0;
 }
 
+.blueprint-title.is-reduced-static-word .blueprint-final-word,
 .blueprint-title.is-static-word .blueprint-final-word {
   opacity: 1;
   animation: none;
@@ -182,16 +184,24 @@ body.schematic-mode {
 
 .particle-canvas {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   z-index: 11;
   display: block;
   width: 100%;
   height: 100%;
+  opacity: 0;
   pointer-events: none;
 }
 
-.blueprint-title.is-particle-complete .particle-canvas {
+.blueprint-title.is-particle-building .particle-canvas,
+.blueprint-title.is-particle-complete .particle-canvas,
+.blueprint-title.is-static-wordmark .particle-canvas {
   opacity: 1;
+}
+
+.blueprint-title.is-reduced-static-word .particle-canvas {
+  opacity: 0;
 }
 
 .blueprint-grid-line,
@@ -673,13 +683,17 @@ body.schematic-mode .tag:hover {
 }
 
 html.skip-page-animation[data-page-id="home"] .blueprint-final-word {
-  opacity: 1 !important;
+  opacity: 0 !important;
   visibility: visible !important;
   animation: none !important;
   filter: none !important;
 }
 
-html.skip-page-animation[data-page-id="home"] .particle-canvas,
+html.skip-page-animation[data-page-id="home"] .particle-canvas {
+  opacity: 1 !important;
+  animation: none !important;
+}
+
 html.skip-page-animation[data-page-id="home"] .blueprint-outline-text {
   opacity: 0 !important;
   animation: none !important;
@@ -700,6 +714,16 @@ html.skip-page-animation[data-page-id="home"] .hero-deferred {
 html.skip-page-animation[data-page-id="home"] #navToggle {
   opacity: 1 !important;
   pointer-events: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.skip-page-animation[data-page-id="home"] .blueprint-final-word {
+    opacity: 1 !important;
+  }
+
+  html.skip-page-animation[data-page-id="home"] .particle-canvas {
+    opacity: 0 !important;
+  }
 }
 
 /* ========================================
