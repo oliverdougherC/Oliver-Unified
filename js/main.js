@@ -716,6 +716,43 @@
 
     let hoverPointer = null;
     let hoverFrameId = 0;
+    let hoverProjectionFrameId = 0;
+    let lastPointerViewportPosition = null;
+
+    const syncHoverPointerFromViewportPosition = (pointerPosition) => {
+      if (!pointerPosition || !supportsFinePointer()) return;
+
+      const rect = canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+
+      const isInside = pointerPosition.x >= rect.left
+        && pointerPosition.x <= rect.right
+        && pointerPosition.y >= rect.top
+        && pointerPosition.y <= rect.bottom;
+
+      if (!isInside) {
+        if (hoverPointer) {
+          hoverPointer = null;
+          queueHoverFrame();
+        }
+        return;
+      }
+
+      hoverPointer = {
+        x: ((pointerPosition.x - rect.left) / rect.width) * canvasWidth,
+        y: ((pointerPosition.y - rect.top) / rect.height) * canvasHeight
+      };
+      queueHoverFrame();
+    };
+
+    const queueHoverPointerProjection = () => {
+      if (!lastPointerViewportPosition || hoverProjectionFrameId) return;
+
+      hoverProjectionFrameId = window.requestAnimationFrame(() => {
+        hoverProjectionFrameId = 0;
+        syncHoverPointerFromViewportPosition(lastPointerViewportPosition);
+      });
+    };
 
     const resolvePointerTarget = (particle, strength = 1) => {
       let desiredX = particle.targetX;
@@ -811,31 +848,17 @@
 
     const updateHoverPointer = (event) => {
       if (!supportsFinePointer()) return;
-      const rect = canvas.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
 
-      const isInside = event.clientX >= rect.left
-        && event.clientX <= rect.right
-        && event.clientY >= rect.top
-        && event.clientY <= rect.bottom;
-
-      if (!isInside) {
-        if (hoverPointer) {
-          hoverPointer = null;
-          queueHoverFrame();
-        }
-        return;
-      }
-
-      hoverPointer = {
-        x: ((event.clientX - rect.left) / rect.width) * canvasWidth,
-        y: ((event.clientY - rect.top) / rect.height) * canvasHeight
+      lastPointerViewportPosition = {
+        x: event.clientX,
+        y: event.clientY
       };
-      queueHoverFrame();
+      syncHoverPointerFromViewportPosition(lastPointerViewportPosition);
     };
 
     title.addEventListener('od:home-wordmark-force-complete', completeWordmark);
     window.addEventListener('pointermove', updateHoverPointer, { passive: true });
+    window.addEventListener('scroll', queueHoverPointerProjection, { passive: true });
     window.addEventListener('pagehide', () => {
       if (animationFrameId) {
         window.cancelAnimationFrame(animationFrameId);
@@ -848,6 +871,10 @@
       if (resizeFrameId) {
         window.cancelAnimationFrame(resizeFrameId);
         resizeFrameId = 0;
+      }
+      if (hoverProjectionFrameId) {
+        window.cancelAnimationFrame(hoverProjectionFrameId);
+        hoverProjectionFrameId = 0;
       }
     }, { once: true });
 
@@ -1034,6 +1061,7 @@
 
       sampledParticles.sort((a, b) => a.order - b.order);
       particles = sampledParticles.slice(0, maxParticlesForViewport());
+      syncHoverPointerFromViewportPosition(lastPointerViewportPosition);
 
       if (options.static || shouldSkipPageAnimation()) {
         title.classList.remove('is-particle-building');
