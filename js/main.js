@@ -10,7 +10,7 @@
 (function () {
   'use strict';
 
-  const DOUGHERTY_PARTICLE_SEQUENCE_MS = 6800;
+  const DOUGHERTY_PARTICLE_SEQUENCE_MS = 7600;
   let confettiFired = false;
   const FLASHLIGHT_MODE_STORAGE_KEY = 'od-flashlight-mode';
   const FLASHLIGHT_BATTERY_SESSION_KEY = 'od-flashlight-battery';
@@ -690,9 +690,9 @@
 
     const maxParticlesForViewport = () => {
       const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
-      if (viewportWidth < 640) return 1450;
-      if (viewportWidth < 1024) return 2600;
-      return 4300;
+      if (viewportWidth < 640) return 2400;
+      if (viewportWidth < 1024) return 5200;
+      return 9000;
     };
 
     const drawParticle = (particle, x = particle.x, y = particle.y) => {
@@ -715,34 +715,6 @@
 
     let hoverPointer = null;
     let hoverFrameId = 0;
-    let lastHoverAt = 0;
-
-    const drawMagneticGuides = (progress, time) => {
-      const guideProgress = clamp((progress - 0.04) / 0.68, 0, 1);
-      const alpha = Math.sin(guideProgress * Math.PI) * 0.18;
-      if (alpha <= 0.001) return;
-
-      const centerY = canvasHeight * 0.48;
-      const pulse = Math.sin(time * 0.002) * 10;
-      ctx.save();
-      ctx.lineWidth = 0.8;
-      ctx.lineCap = 'round';
-      for (let i = 0; i < 7; i += 1) {
-        const offset = (i - 3) * canvasHeight * 0.115;
-        const startX = canvasWidth * (i % 2 === 0 ? 0.04 : 0.96);
-        const endX = canvasWidth * (i % 2 === 0 ? 0.82 : 0.18);
-        const controlX = canvasWidth * (i % 2 === 0 ? 0.36 : 0.64);
-        const controlY = centerY + offset + pulse;
-        ctx.beginPath();
-        ctx.moveTo(startX, centerY + offset * 1.6);
-        ctx.quadraticCurveTo(controlX, controlY, endX, centerY + offset * 0.26);
-        ctx.strokeStyle = i === 3
-          ? `rgba(255, 103, 0, ${alpha * 0.95})`
-          : `rgba(0, 0, 0, ${alpha * 0.42})`;
-        ctx.stroke();
-      }
-      ctx.restore();
-    };
 
     const completeWordmark = () => {
       if (isComplete) return;
@@ -765,8 +737,8 @@
       hoverFrameId = 0;
       if (!isComplete) return;
 
-      const pointerActive = hoverPointer && (time - lastHoverAt) < 520;
-      const radius = clamp(canvasWidth * 0.12, 86, 176);
+      const pointerActive = Boolean(hoverPointer);
+      const radius = clamp(canvasWidth * 0.035, 26, 54);
       let needsNextFrame = false;
 
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -843,7 +815,6 @@
         x: ((event.clientX - rect.left) / rect.width) * canvasWidth,
         y: ((event.clientY - rect.top) / rect.height) * canvasHeight
       };
-      lastHoverAt = performance.now();
       queueHoverFrame();
     };
 
@@ -884,7 +855,6 @@
       const fontSizePx = Number.parseFloat(fontSize) || height;
       const fontFamily = wordStyle.fontFamily || 'sans-serif';
       const fontWeight = wordStyle.fontWeight || '800';
-      const letterSpacing = wordStyle.letterSpacing || 'normal';
 
       canvasDpr = Math.min(2, dpr);
       const padX = clamp(width * 0.58, 160, 440);
@@ -904,32 +874,60 @@
       const measurementCtx = measurementCanvas.getContext('2d');
       if (!measurementCtx) return;
       measurementCtx.font = `${fontWeight} ${fontSize} ${fontFamily}`;
-      const metrics = measurementCtx.measureText(word);
-      const ascent = metrics.actualBoundingBoxAscent || fontSizePx * 0.78;
-      const descent = metrics.actualBoundingBoxDescent || fontSizePx * 0.22;
-      const textWidth = Math.max(width, metrics.width || width);
       const sourcePad = Math.max(8, fontSizePx * 0.12);
-      const sourceWidth = Math.ceil(textWidth + (sourcePad * 2));
-      const sourceHeight = Math.ceil(ascent + descent + (sourcePad * 2));
 
+      const measureCharacterLayouts = () => {
+        const textNode = Array.from(finalWord.childNodes).find((node) => node.nodeType === Node.TEXT_NODE);
+        if (!textNode) return [];
+
+        const range = document.createRange();
+        const layouts = [];
+        let offset = 0;
+
+        for (const character of word) {
+          const nextOffset = offset + character.length;
+          range.setStart(textNode, offset);
+          range.setEnd(textNode, nextOffset);
+          const rect = range.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            layouts.push({
+              character,
+              left: rect.left - wordRect.left,
+              width: rect.width
+            });
+          }
+          offset = nextOffset;
+        }
+
+        range.detach();
+        return layouts;
+      };
+
+      const characterLayouts = measureCharacterLayouts();
+      if (!characterLayouts.length) return;
+
+      const wordMetrics = measurementCtx.measureText(word);
+      const ascent = wordMetrics.actualBoundingBoxAscent || fontSizePx * 0.78;
+      const descent = wordMetrics.actualBoundingBoxDescent || fontSizePx * 0.22;
+      const sourceWidth = Math.ceil(width + (sourcePad * 2));
+      const sourceHeight = Math.ceil(ascent + descent + (sourcePad * 2));
       const offCanvas = document.createElement('canvas');
       const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
       if (!offCtx) return;
+
       offCanvas.width = Math.ceil(sourceWidth * canvasDpr);
       offCanvas.height = Math.ceil(sourceHeight * canvasDpr);
       offCtx.scale(canvasDpr, canvasDpr);
       offCtx.font = `${fontWeight} ${fontSize} ${fontFamily}`;
       offCtx.fillStyle = '#000';
       offCtx.textBaseline = 'alphabetic';
-      if ('letterSpacing' in offCtx && letterSpacing !== 'normal') {
-        offCtx.letterSpacing = letterSpacing;
-      }
 
       const baselineY = sourcePad + ascent;
-      offCtx.fillText(word, sourcePad, baselineY);
+      for (const layout of characterLayouts) {
+        offCtx.fillText(layout.character, sourcePad + layout.left, baselineY);
+      }
 
       const imgData = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height).data;
-      const sampledParticles = [];
       let alphaMinX = offCanvas.width;
       let alphaMaxX = 0;
       let alphaMinY = offCanvas.height;
@@ -954,13 +952,13 @@
       const alphaMaxXCss = alphaMaxX / canvasDpr;
       const alphaMinYCss = alphaMinY / canvasDpr;
       const alphaMaxYCss = alphaMaxY / canvasDpr;
-      const alphaWidthCss = Math.max(1, alphaMaxXCss - alphaMinXCss);
       const alphaHeightCss = Math.max(1, alphaMaxYCss - alphaMinYCss);
       const heroCenterX = canvasWidth / 2;
       const heroCenterY = canvasHeight / 2;
       const random = createSeededRandom(hashString(`${word}:${Math.round(width)}:${Math.round(height)}:${Math.round(fontSizePx)}`));
-      const sampleSpacing = clamp(fontSizePx * 0.036, canvasWidth < 760 ? 4.1 : 3.65, canvasWidth < 760 ? 5.15 : 4.45);
-      const baseDotSize = clamp(fontSizePx * 0.0095, canvasWidth < 760 ? 0.68 : 0.82, canvasWidth < 760 ? 1.08 : 1.35);
+      const sampleSpacing = clamp(fontSizePx * 0.026, canvasWidth < 760 ? 3.25 : 2.75, canvasWidth < 760 ? 4.1 : 3.45);
+      const baseDotSize = clamp(fontSizePx * 0.012, canvasWidth < 760 ? 0.86 : 1.05, canvasWidth < 760 ? 1.32 : 1.72);
+      const sampledParticles = [];
       const readAlphaAt = (cssX, cssY) => {
         const pixelX = clamp(Math.round(cssX * canvasDpr), 0, offCanvas.width - 1);
         const pixelY = clamp(Math.round(cssY * canvasDpr), 0, offCanvas.height - 1);
@@ -978,24 +976,24 @@
           const sampleY = clamp(y + jitterY, alphaMinYCss, alphaMaxYCss);
           const alpha = readAlphaAt(sampleX, sampleY);
 
-          if (alpha <= 118) continue;
+          if (alpha <= 72) continue;
 
-          const targetX = targetOffsetX + ((sampleX - alphaMinXCss) / alphaWidthCss) * width;
+          const targetX = targetOffsetX + sampleX - sourcePad;
           const targetY = targetOffsetY + ((sampleY - alphaMinYCss) / alphaHeightCss) * height;
           const edgeRoll = random();
           const originEdge = random();
-          let originX = heroCenterX + ((random() - 0.5) * canvasWidth * 0.7);
-          let originY = heroCenterY + ((random() - 0.5) * canvasHeight * 0.62);
+          let originX = heroCenterX + ((random() - 0.5) * canvasWidth * 0.42);
+          let originY = heroCenterY + ((random() - 0.5) * canvasHeight * 0.36);
 
           if (originEdge < 0.32) {
-            originX = random() * padX * 0.82;
-            originY = canvasHeight * (0.18 + random() * 0.68);
+            originX = padX * (0.35 + random() * 0.58);
+            originY = canvasHeight * (0.26 + random() * 0.48);
           } else if (originEdge < 0.64) {
-            originX = canvasWidth - (random() * padX * 0.82);
-            originY = canvasHeight * (0.18 + random() * 0.68);
+            originX = canvasWidth - (padX * (0.35 + random() * 0.58));
+            originY = canvasHeight * (0.26 + random() * 0.48);
           } else if (originEdge < 0.82) {
-            originX = heroCenterX + ((random() - 0.5) * canvasWidth * 0.74);
-            originY = canvasHeight * (0.05 + random() * 0.22);
+            originX = heroCenterX + ((random() - 0.5) * canvasWidth * 0.46);
+            originY = canvasHeight * (0.15 + random() * 0.18);
           }
 
           sampledParticles.push({
@@ -1003,8 +1001,8 @@
             originY,
             x: originX,
             y: originY,
-            vx: (random() - 0.5) * 1.8,
-            vy: (random() - 0.5) * 1.8,
+            vx: (random() - 0.5) * 0.8,
+            vy: (random() - 0.5) * 0.8,
             targetX,
             targetY,
             delay: (targetX / canvasWidth) * 470 + random() * 580,
@@ -1042,12 +1040,8 @@
         const settleProgress = easeOutQuint(clamp((elapsed - (DOUGHERTY_PARTICLE_SEQUENCE_MS - 1850)) / 1550, 0, 1));
 
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        drawMagneticGuides(progress, time);
-
         for (let i = 0; i < particles.length; i++) {
           const p = particles[i];
-          const prevX = p.x;
-          const prevY = p.y;
           const localProgress = clamp(
             (elapsed - p.delay) / (DOUGHERTY_PARTICLE_SEQUENCE_MS - 1450),
             0,
@@ -1062,11 +1056,11 @@
           const normalY = dyToTarget / distanceToTarget;
           const fieldTime = time * 0.001;
           const fieldFade = 1 - captureProgress;
-          const curl = Math.sin((fieldTime * 2.2) + p.seed + (p.targetX * 0.006)) * p.charge * p.field;
-          const pull = 0.010 + (localCapture * 0.055) + (settleProgress * 0.045);
-          const swirl = fieldFade * (0.30 + (1 - localCapture) * 0.42) * p.field;
-          const oscillationX = Math.sin((fieldTime * 1.6) + p.seed) * fieldFade * 0.18;
-          const oscillationY = Math.cos((fieldTime * 1.4) + p.seed) * fieldFade * 0.18;
+          const curl = Math.sin((fieldTime * 1.45) + p.seed + (p.targetX * 0.004)) * p.charge * p.field;
+          const pull = 0.007 + (localCapture * 0.037) + (settleProgress * 0.036);
+          const swirl = fieldFade * (0.12 + (1 - localCapture) * 0.18) * p.field;
+          const oscillationX = Math.sin((fieldTime * 1.05) + p.seed) * fieldFade * 0.08;
+          const oscillationY = Math.cos((fieldTime * 0.95) + p.seed) * fieldFade * 0.08;
 
           p.vx += (dxToTarget * pull) + (-normalY * swirl * curl) + oscillationX;
           p.vy += (dyToTarget * pull) + (normalX * swirl * curl) + oscillationY;
@@ -1081,25 +1075,6 @@
             const snap = (settleProgress - 0.72) / 0.28;
             p.x += (p.targetX - p.x) * snap * 0.24;
             p.y += (p.targetY - p.y) * snap * 0.24;
-          }
-
-          const dx = p.x - prevX;
-          const dy = p.y - prevY;
-          const movement = Math.hypot(dx, dy);
-          const trailLength = clamp(movement * 0.66, 0, localProgress > 0.72 ? 4.5 : 13);
-
-          if (movement > 0.01 && trailLength > 0.35 && localProgress < 0.96) {
-            const normalX = dx / movement;
-            const normalY = dy / movement;
-            ctx.globalAlpha = 0.12 + ((1 - localCapture) * 0.28);
-            ctx.beginPath();
-            ctx.moveTo(p.x - normalX * trailLength, p.y - normalY * trailLength);
-            ctx.lineTo(p.x, p.y);
-            ctx.strokeStyle = p.color;
-            ctx.lineWidth = p.size;
-            ctx.lineCap = 'round';
-            ctx.stroke();
-            ctx.globalAlpha = 1;
           }
 
           drawParticle(p);

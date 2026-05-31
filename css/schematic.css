@@ -164,7 +164,7 @@ body.schematic-mode {
 .blueprint-final-word {
   position: relative;
   z-index: 3;
-  display: block;
+  display: inline-block;
   color: var(--blueprint-final-fill);
   opacity: 0;
   will-change: opacity, filter;
