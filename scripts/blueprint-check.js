@@ -103,6 +103,7 @@ async function assertBlueprintStructure(page, browserName) {
     const draftingLayer = document.querySelector('.blueprint-drafting-layer');
     return {
       ready: title?.classList.contains('is-blueprint-ready') === true,
+      expectedOutlines: (title?.querySelector('.blueprint-final-word')?.textContent || '').trim().length,
       gridLines: document.querySelectorAll('.blueprint-grid-line').length,
       tspans: document.querySelectorAll('.blueprint-outline-text').length,
       hasSketchFilter: draftingLayer
@@ -113,7 +114,10 @@ async function assertBlueprintStructure(page, browserName) {
 
   assert(state.ready, `[${browserName}] blueprint overlay should be ready`);
   assert(state.gridLines > 0, `[${browserName}] expected blueprint grid lines`);
-  assert(state.tspans === 10, `[${browserName}] expected 10 letter outlines, got ${state.tspans}`);
+  assert(
+    state.tspans === state.expectedOutlines,
+    `[${browserName}] expected ${state.expectedOutlines} letter outlines, got ${state.tspans}`
+  );
   assert(!state.hasSketchFilter, `[${browserName}] sketch filter should be removed`);
 }
 

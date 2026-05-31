@@ -68,13 +68,24 @@ body.gallery-lightbox-open .nav-actions {
 }
 
 .gallery-hero-layout {
+  --gallery-hero-feature-width: clamp(30rem, 38vw, 41rem);
+  --gallery-hero-title-size: clamp(5.5rem, 8.8vw, 9rem);
+  --gallery-hero-title-width: 4.35em;
+  --gallery-hero-overlap: clamp(3.5rem, 7vw, 7rem);
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 45vw);
-  gap: var(--space-12);
-  gap: clamp(var(--space-8), 8vw, var(--space-24));
+  grid-template-columns: var(--gallery-hero-title-width) var(--gallery-hero-feature-width);
+  gap: 0;
   align-items: center;
-  width: 100%;
+  justify-content: center;
+  width: max-content;
+  max-width: 100%;
+  font-size: var(--gallery-hero-title-size);
+}
+
+body.schematic-mode .gallery-hero-layout {
+  max-width: min(calc(100vw - 4rem), 1380px);
+  padding-inline: 0;
 }
 
 .gallery-hero-overlay {
@@ -115,8 +126,8 @@ body.gallery-lightbox-open .nav-actions {
   color: #000000;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 6rem;
-  font-size: clamp(4.2rem, 11.5vw, 10rem);
+  width: max-content;
+  font-size: 1em;
   line-height: 1.0;
   letter-spacing: -0.02em;
   overflow: visible;
@@ -126,11 +137,11 @@ body.gallery-lightbox-open .nav-actions {
 .hero-feature-card {
   position: relative;
   display: block;
-  width: 100%;
-  max-width: 34rem;
-  max-width: clamp(24rem, 45vw, 40rem);
+  width: var(--gallery-hero-feature-width);
+  max-width: none;
   background: transparent;
   box-shadow: none;
+  margin-left: calc(-1 * var(--gallery-hero-overlap));
   margin-top: 0;
 }
 
@@ -943,21 +954,22 @@ html.skip-page-animation[data-page-id="gallery"] .hero-deferred {
 
 @media (max-width: 1280px) {
   .gallery-hero-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(240px, 34vw);
+    --gallery-hero-feature-width: clamp(26rem, 40vw, 34rem);
+    --gallery-hero-title-size: clamp(5rem, 8.2vw, 7.25rem);
+    --gallery-hero-overlap: clamp(3rem, 6vw, 5rem);
   }
 
 }
 
 @media (max-width: 1024px) {
   .gallery-hero-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 38vw);
-    gap: var(--space-10);
-    gap: clamp(var(--space-6), 6vw, var(--space-14));
+    --gallery-hero-feature-width: clamp(22rem, 41vw, 28rem);
+    --gallery-hero-title-size: clamp(4.4rem, 8.6vw, 5.6rem);
+    --gallery-hero-overlap: clamp(2.25rem, 5vw, 3.5rem);
   }
 
   .hero-feature-card {
-    max-width: 20rem;
-    max-width: clamp(16rem, 44vw, 24rem);
+    max-width: none;
   }
 
   .archive-grid {
@@ -976,13 +988,20 @@ html.skip-page-animation[data-page-id="gallery"] .hero-deferred {
 
 @media (max-width: 900px) {
   .gallery-hero-layout {
+    --gallery-hero-feature-width: min(100%, 28rem);
+    --gallery-hero-overlap: 0rem;
     grid-template-columns: 1fr;
+    gap: var(--space-8);
     align-items: start;
+    justify-content: stretch;
+    width: 100%;
   }
 
   .hero-feature-card {
     justify-self: start;
+    width: var(--gallery-hero-feature-width);
     max-width: min(100%, 28rem);
+    margin-left: 0;
   }
 
   .lightbox {
