@@ -11,6 +11,7 @@
   'use strict';
 
   const DOUGHERTY_PARTICLE_SEQUENCE_MS = 7600;
+  const DOUGHERTY_POINTER_SETTLE_START_MS = DOUGHERTY_PARTICLE_SEQUENCE_MS - 1850;
   let confettiFired = false;
   const FLASHLIGHT_MODE_STORAGE_KEY = 'od-flashlight-mode';
   const FLASHLIGHT_BATTERY_SESSION_KEY = 'od-flashlight-battery';
@@ -716,6 +717,33 @@
     let hoverPointer = null;
     let hoverFrameId = 0;
 
+    const resolvePointerTarget = (particle, strength = 1) => {
+      let desiredX = particle.targetX;
+      let desiredY = particle.targetY;
+
+      if (!hoverPointer || strength <= 0) {
+        return { x: desiredX, y: desiredY };
+      }
+
+      const radius = clamp(canvasWidth * 0.035, 26, 54);
+      const dx = particle.targetX - hoverPointer.x;
+      const dy = particle.targetY - hoverPointer.y;
+      const distance = Math.max(1, Math.hypot(dx, dy));
+
+      if (distance >= radius) {
+        return { x: desiredX, y: desiredY };
+      }
+
+      const field = Math.pow(1 - (distance / radius), 2);
+      const normalX = dx / distance;
+      const normalY = dy / distance;
+      const push = field * clamp(canvasWidth * 0.021, 12, 24) * strength;
+      desiredX += (normalX * push) - (normalY * push * 0.32);
+      desiredY += (normalY * push) + (normalX * push * 0.18);
+
+      return { x: desiredX, y: desiredY };
+    };
+
     const completeWordmark = () => {
       if (isComplete) return;
       isComplete = true;
@@ -727,9 +755,13 @@
         window.cancelAnimationFrame(hoverFrameId);
         hoverFrameId = 0;
       }
-      drawStaticFrame();
       title.classList.remove('is-particle-building');
       title.classList.add('is-particle-complete', 'is-static-wordmark');
+      if (hoverPointer && supportsFinePointer()) {
+        hoverFrameId = window.requestAnimationFrame(renderHoverFrame);
+      } else {
+        drawStaticFrame();
+      }
       title.dispatchEvent(new CustomEvent('od:home-wordmark-complete', { bubbles: true }));
     };
 
@@ -738,31 +770,15 @@
       if (!isComplete) return;
 
       const pointerActive = Boolean(hoverPointer);
-      const radius = clamp(canvasWidth * 0.035, 26, 54);
       let needsNextFrame = false;
 
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
       for (const p of particles) {
-        let desiredX = p.targetX;
-        let desiredY = p.targetY;
+        const desired = resolvePointerTarget(p, 1);
 
-        if (pointerActive) {
-          const dx = p.targetX - hoverPointer.x;
-          const dy = p.targetY - hoverPointer.y;
-          const distance = Math.max(1, Math.hypot(dx, dy));
-          if (distance < radius) {
-            const field = Math.pow(1 - (distance / radius), 2);
-            const normalX = dx / distance;
-            const normalY = dy / distance;
-            const push = field * clamp(canvasWidth * 0.021, 12, 24);
-            desiredX += (normalX * push) - (normalY * push * 0.32);
-            desiredY += (normalY * push) + (normalX * push * 0.18);
-          }
-        }
-
-        const ax = (desiredX - p.x) * 0.18;
-        const ay = (desiredY - p.y) * 0.18;
+        const ax = (desired.x - p.x) * 0.18;
+        const ay = (desired.y - p.y) * 0.18;
         p.vx = (p.vx + ax) * 0.72;
         p.vy = (p.vy + ay) * 0.72;
         p.x += p.vx;
@@ -794,7 +810,7 @@
     };
 
     const updateHoverPointer = (event) => {
-      if (!isComplete || !supportsFinePointer()) return;
+      if (!supportsFinePointer()) return;
       const rect = canvas.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
 
@@ -1038,6 +1054,8 @@
         const progress = clamp(elapsed / DOUGHERTY_PARTICLE_SEQUENCE_MS, 0, 1);
         const captureProgress = easeInOutCubic(clamp((elapsed - 420) / (DOUGHERTY_PARTICLE_SEQUENCE_MS - 1600), 0, 1));
         const settleProgress = easeOutQuint(clamp((elapsed - (DOUGHERTY_PARTICLE_SEQUENCE_MS - 1850)) / 1550, 0, 1));
+        const pointerSettleProgress = easeOutCubic(clamp((elapsed - DOUGHERTY_POINTER_SETTLE_START_MS) / 620, 0, 1));
+        const pointerTargetStrength = settleProgress * pointerSettleProgress;
 
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         for (let i = 0; i < particles.length; i++) {
@@ -1049,8 +1067,9 @@
           );
           const localCapture = easeInOutCubic(localProgress);
           const arrival = easeOutCubic(clamp((localProgress - 0.64) / 0.36, 0, 1));
-          const dxToTarget = p.targetX - p.x;
-          const dyToTarget = p.targetY - p.y;
+          const desired = resolvePointerTarget(p, pointerTargetStrength);
+          const dxToTarget = desired.x - p.x;
+          const dyToTarget = desired.y - p.y;
           const distanceToTarget = Math.max(1, Math.hypot(dxToTarget, dyToTarget));
           const normalX = dxToTarget / distanceToTarget;
           const normalY = dyToTarget / distanceToTarget;
@@ -1073,8 +1092,8 @@
 
           if (settleProgress > 0.72) {
             const snap = (settleProgress - 0.72) / 0.28;
-            p.x += (p.targetX - p.x) * snap * 0.24;
-            p.y += (p.targetY - p.y) * snap * 0.24;
+            p.x += (desired.x - p.x) * snap * 0.24;
+            p.y += (desired.y - p.y) * snap * 0.24;
           }
 
           drawParticle(p);
