@@ -658,6 +658,7 @@
 
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
     const easeOutCubic = (value) => 1 - Math.pow(1 - clamp(value, 0, 1), 3);
+    const easeOutQuint = (value) => 1 - Math.pow(1 - clamp(value, 0, 1), 5);
     const easeInOutCubic = (value) => {
       const easedValue = clamp(value, 0, 1);
       return easedValue < 0.5
@@ -665,21 +666,82 @@
         : 1 - Math.pow(-2 * easedValue + 2, 3) / 2;
     };
 
+    const hashString = (value) => {
+      let hash = 2166136261;
+      for (let i = 0; i < value.length; i += 1) {
+        hash ^= value.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
+    };
+
+    const createSeededRandom = (seed) => {
+      let state = seed >>> 0;
+      return () => {
+        state += 0x6D2B79F5;
+        let value = Math.imul(state ^ (state >>> 15), state | 1);
+        value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+        return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+      };
+    };
+
+    const supportsFinePointer = () => window.matchMedia
+      && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
     const maxParticlesForViewport = () => {
       const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
-      if (viewportWidth < 640) return 900;
-      if (viewportWidth < 1024) return 1500;
-      return 2200;
+      if (viewportWidth < 640) return 1450;
+      if (viewportWidth < 1024) return 2600;
+      return 4300;
+    };
+
+    const drawParticle = (particle, x = particle.x, y = particle.y) => {
+      ctx.beginPath();
+      ctx.arc(x, y, particle.size, 0, Math.PI * 2);
+      ctx.fillStyle = particle.color;
+      ctx.fill();
     };
 
     const drawStaticFrame = () => {
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
       for (const p of particles) {
-        ctx.beginPath();
-        ctx.arc(p.targetX, p.targetY, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.fill();
+        p.x = p.targetX;
+        p.y = p.targetY;
+        p.vx = 0;
+        p.vy = 0;
+        drawParticle(p);
       }
+    };
+
+    let hoverPointer = null;
+    let hoverFrameId = 0;
+    let lastHoverAt = 0;
+
+    const drawMagneticGuides = (progress, time) => {
+      const guideProgress = clamp((progress - 0.04) / 0.68, 0, 1);
+      const alpha = Math.sin(guideProgress * Math.PI) * 0.18;
+      if (alpha <= 0.001) return;
+
+      const centerY = canvasHeight * 0.48;
+      const pulse = Math.sin(time * 0.002) * 10;
+      ctx.save();
+      ctx.lineWidth = 0.8;
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 7; i += 1) {
+        const offset = (i - 3) * canvasHeight * 0.115;
+        const startX = canvasWidth * (i % 2 === 0 ? 0.04 : 0.96);
+        const endX = canvasWidth * (i % 2 === 0 ? 0.82 : 0.18);
+        const controlX = canvasWidth * (i % 2 === 0 ? 0.36 : 0.64);
+        const controlY = centerY + offset + pulse;
+        ctx.beginPath();
+        ctx.moveTo(startX, centerY + offset * 1.6);
+        ctx.quadraticCurveTo(controlX, controlY, endX, centerY + offset * 0.26);
+        ctx.strokeStyle = i === 3
+          ? `rgba(255, 103, 0, ${alpha * 0.95})`
+          : `rgba(0, 0, 0, ${alpha * 0.42})`;
+        ctx.stroke();
+      }
+      ctx.restore();
     };
 
     const completeWordmark = () => {
@@ -689,17 +751,112 @@
         window.cancelAnimationFrame(animationFrameId);
         animationFrameId = 0;
       }
+      if (hoverFrameId) {
+        window.cancelAnimationFrame(hoverFrameId);
+        hoverFrameId = 0;
+      }
       drawStaticFrame();
       title.classList.remove('is-particle-building');
       title.classList.add('is-particle-complete', 'is-static-wordmark');
       title.dispatchEvent(new CustomEvent('od:home-wordmark-complete', { bubbles: true }));
     };
 
+    const renderHoverFrame = (time) => {
+      hoverFrameId = 0;
+      if (!isComplete) return;
+
+      const pointerActive = hoverPointer && (time - lastHoverAt) < 520;
+      const radius = clamp(canvasWidth * 0.12, 86, 176);
+      let needsNextFrame = false;
+
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      for (const p of particles) {
+        let desiredX = p.targetX;
+        let desiredY = p.targetY;
+
+        if (pointerActive) {
+          const dx = p.targetX - hoverPointer.x;
+          const dy = p.targetY - hoverPointer.y;
+          const distance = Math.max(1, Math.hypot(dx, dy));
+          if (distance < radius) {
+            const field = Math.pow(1 - (distance / radius), 2);
+            const normalX = dx / distance;
+            const normalY = dy / distance;
+            const push = field * clamp(canvasWidth * 0.021, 12, 24);
+            desiredX += (normalX * push) - (normalY * push * 0.32);
+            desiredY += (normalY * push) + (normalX * push * 0.18);
+          }
+        }
+
+        const ax = (desiredX - p.x) * 0.18;
+        const ay = (desiredY - p.y) * 0.18;
+        p.vx = (p.vx + ax) * 0.72;
+        p.vy = (p.vy + ay) * 0.72;
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (
+          Math.abs(p.x - p.targetX) > 0.08
+          || Math.abs(p.y - p.targetY) > 0.08
+          || Math.abs(p.vx) > 0.05
+          || Math.abs(p.vy) > 0.05
+          || pointerActive
+        ) {
+          needsNextFrame = true;
+        }
+
+        drawParticle(p);
+      }
+
+      if (needsNextFrame) {
+        hoverFrameId = window.requestAnimationFrame(renderHoverFrame);
+      } else {
+        drawStaticFrame();
+      }
+    };
+
+    const queueHoverFrame = () => {
+      if (!isComplete || hoverFrameId) return;
+      hoverFrameId = window.requestAnimationFrame(renderHoverFrame);
+    };
+
+    const updateHoverPointer = (event) => {
+      if (!isComplete || !supportsFinePointer()) return;
+      const rect = canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+
+      const isInside = event.clientX >= rect.left
+        && event.clientX <= rect.right
+        && event.clientY >= rect.top
+        && event.clientY <= rect.bottom;
+
+      if (!isInside) {
+        if (hoverPointer) {
+          hoverPointer = null;
+          queueHoverFrame();
+        }
+        return;
+      }
+
+      hoverPointer = {
+        x: ((event.clientX - rect.left) / rect.width) * canvasWidth,
+        y: ((event.clientY - rect.top) / rect.height) * canvasHeight
+      };
+      lastHoverAt = performance.now();
+      queueHoverFrame();
+    };
+
     title.addEventListener('od:home-wordmark-force-complete', completeWordmark);
+    window.addEventListener('pointermove', updateHoverPointer, { passive: true });
     window.addEventListener('pagehide', () => {
       if (animationFrameId) {
         window.cancelAnimationFrame(animationFrameId);
         animationFrameId = 0;
+      }
+      if (hoverFrameId) {
+        window.cancelAnimationFrame(hoverFrameId);
+        hoverFrameId = 0;
       }
       if (resizeFrameId) {
         window.cancelAnimationFrame(resizeFrameId);
@@ -708,6 +865,12 @@
     }, { once: true });
 
     const startRender = (options = {}) => {
+      if (hoverFrameId) {
+        window.cancelAnimationFrame(hoverFrameId);
+        hoverFrameId = 0;
+      }
+      hoverPointer = null;
+
       const getDpr = () => window.devicePixelRatio || 1;
       const dpr = getDpr();
       const wordRect = finalWord.getBoundingClientRect();
@@ -716,89 +879,150 @@
 
       if (width === 0 || height === 0) return;
 
+      const wordStyle = window.getComputedStyle(finalWord);
+      const fontSize = wordStyle.fontSize || '16px';
+      const fontSizePx = Number.parseFloat(fontSize) || height;
+      const fontFamily = wordStyle.fontFamily || 'sans-serif';
+      const fontWeight = wordStyle.fontWeight || '800';
+      const letterSpacing = wordStyle.letterSpacing || 'normal';
+
       canvasDpr = Math.min(2, dpr);
-      const padX = clamp(width * 0.28, 64, 200);
-      const padY = clamp(height * 0.62, 48, 120);
+      const padX = clamp(width * 0.58, 160, 440);
+      const padTop = clamp(fontSizePx * 0.55, 72, 180);
+      const padBottom = clamp(fontSizePx * 0.82, 96, 240);
       canvasWidth = Math.max(1, Math.round(width + (padX * 2)));
-      canvasHeight = Math.max(1, Math.round(height + (padY * 2)));
+      canvasHeight = Math.max(1, Math.round(height + padTop + padBottom));
       canvas.width = Math.round(canvasWidth * canvasDpr);
       canvas.height = Math.round(canvasHeight * canvasDpr);
       canvas.style.width = `${canvasWidth}px`;
       canvas.style.height = `${canvasHeight}px`;
       canvas.style.left = `${Math.round(-padX)}px`;
-      canvas.style.top = `${Math.round(-padY)}px`;
+      canvas.style.top = `${Math.round(-padTop)}px`;
       ctx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
 
-      const wordStyle = window.getComputedStyle(finalWord);
-      const fontSize = wordStyle.fontSize || '16px';
-      const fontFamily = wordStyle.fontFamily || 'sans-serif';
-      const fontWeight = wordStyle.fontWeight || '800';
-      const letterSpacing = wordStyle.letterSpacing || 'normal';
+      const measurementCanvas = document.createElement('canvas');
+      const measurementCtx = measurementCanvas.getContext('2d');
+      if (!measurementCtx) return;
+      measurementCtx.font = `${fontWeight} ${fontSize} ${fontFamily}`;
+      const metrics = measurementCtx.measureText(word);
+      const ascent = metrics.actualBoundingBoxAscent || fontSizePx * 0.78;
+      const descent = metrics.actualBoundingBoxDescent || fontSizePx * 0.22;
+      const textWidth = Math.max(width, metrics.width || width);
+      const sourcePad = Math.max(8, fontSizePx * 0.12);
+      const sourceWidth = Math.ceil(textWidth + (sourcePad * 2));
+      const sourceHeight = Math.ceil(ascent + descent + (sourcePad * 2));
 
       const offCanvas = document.createElement('canvas');
       const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
       if (!offCtx) return;
-      offCanvas.width = Math.ceil(width * canvasDpr);
-      offCanvas.height = Math.ceil(height * canvasDpr);
+      offCanvas.width = Math.ceil(sourceWidth * canvasDpr);
+      offCanvas.height = Math.ceil(sourceHeight * canvasDpr);
       offCtx.scale(canvasDpr, canvasDpr);
-
       offCtx.font = `${fontWeight} ${fontSize} ${fontFamily}`;
       offCtx.fillStyle = '#000';
       offCtx.textBaseline = 'alphabetic';
-      offCtx.letterSpacing = letterSpacing;
+      if ('letterSpacing' in offCtx && letterSpacing !== 'normal') {
+        offCtx.letterSpacing = letterSpacing;
+      }
 
-      const baselineY = height * 0.82;
-      offCtx.fillText(word, 0, baselineY);
+      const baselineY = sourcePad + ascent;
+      offCtx.fillText(word, sourcePad, baselineY);
 
       const imgData = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height).data;
       const sampledParticles = [];
+      let alphaMinX = offCanvas.width;
+      let alphaMaxX = 0;
+      let alphaMinY = offCanvas.height;
+      let alphaMaxY = 0;
 
-      const sampleStep = Math.max(2, Math.round(canvasDpr * (canvasWidth < 760 ? 3 : 2.35)));
-      const targetOffsetX = padX;
-      const targetOffsetY = padY;
-      const heroCenterX = canvasWidth / 2;
-      const heroCenterY = canvasHeight / 2;
-
-      for (let y = 0; y < offCanvas.height; y += sampleStep) {
-        for (let x = 0; x < offCanvas.width; x += sampleStep) {
+      for (let y = 0; y < offCanvas.height; y += 1) {
+        for (let x = 0; x < offCanvas.width; x += 1) {
           const alpha = imgData[(y * offCanvas.width + x) * 4 + 3];
-          if (alpha > 128) {
-            const targetX = targetOffsetX + (x / canvasDpr);
-            const targetY = targetOffsetY + (y / canvasDpr);
-            const angle = Math.random() * Math.PI * 2;
-            const orbitDistance = Math.max(canvasWidth, canvasHeight) * (0.36 + Math.random() * 0.34);
-            const originX = clamp(
-              heroCenterX + Math.cos(angle) * orbitDistance + ((Math.random() - 0.5) * width * 0.22),
-              0,
-              canvasWidth
-            );
-            const originY = clamp(
-              heroCenterY + Math.sin(angle) * orbitDistance + ((Math.random() - 0.5) * height * 0.42),
-              0,
-              canvasHeight
-            );
-
-            sampledParticles.push({
-              originX,
-              originY,
-              x: originX,
-              y: originY,
-              targetX,
-              targetY,
-              delay: Math.random() * 1150,
-              seed: Math.random() * Math.PI * 2,
-              drift: 8 + Math.random() * 18,
-              color: Math.random() > 0.95 ? '#FF6700' : '#000000',
-              size: Math.random() * 0.75 + 0.45
-            });
-          }
+          if (alpha <= 128) continue;
+          alphaMinX = Math.min(alphaMinX, x);
+          alphaMaxX = Math.max(alphaMaxX, x);
+          alphaMinY = Math.min(alphaMinY, y);
+          alphaMaxY = Math.max(alphaMaxY, y);
         }
       }
 
-      sampledParticles.sort(() => Math.random() - 0.5);
+      if (alphaMaxX <= alphaMinX || alphaMaxY <= alphaMinY) return;
+
+      const targetOffsetX = padX;
+      const targetOffsetY = padTop;
+      const alphaMinXCss = alphaMinX / canvasDpr;
+      const alphaMaxXCss = alphaMaxX / canvasDpr;
+      const alphaMinYCss = alphaMinY / canvasDpr;
+      const alphaMaxYCss = alphaMaxY / canvasDpr;
+      const alphaWidthCss = Math.max(1, alphaMaxXCss - alphaMinXCss);
+      const alphaHeightCss = Math.max(1, alphaMaxYCss - alphaMinYCss);
+      const heroCenterX = canvasWidth / 2;
+      const heroCenterY = canvasHeight / 2;
+      const random = createSeededRandom(hashString(`${word}:${Math.round(width)}:${Math.round(height)}:${Math.round(fontSizePx)}`));
+      const sampleSpacing = clamp(fontSizePx * 0.036, canvasWidth < 760 ? 4.1 : 3.65, canvasWidth < 760 ? 5.15 : 4.45);
+      const baseDotSize = clamp(fontSizePx * 0.0095, canvasWidth < 760 ? 0.68 : 0.82, canvasWidth < 760 ? 1.08 : 1.35);
+      const readAlphaAt = (cssX, cssY) => {
+        const pixelX = clamp(Math.round(cssX * canvasDpr), 0, offCanvas.width - 1);
+        const pixelY = clamp(Math.round(cssY * canvasDpr), 0, offCanvas.height - 1);
+        return imgData[(pixelY * offCanvas.width + pixelX) * 4 + 3];
+      };
+
+      for (let y = alphaMinYCss; y <= alphaMaxYCss; y += sampleSpacing) {
+        const rowIndex = Math.round((y - alphaMinYCss) / sampleSpacing);
+        const rowOffset = rowIndex % 2 === 0 ? 0 : sampleSpacing * 0.5;
+
+        for (let x = alphaMinXCss + rowOffset; x <= alphaMaxXCss; x += sampleSpacing) {
+          const jitterX = (random() - 0.5) * sampleSpacing * 0.72;
+          const jitterY = (random() - 0.5) * sampleSpacing * 0.72;
+          const sampleX = clamp(x + jitterX, alphaMinXCss, alphaMaxXCss);
+          const sampleY = clamp(y + jitterY, alphaMinYCss, alphaMaxYCss);
+          const alpha = readAlphaAt(sampleX, sampleY);
+
+          if (alpha <= 118) continue;
+
+          const targetX = targetOffsetX + ((sampleX - alphaMinXCss) / alphaWidthCss) * width;
+          const targetY = targetOffsetY + ((sampleY - alphaMinYCss) / alphaHeightCss) * height;
+          const edgeRoll = random();
+          const originEdge = random();
+          let originX = heroCenterX + ((random() - 0.5) * canvasWidth * 0.7);
+          let originY = heroCenterY + ((random() - 0.5) * canvasHeight * 0.62);
+
+          if (originEdge < 0.32) {
+            originX = random() * padX * 0.82;
+            originY = canvasHeight * (0.18 + random() * 0.68);
+          } else if (originEdge < 0.64) {
+            originX = canvasWidth - (random() * padX * 0.82);
+            originY = canvasHeight * (0.18 + random() * 0.68);
+          } else if (originEdge < 0.82) {
+            originX = heroCenterX + ((random() - 0.5) * canvasWidth * 0.74);
+            originY = canvasHeight * (0.05 + random() * 0.22);
+          }
+
+          sampledParticles.push({
+            originX,
+            originY,
+            x: originX,
+            y: originY,
+            vx: (random() - 0.5) * 1.8,
+            vy: (random() - 0.5) * 1.8,
+            targetX,
+            targetY,
+            delay: (targetX / canvasWidth) * 470 + random() * 580,
+            seed: random() * Math.PI * 2,
+            charge: random() > 0.5 ? 1 : -1,
+            field: 0.72 + random() * 0.68,
+            order: random(),
+            color: edgeRoll > 0.955 ? '#FF6700' : '#000000',
+            size: baseDotSize * (0.82 + random() * 0.58)
+          });
+        }
+      }
+
+      sampledParticles.sort((a, b) => a.order - b.order);
       particles = sampledParticles.slice(0, maxParticlesForViewport());
 
       if (options.static || shouldSkipPageAnimation()) {
+        title.classList.remove('is-particle-building');
         title.classList.add('is-particle-complete', 'is-static-wordmark');
         isComplete = true;
         drawStaticFrame();
@@ -814,15 +1038,14 @@
       const draw = (time) => {
         const elapsed = time - animationStartTime;
         const progress = clamp(elapsed / DOUGHERTY_PARTICLE_SEQUENCE_MS, 0, 1);
+        const captureProgress = easeInOutCubic(clamp((elapsed - 420) / (DOUGHERTY_PARTICLE_SEQUENCE_MS - 1600), 0, 1));
+        const settleProgress = easeOutQuint(clamp((elapsed - (DOUGHERTY_PARTICLE_SEQUENCE_MS - 1850)) / 1550, 0, 1));
 
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        drawMagneticGuides(progress, time);
 
         for (let i = 0; i < particles.length; i++) {
           const p = particles[i];
-          if (elapsed < p.delay) {
-            continue;
-          }
-
           const prevX = p.x;
           const prevY = p.y;
           const localProgress = clamp(
@@ -830,23 +1053,45 @@
             0,
             1
           );
-          const buildProgress = easeInOutCubic(localProgress);
-          const anticipation = 1 - easeOutCubic(localProgress);
+          const localCapture = easeInOutCubic(localProgress);
+          const arrival = easeOutCubic(clamp((localProgress - 0.64) / 0.36, 0, 1));
+          const dxToTarget = p.targetX - p.x;
+          const dyToTarget = p.targetY - p.y;
+          const distanceToTarget = Math.max(1, Math.hypot(dxToTarget, dyToTarget));
+          const normalX = dxToTarget / distanceToTarget;
+          const normalY = dyToTarget / distanceToTarget;
           const fieldTime = time * 0.001;
-          const driftX = Math.sin((fieldTime * 1.9) + p.seed + (p.targetY * 0.018)) * p.drift * anticipation;
-          const driftY = Math.cos((fieldTime * 1.7) + p.seed + (p.targetX * 0.016)) * p.drift * anticipation;
+          const fieldFade = 1 - captureProgress;
+          const curl = Math.sin((fieldTime * 2.2) + p.seed + (p.targetX * 0.006)) * p.charge * p.field;
+          const pull = 0.010 + (localCapture * 0.055) + (settleProgress * 0.045);
+          const swirl = fieldFade * (0.30 + (1 - localCapture) * 0.42) * p.field;
+          const oscillationX = Math.sin((fieldTime * 1.6) + p.seed) * fieldFade * 0.18;
+          const oscillationY = Math.cos((fieldTime * 1.4) + p.seed) * fieldFade * 0.18;
 
-          p.x = p.originX + ((p.targetX - p.originX) * buildProgress) + driftX;
-          p.y = p.originY + ((p.targetY - p.originY) * buildProgress) + driftY;
+          p.vx += (dxToTarget * pull) + (-normalY * swirl * curl) + oscillationX;
+          p.vy += (dyToTarget * pull) + (normalX * swirl * curl) + oscillationY;
+
+          const damping = 0.875 - (settleProgress * 0.17) - (arrival * 0.045);
+          p.vx *= damping;
+          p.vy *= damping;
+          p.x += p.vx;
+          p.y += p.vy;
+
+          if (settleProgress > 0.72) {
+            const snap = (settleProgress - 0.72) / 0.28;
+            p.x += (p.targetX - p.x) * snap * 0.24;
+            p.y += (p.targetY - p.y) * snap * 0.24;
+          }
 
           const dx = p.x - prevX;
           const dy = p.y - prevY;
           const movement = Math.hypot(dx, dy);
-          const trailLength = clamp(movement * 0.72, 0, localProgress > 0.72 ? 5 : 11);
+          const trailLength = clamp(movement * 0.66, 0, localProgress > 0.72 ? 4.5 : 13);
 
           if (movement > 0.01 && trailLength > 0.35 && localProgress < 0.96) {
             const normalX = dx / movement;
             const normalY = dy / movement;
+            ctx.globalAlpha = 0.12 + ((1 - localCapture) * 0.28);
             ctx.beginPath();
             ctx.moveTo(p.x - normalX * trailLength, p.y - normalY * trailLength);
             ctx.lineTo(p.x, p.y);
@@ -854,12 +1099,10 @@
             ctx.lineWidth = p.size;
             ctx.lineCap = 'round';
             ctx.stroke();
+            ctx.globalAlpha = 1;
           }
 
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fillStyle = p.color;
-          ctx.fill();
+          drawParticle(p);
         }
 
         if (progress >= 1) {
