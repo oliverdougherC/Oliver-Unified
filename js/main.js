@@ -10,7 +10,7 @@
 (function () {
   'use strict';
 
-  const DOUGHERTY_PARTICLE_SEQUENCE_MS = 4000;
+  const DOUGHERTY_PARTICLE_SEQUENCE_MS = 6800;
   let confettiFired = false;
   const FLASHLIGHT_MODE_STORAGE_KEY = 'od-flashlight-mode';
   const FLASHLIGHT_BATTERY_SESSION_KEY = 'od-flashlight-battery';
@@ -638,16 +638,14 @@
 
     if (!title || !finalWord || !canvas) return;
 
-    if (prefersReducedMotion() || shouldSkipPageAnimation()) {
-      title.classList.add('is-particle-complete', 'is-static-word');
-      return;
-    }
-
-    window.pageAnimations?.markSeen?.();
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
-    const hero = title.closest('.schematic-wrapper') || document.body;
+    if (prefersReducedMotion()) {
+      title.classList.add('is-reduced-static-word');
+      return;
+    }
+
     const word = finalWord.textContent?.trim() || 'DOUGHERTY';
     let particles = [];
     let animationFrameId = 0;
@@ -656,52 +654,62 @@
     let canvasWidth = 0;
     let canvasHeight = 0;
     let canvasDpr = 1;
-    const pointer = {
-      x: 0,
-      y: 0,
-      active: false
-    };
-
-    if (canvas.parentElement !== hero) {
-      hero.appendChild(canvas);
-    }
+    let animationStartTime = 0;
 
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
     const easeOutCubic = (value) => 1 - Math.pow(1 - clamp(value, 0, 1), 3);
-
-    const updatePointer = (event) => {
-      const heroRect = hero.getBoundingClientRect();
-      const nextX = event.clientX - heroRect.left;
-      const nextY = event.clientY - heroRect.top;
-      pointer.x = nextX;
-      pointer.y = nextY;
-      pointer.active = (
-        nextX >= 0
-        && nextY >= 0
-        && nextX <= heroRect.width
-        && nextY <= heroRect.height
-      );
+    const easeInOutCubic = (value) => {
+      const easedValue = clamp(value, 0, 1);
+      return easedValue < 0.5
+        ? 4 * easedValue * easedValue * easedValue
+        : 1 - Math.pow(-2 * easedValue + 2, 3) / 2;
     };
 
-    const clearPointer = () => {
-      pointer.active = false;
+    const maxParticlesForViewport = () => {
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      if (viewportWidth < 640) return 900;
+      if (viewportWidth < 1024) return 1500;
+      return 2200;
     };
 
-    const clearPointerOnViewportExit = (event) => {
-      if (event.relatedTarget !== null || event.toElement !== null) return;
-      clearPointer();
+    const drawStaticFrame = () => {
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      for (const p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.targetX, p.targetY, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+      }
     };
 
-    window.addEventListener('pointermove', updatePointer, { passive: true });
-    window.addEventListener('pointerleave', clearPointer, { passive: true });
-    window.addEventListener('mouseout', clearPointerOnViewportExit, { passive: true });
-    window.addEventListener('scroll', clearPointer, { passive: true });
-    window.addEventListener('blur', clearPointer);
+    const completeWordmark = () => {
+      if (isComplete) return;
+      isComplete = true;
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+        animationFrameId = 0;
+      }
+      drawStaticFrame();
+      title.classList.remove('is-particle-building');
+      title.classList.add('is-particle-complete', 'is-static-wordmark');
+      title.dispatchEvent(new CustomEvent('od:home-wordmark-complete', { bubbles: true }));
+    };
 
-    const startRender = () => {
+    title.addEventListener('od:home-wordmark-force-complete', completeWordmark);
+    window.addEventListener('pagehide', () => {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+        animationFrameId = 0;
+      }
+      if (resizeFrameId) {
+        window.cancelAnimationFrame(resizeFrameId);
+        resizeFrameId = 0;
+      }
+    }, { once: true });
+
+    const startRender = (options = {}) => {
       const getDpr = () => window.devicePixelRatio || 1;
       const dpr = getDpr();
-      const heroRect = hero.getBoundingClientRect();
       const wordRect = finalWord.getBoundingClientRect();
       const width = wordRect.width;
       const height = wordRect.height;
@@ -709,12 +717,16 @@
       if (width === 0 || height === 0) return;
 
       canvasDpr = Math.min(2, dpr);
-      canvasWidth = Math.max(1, Math.round(heroRect.width));
-      canvasHeight = Math.max(1, Math.round(heroRect.height));
+      const padX = clamp(width * 0.28, 64, 200);
+      const padY = clamp(height * 0.62, 48, 120);
+      canvasWidth = Math.max(1, Math.round(width + (padX * 2)));
+      canvasHeight = Math.max(1, Math.round(height + (padY * 2)));
       canvas.width = Math.round(canvasWidth * canvasDpr);
       canvas.height = Math.round(canvasHeight * canvasDpr);
       canvas.style.width = `${canvasWidth}px`;
       canvas.style.height = `${canvasHeight}px`;
+      canvas.style.left = `${Math.round(-padX)}px`;
+      canvas.style.top = `${Math.round(-padY)}px`;
       ctx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
 
       const wordStyle = window.getComputedStyle(finalWord);
@@ -739,14 +751,13 @@
       offCtx.fillText(word, 0, baselineY);
 
       const imgData = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height).data;
-      particles = [];
+      const sampledParticles = [];
 
       const sampleStep = Math.max(2, Math.round(canvasDpr * (canvasWidth < 760 ? 3 : 2.35)));
-      const targetOffsetX = wordRect.left - heroRect.left;
-      const targetOffsetY = wordRect.top - heroRect.top;
+      const targetOffsetX = padX;
+      const targetOffsetY = padY;
       const heroCenterX = canvasWidth / 2;
       const heroCenterY = canvasHeight / 2;
-      const alreadyComplete = isComplete;
 
       for (let y = 0; y < offCanvas.height; y += sampleStep) {
         for (let x = 0; x < offCanvas.width; x += sampleStep) {
@@ -755,43 +766,56 @@
             const targetX = targetOffsetX + (x / canvasDpr);
             const targetY = targetOffsetY + (y / canvasDpr);
             const angle = Math.random() * Math.PI * 2;
-            const orbitDistance = Math.max(canvasWidth, canvasHeight) * (0.28 + Math.random() * 0.62);
-            const randomViewportX = Math.random() * canvasWidth;
-            const randomViewportY = Math.random() * canvasHeight;
-            const originX = (randomViewportX * 0.42) + ((heroCenterX + Math.cos(angle) * orbitDistance) * 0.58);
-            const originY = (randomViewportY * 0.42) + ((heroCenterY + Math.sin(angle) * orbitDistance) * 0.58);
+            const orbitDistance = Math.max(canvasWidth, canvasHeight) * (0.36 + Math.random() * 0.34);
+            const originX = clamp(
+              heroCenterX + Math.cos(angle) * orbitDistance + ((Math.random() - 0.5) * width * 0.22),
+              0,
+              canvasWidth
+            );
+            const originY = clamp(
+              heroCenterY + Math.sin(angle) * orbitDistance + ((Math.random() - 0.5) * height * 0.42),
+              0,
+              canvasHeight
+            );
 
-            particles.push({
-              x: alreadyComplete ? targetX + ((Math.random() - 0.5) * 3) : originX,
-              y: alreadyComplete ? targetY + ((Math.random() - 0.5) * 3) : originY,
+            sampledParticles.push({
+              originX,
+              originY,
+              x: originX,
+              y: originY,
               targetX,
               targetY,
-              vx: 0,
-              vy: 0,
-              delay: alreadyComplete ? 0 : Math.random() * 620,
+              delay: Math.random() * 1150,
               seed: Math.random() * Math.PI * 2,
-              orbit: Math.random() > 0.5 ? 1 : -1,
-              aliveAmp: 0.45 + Math.random() * 1.65,
+              drift: 8 + Math.random() * 18,
               color: Math.random() > 0.95 ? '#FF6700' : '#000000',
-              size: Math.random() * 0.85 + 0.45
+              size: Math.random() * 0.75 + 0.45
             });
           }
         }
       }
 
-      particles.sort(() => Math.random() - 0.5);
+      sampledParticles.sort(() => Math.random() - 0.5);
+      particles = sampledParticles.slice(0, maxParticlesForViewport());
 
-      const animationStartTime = performance.now() - (alreadyComplete ? DOUGHERTY_PARTICLE_SEQUENCE_MS : 0);
+      if (options.static || shouldSkipPageAnimation()) {
+        title.classList.add('is-particle-complete', 'is-static-wordmark');
+        isComplete = true;
+        drawStaticFrame();
+        return;
+      }
+
+      window.pageAnimations?.markSeen?.();
+      isComplete = false;
+      animationStartTime = performance.now();
+      title.classList.remove('is-particle-complete', 'is-static-wordmark');
+      title.classList.add('is-particle-building');
 
       const draw = (time) => {
         const elapsed = time - animationStartTime;
         const progress = clamp(elapsed / DOUGHERTY_PARTICLE_SEQUENCE_MS, 0, 1);
-        const easedProgress = easeOutCubic(progress);
-        const interactive = progress >= 1;
-        const fadeAlpha = interactive ? 0.36 : 0.24;
 
-        ctx.fillStyle = `rgba(255, 255, 255, ${fadeAlpha})`;
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
         for (let i = 0; i < particles.length; i++) {
           const p = particles[i];
@@ -799,85 +823,64 @@
             continue;
           }
 
-          const fieldTime = time * 0.001;
-          const introSwirl = Math.max(0, 1 - easedProgress);
-          const aliveSwirl = interactive ? 1 : easedProgress * 0.18;
-          const aliveX = Math.sin((fieldTime * 1.4) + p.seed + (p.targetY * 0.018)) * p.aliveAmp * aliveSwirl;
-          const aliveY = Math.cos((fieldTime * 1.2) + p.seed + (p.targetX * 0.014)) * p.aliveAmp * aliveSwirl;
-          const targetX = p.targetX + aliveX;
-          const targetY = p.targetY + aliveY;
-
-          const dx = targetX - p.x;
-          const dy = targetY - p.y;
-
-          const flowX = Math.sin((p.y * 0.018) + (fieldTime * 5.2) + p.seed) * 2.8 * introSwirl;
-          const flowY = Math.cos((p.x * 0.016) + (fieldTime * 4.8) + p.seed) * 2.8 * introSwirl;
-          const springForce = interactive ? 0.034 : 0.012 + (easedProgress * 0.072);
-          const friction = interactive ? 0.86 : 0.835;
-
-          p.vx += (dx * springForce) + flowX;
-          p.vy += (dy * springForce) + flowY;
-
-          if (interactive && pointer.active) {
-            const pointerDx = p.x - pointer.x;
-            const pointerDy = p.y - pointer.y;
-            const pointerDistance = Math.max(1, Math.hypot(pointerDx, pointerDy));
-            const radius = clamp(Math.min(canvasWidth, canvasHeight) * 0.16, 92, 168);
-
-            if (pointerDistance < radius) {
-              const strength = Math.pow(1 - (pointerDistance / radius), 2);
-              const push = strength * 16;
-              const normalX = pointerDx / pointerDistance;
-              const normalY = pointerDy / pointerDistance;
-              p.vx += (normalX * push) + (-normalY * push * 0.22 * p.orbit);
-              p.vy += (normalY * push) + (normalX * push * 0.22 * p.orbit);
-            }
-          }
-
-          p.vx *= friction;
-          p.vy *= friction;
-
           const prevX = p.x;
           const prevY = p.y;
+          const localProgress = clamp(
+            (elapsed - p.delay) / (DOUGHERTY_PARTICLE_SEQUENCE_MS - 1450),
+            0,
+            1
+          );
+          const buildProgress = easeInOutCubic(localProgress);
+          const anticipation = 1 - easeOutCubic(localProgress);
+          const fieldTime = time * 0.001;
+          const driftX = Math.sin((fieldTime * 1.9) + p.seed + (p.targetY * 0.018)) * p.drift * anticipation;
+          const driftY = Math.cos((fieldTime * 1.7) + p.seed + (p.targetX * 0.016)) * p.drift * anticipation;
 
-          p.x += p.vx;
-          p.y += p.vy;
+          p.x = p.originX + ((p.targetX - p.originX) * buildProgress) + driftX;
+          p.y = p.originY + ((p.targetY - p.originY) * buildProgress) + driftY;
 
-          if (interactive) {
+          const dx = p.x - prevX;
+          const dy = p.y - prevY;
+          const movement = Math.hypot(dx, dy);
+          const trailLength = clamp(movement * 0.72, 0, localProgress > 0.72 ? 5 : 11);
+
+          if (movement > 0.01 && trailLength > 0.35 && localProgress < 0.96) {
+            const normalX = dx / movement;
+            const normalY = dy / movement;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size * 0.72, 0, Math.PI * 2);
-            ctx.fillStyle = p.color;
-            ctx.fill();
-          } else {
-            ctx.beginPath();
-            ctx.moveTo(prevX - p.vx * 1.25, prevY - p.vy * 1.25);
+            ctx.moveTo(p.x - normalX * trailLength, p.y - normalY * trailLength);
             ctx.lineTo(p.x, p.y);
             ctx.strokeStyle = p.color;
             ctx.lineWidth = p.size;
             ctx.lineCap = 'round';
             ctx.stroke();
           }
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
         }
 
-        if (interactive && !isComplete) {
-          isComplete = true;
-          title.classList.add('is-particle-complete');
+        if (progress >= 1) {
+          completeWordmark();
+          return;
         }
 
-        animationFrameId = requestAnimationFrame(draw);
+        animationFrameId = window.requestAnimationFrame(draw);
       };
 
       if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
+        window.cancelAnimationFrame(animationFrameId);
       }
-      animationFrameId = requestAnimationFrame(draw);
+      animationFrameId = window.requestAnimationFrame(draw);
     };
 
     const scheduleRender = () => {
       if (resizeFrameId) return;
       resizeFrameId = window.requestAnimationFrame(() => {
         resizeFrameId = 0;
-        startRender();
+        startRender({ static: isComplete });
       });
     };
 
@@ -957,9 +960,7 @@
     let revealed = false;
 
     const finishParticleAnimations = () => {
-      const root = document.querySelector('.blueprint-title');
-      if (!root) return;
-      root.classList.add('is-particle-complete');
+      blueprint.dispatchEvent(new CustomEvent('od:home-wordmark-force-complete', { bubbles: true }));
     };
 
     const reveal = () => {
@@ -970,6 +971,7 @@
         revealTimer = null;
       }
       revealDeferredElements();
+      blueprint.removeEventListener('od:home-wordmark-complete', reveal);
       window.removeEventListener('scroll', onScrollMaybePastDougherty, { passive: true });
     };
 
@@ -987,9 +989,10 @@
     };
 
     window.addEventListener('scroll', onScrollMaybePastDougherty, { passive: true });
+    blueprint.addEventListener('od:home-wordmark-complete', reveal, { once: true });
 
     // Deferred elements reveal when the particle animation completes
-    revealTimer = window.setTimeout(reveal, DOUGHERTY_PARTICLE_SEQUENCE_MS);
+    revealTimer = window.setTimeout(reveal, DOUGHERTY_PARTICLE_SEQUENCE_MS + 1400);
   }
 
   /**
