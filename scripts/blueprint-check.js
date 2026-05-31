@@ -210,6 +210,136 @@ async function assertBlueprintStructure(page, browserName) {
   assert(state.activeAnimationFrames === 0, `[${browserName}] particle animation should not leave rAF work queued`);
 }
 
+async function assertLateSettlePointerInteraction(page, browserName) {
+  await clearAnimationMemory(page);
+  await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+  await waitForBlueprintReady(page);
+  await page.mouse.move(10, 10);
+  await page.waitForTimeout(6250);
+
+  const before = await page.evaluate(() => {
+    const title = document.querySelector('.blueprint-title');
+    const canvas = title?.querySelector('.particle-canvas');
+    const canvasRect = canvas?.getBoundingClientRect();
+
+    if (!(title instanceof HTMLElement) || !(canvas instanceof HTMLCanvasElement) || !canvasRect) {
+      return null;
+    }
+
+    const context = canvas.getContext('2d');
+    const imageData = context?.getImageData(0, 0, canvas.width, canvas.height).data;
+    if (!imageData) return null;
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    let sampleX = 0;
+    let sampleY = 0;
+    let sampleDistance = Number.POSITIVE_INFINITY;
+
+    for (let y = 0; y < canvas.height; y += 1) {
+      for (let x = 0; x < canvas.width; x += 1) {
+        const alpha = imageData[(y * canvas.width + x) * 4 + 3];
+        if (alpha <= 0) continue;
+        const distance = Math.hypot(x - centerX, y - centerY);
+        if (distance < sampleDistance) {
+          sampleDistance = distance;
+          sampleX = x;
+          sampleY = y;
+        }
+      }
+    }
+
+    if (!Number.isFinite(sampleDistance)) return null;
+
+    const cssPixelScale = canvas.width / canvasRect.width;
+    const radiusCss = Math.max(26, Math.min(54, canvasRect.width * 0.035));
+    const radiusPx = Math.round(radiusCss * cssPixelScale * 0.62);
+    let localActivePixels = 0;
+    const minX = Math.max(0, sampleX - radiusPx);
+    const maxX = Math.min(canvas.width - 1, sampleX + radiusPx);
+    const minY = Math.max(0, sampleY - radiusPx);
+    const maxY = Math.min(canvas.height - 1, sampleY + radiusPx);
+    const radiusSquared = radiusPx * radiusPx;
+
+    for (let y = minY; y <= maxY; y += 1) {
+      for (let x = minX; x <= maxX; x += 1) {
+        const dx = x - sampleX;
+        const dy = y - sampleY;
+        if ((dx * dx) + (dy * dy) > radiusSquared) continue;
+        if (imageData[(y * canvas.width + x) * 4 + 3] > 0) {
+          localActivePixels += 1;
+        }
+      }
+    }
+
+    return {
+      building: title.classList.contains('is-particle-building'),
+      complete: title.classList.contains('is-static-wordmark'),
+      pointerClientX: canvasRect.left + ((sampleX / canvas.width) * canvasRect.width),
+      pointerClientY: canvasRect.top + ((sampleY / canvas.height) * canvasRect.height),
+      sampleX,
+      sampleY,
+      radiusPx,
+      localActivePixels
+    };
+  });
+
+  assert(before, `[${browserName}] late-settle particle sample should be readable`);
+  assert(before.building, `[${browserName}] late-settle pointer check should run before particle completion`);
+  assert(!before.complete, `[${browserName}] late-settle pointer check should not use the completed hover loop`);
+
+  await page.mouse.move(before.pointerClientX, before.pointerClientY);
+  await page.waitForTimeout(240);
+
+  const after = await page.evaluate(({ sampleX, sampleY, radiusPx }) => {
+    const title = document.querySelector('.blueprint-title');
+    const canvas = title?.querySelector('.particle-canvas');
+    if (!(title instanceof HTMLElement) || !(canvas instanceof HTMLCanvasElement)) {
+      return null;
+    }
+
+    const context = canvas.getContext('2d');
+    const imageData = context?.getImageData(0, 0, canvas.width, canvas.height).data;
+    if (!imageData) return null;
+
+    let localActivePixels = 0;
+    const minX = Math.max(0, sampleX - radiusPx);
+    const maxX = Math.min(canvas.width - 1, sampleX + radiusPx);
+    const minY = Math.max(0, sampleY - radiusPx);
+    const maxY = Math.min(canvas.height - 1, sampleY + radiusPx);
+    const radiusSquared = radiusPx * radiusPx;
+
+    for (let y = minY; y <= maxY; y += 1) {
+      for (let x = minX; x <= maxX; x += 1) {
+        const dx = x - sampleX;
+        const dy = y - sampleY;
+        if ((dx * dx) + (dy * dy) > radiusSquared) continue;
+        if (imageData[(y * canvas.width + x) * 4 + 3] > 0) {
+          localActivePixels += 1;
+        }
+      }
+    }
+
+    return {
+      building: title.classList.contains('is-particle-building'),
+      complete: title.classList.contains('is-static-wordmark'),
+      localActivePixels
+    };
+  }, {
+    sampleX: before.sampleX,
+    sampleY: before.sampleY,
+    radiusPx: before.radiusPx
+  });
+
+  assert(after, `[${browserName}] late-settle particle response should be readable`);
+  assert(after.building, `[${browserName}] cursor effect should activate before particle completion`);
+  assert(!after.complete, `[${browserName}] cursor effect should not depend on the completed wordmark class`);
+  assert(
+    after.localActivePixels < before.localActivePixels * 0.88,
+    `[${browserName}] cursor effect should repel late-settle particles before completion`
+  );
+}
+
 async function assertReloadSkipState(page, browserName) {
   await page.reload({ waitUntil: 'networkidle' });
   await waitForBlueprintReady(page);
@@ -263,6 +393,7 @@ async function runBrowser(browserEntry, viewport) {
     }
 
     await assertBlueprintStructure(page, browserEntry.name);
+    await assertLateSettlePointerInteraction(page, browserEntry.name);
     await assertReloadSkipState(page, browserEntry.name);
     await context.close();
   } finally {
