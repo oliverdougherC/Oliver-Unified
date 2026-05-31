@@ -135,25 +135,51 @@ async function assertBlueprintStructure(page, browserName) {
     const oliverRect = oliver?.getBoundingClientRect();
     const wordRect = finalWord?.getBoundingClientRect();
     let activeCanvasPixels = 0;
+    let activeOliverOverlapPixels = 0;
+    let activeMinX = canvas?.width || 0;
+    let activeMaxX = 0;
+    let activeMinY = canvas?.height || 0;
+    let activeMaxY = 0;
 
     if (canvas instanceof HTMLCanvasElement) {
       const context = canvas.getContext('2d');
       const imageData = context?.getImageData(0, 0, canvas.width, canvas.height).data;
       if (imageData) {
-        for (let index = 3; index < imageData.length; index += 4) {
-          if (imageData[index] > 0) activeCanvasPixels += 1;
+        for (let y = 0; y < canvas.height; y += 1) {
+          for (let x = 0; x < canvas.width; x += 1) {
+            const alpha = imageData[(y * canvas.width + x) * 4 + 3];
+            if (alpha <= 0) continue;
+
+            activeCanvasPixels += 1;
+            activeMinX = Math.min(activeMinX, x);
+            activeMaxX = Math.max(activeMaxX, x);
+            activeMinY = Math.min(activeMinY, y);
+            activeMaxY = Math.max(activeMaxY, y);
+            if (canvasRect && oliverRect) {
+              const pageX = canvasRect.left + (x / canvas.width) * canvasRect.width;
+              const pageY = canvasRect.top + (y / canvas.height) * canvasRect.height;
+              if (
+                pageX >= oliverRect.left
+                && pageX <= oliverRect.right
+                && pageY >= oliverRect.top
+                && pageY <= oliverRect.bottom
+              ) {
+                activeOliverOverlapPixels += 1;
+              }
+            }
+          }
         }
       }
     }
 
-    const intersectsOliver = Boolean(canvasRect && oliverRect)
-      && canvasRect.left < oliverRect.right
-      && canvasRect.right > oliverRect.left
-      && canvasRect.top < oliverRect.bottom
-      && canvasRect.bottom > oliverRect.top;
-
     const widthRatio = canvasRect && wordRect ? canvasRect.width / wordRect.width : 0;
     const heightRatio = canvasRect && wordRect ? canvasRect.height / wordRect.height : 0;
+    const activeWidth = activeCanvasPixels > 0 ? activeMaxX - activeMinX + 1 : 0;
+    const activeHeight = activeCanvasPixels > 0 ? activeMaxY - activeMinY + 1 : 0;
+    const activeCssWidth = canvasRect && canvas ? activeWidth * (canvasRect.width / canvas.width) : 0;
+    const activeCssHeight = canvasRect && canvas ? activeHeight * (canvasRect.height / canvas.height) : 0;
+    const activeWidthRatio = wordRect ? activeCssWidth / wordRect.width : 0;
+    const activeHeightRatio = wordRect ? activeCssHeight / wordRect.height : 0;
 
     return {
       complete: title?.classList.contains('is-static-wordmark') === true,
@@ -162,9 +188,11 @@ async function assertBlueprintStructure(page, browserName) {
       canvasWidth: canvas?.width || 0,
       canvasHeight: canvas?.height || 0,
       activeCanvasPixels,
-      intersectsOliver,
+      activeOliverOverlapPixels,
       widthRatio,
       heightRatio,
+      activeWidthRatio,
+      activeHeightRatio,
       activeAnimationFrames: window.__odActiveAnimationFrames?.size ?? 0
     };
   });
@@ -173,10 +201,12 @@ async function assertBlueprintStructure(page, browserName) {
   assert(Number(state.finalWordOpacity) === 0, `[${browserName}] final orange word should stay hidden`);
   assert(Number(state.canvasOpacity) === 1, `[${browserName}] completed particle canvas should be visible`);
   assert(state.canvasWidth > 0 && state.canvasHeight > 0, `[${browserName}] particle canvas should be sized`);
-  assert(state.activeCanvasPixels > 500, `[${browserName}] expected active particle pixels in completed canvas`);
-  assert(!state.intersectsOliver, `[${browserName}] particle canvas should not cover OLIVER`);
-  assert(state.widthRatio > 1 && state.widthRatio < 1.7, `[${browserName}] particle canvas width should stay close to DOUGHERTY bounds`);
-  assert(state.heightRatio > 1.6 && state.heightRatio < 3.8, `[${browserName}] particle canvas height should stay close to DOUGHERTY bounds`);
+  assert(state.activeCanvasPixels > 2400, `[${browserName}] expected dense active particle pixels in completed canvas`);
+  assert(state.activeOliverOverlapPixels === 0, `[${browserName}] completed particle canvas should not draw over OLIVER`);
+  assert(state.widthRatio > 1.8 && state.widthRatio < 2.35, `[${browserName}] particle canvas width should provide a loose stage`);
+  assert(state.heightRatio > 2 && state.heightRatio < 4.8, `[${browserName}] particle canvas height should provide a loose stage`);
+  assert(state.activeWidthRatio > 0.82 && state.activeWidthRatio < 1.08, `[${browserName}] final particle bounds should align to DOUGHERTY width`);
+  assert(state.activeHeightRatio > 0.58 && state.activeHeightRatio < 1.16, `[${browserName}] final particle bounds should align to DOUGHERTY height`);
   assert(state.activeAnimationFrames === 0, `[${browserName}] particle animation should not leave rAF work queued`);
 }
 
