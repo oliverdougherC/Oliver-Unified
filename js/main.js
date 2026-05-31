@@ -651,7 +651,7 @@
     window.pageAnimations?.markSeen?.();
 
     const SVG_NS = 'http://www.w3.org/2000/svg';
-    const word = finalWord.textContent?.trim() || 'DOUGHERTY.';
+    const word = finalWord.textContent?.trim() || 'DOUGHERTY';
     let completionTimer = null;
     let lastSignature = '';
 
@@ -781,33 +781,6 @@
       const lowerGuide = snap(height * 0.82, dpr);
       const bottom = snap(height - railInset, dpr);
 
-      characters.forEach(({ x }, index) => {
-        addLine(grid, 'blueprint-grid-line--major', x, top, x, bottom, index * 26, dpr);
-      });
-      addLine(grid, 'blueprint-grid-line--major', width, top, width, bottom, characters.length * 26, dpr);
-
-      for (let index = 0; index < characters.length - 1; index += 1) {
-        const current = characters[index];
-        const next = characters[index + 1];
-        const midpoint = (current.x + current.width / 2 + next.x + next.width / 2) / 2;
-        addLine(
-          grid,
-          'blueprint-grid-line--minor',
-          midpoint,
-          cap,
-          midpoint,
-          lowerGuide,
-          130 + index * 20,
-          dpr
-        );
-      }
-
-      addLine(grid, 'blueprint-grid-line--rail', 0, top, width, top, 40, dpr);
-      addLine(grid, 'blueprint-grid-line--rail', 0, bottom, width, bottom, 120, dpr);
-      addLine(grid, 'blueprint-grid-line--center', 0, center, width, center, 240, dpr);
-      addLine(grid, 'blueprint-grid-line--minor', 0, cap, width, cap, 300, dpr);
-      addLine(grid, 'blueprint-grid-line--minor', 0, lowerGuide, width, lowerGuide, 360, dpr);
-
       const baseLetterTiming = [
         { delay: 0, duration: 2500, dash: 4.8 },
         { delay: 430, duration: 2300, dash: 4.4 },
@@ -876,6 +849,58 @@
       } catch (error) {
         // getBBox can fail before layout; initial y estimate is sufficient.
       }
+
+      const letterBounds = letterNodes.map(({ outlineText }, index) => {
+        try {
+          const bbox = outlineText.getBBox();
+          return {
+            left: snap(bbox.x, dpr),
+            right: snap(bbox.x + bbox.width, dpr),
+            center: snap(bbox.x + bbox.width / 2, dpr)
+          };
+        } catch (_error) {
+          const character = characters[index];
+          return {
+            left: character.x,
+            right: snap(character.x + character.width, dpr),
+            center: snap(character.x + character.width / 2, dpr)
+          };
+        }
+      });
+      const guidePad = snap(Math.max(4, fontSizePx * 0.025), dpr);
+      const guideBoundaries = [
+        snap(Math.max(0, Math.min(characters[0]?.x || 0, (letterBounds[0]?.left || 0) - guidePad)), dpr)
+      ];
+
+      for (let index = 1; index < letterBounds.length; index += 1) {
+        guideBoundaries.push(snap((letterBounds[index - 1].right + letterBounds[index].left) / 2, dpr));
+      }
+
+      guideBoundaries.push(width);
+      guideBoundaries.forEach((x, index) => {
+        addLine(grid, 'blueprint-grid-line--major', x, top, x, bottom, index * 26, dpr);
+      });
+
+      for (let index = 0; index < letterBounds.length - 1; index += 1) {
+        const midpoint = snap((letterBounds[index].center + letterBounds[index + 1].center) / 2, dpr);
+        addLine(
+          grid,
+          'blueprint-grid-line--minor',
+          midpoint,
+          cap,
+          midpoint,
+          lowerGuide,
+          130 + index * 20,
+          dpr
+        );
+      }
+
+      addLine(grid, 'blueprint-grid-line--rail', 0, top, width, top, 40, dpr);
+      addLine(grid, 'blueprint-grid-line--rail', 0, bottom, width, bottom, 120, dpr);
+      addLine(grid, 'blueprint-grid-line--center', 0, center, width, center, 240, dpr);
+      addLine(grid, 'blueprint-grid-line--minor', 0, cap, width, cap, 300, dpr);
+      addLine(grid, 'blueprint-grid-line--minor', 0, lowerGuide, width, lowerGuide, 360, dpr);
+      layer.insertBefore(grid, outline);
 
       const finalGap = Math.max(4, Math.round(fontSizePx * 0.14));
       letterNodes.forEach(({ outlineText, timing }) => {
