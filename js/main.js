@@ -639,7 +639,7 @@
     if (!title || !finalWord || !canvas) return;
 
     if (prefersReducedMotion() || shouldSkipPageAnimation()) {
-      title.classList.add('is-particle-complete');
+      title.classList.add('is-particle-complete', 'is-static-word');
       return;
     }
 
@@ -647,34 +647,75 @@
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
+    const hero = title.closest('.schematic-wrapper') || document.body;
     const word = finalWord.textContent?.trim() || 'DOUGHERTY';
     let particles = [];
-    let animationFrameId;
+    let animationFrameId = 0;
+    let resizeFrameId = 0;
     let isComplete = false;
-    
+    let canvasWidth = 0;
+    let canvasHeight = 0;
+    let canvasDpr = 1;
+    const pointer = {
+      x: 0,
+      y: 0,
+      active: false
+    };
+
+    if (canvas.parentElement !== hero) {
+      hero.appendChild(canvas);
+    }
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const easeOutCubic = (value) => 1 - Math.pow(1 - clamp(value, 0, 1), 3);
+
+    const updatePointer = (event) => {
+      const heroRect = hero.getBoundingClientRect();
+      const nextX = event.clientX - heroRect.left;
+      const nextY = event.clientY - heroRect.top;
+      pointer.x = nextX;
+      pointer.y = nextY;
+      pointer.active = (
+        nextX >= 0
+        && nextY >= 0
+        && nextX <= heroRect.width
+        && nextY <= heroRect.height
+      );
+    };
+
+    const clearPointer = () => {
+      pointer.active = false;
+    };
+
+    const clearPointerOnViewportExit = (event) => {
+      if (event.relatedTarget !== null || event.toElement !== null) return;
+      clearPointer();
+    };
+
+    window.addEventListener('pointermove', updatePointer, { passive: true });
+    window.addEventListener('pointerleave', clearPointer, { passive: true });
+    window.addEventListener('mouseout', clearPointerOnViewportExit, { passive: true });
+    window.addEventListener('scroll', clearPointer, { passive: true });
+    window.addEventListener('blur', clearPointer);
+
     const startRender = () => {
       const getDpr = () => window.devicePixelRatio || 1;
       const dpr = getDpr();
-      const rect = finalWord.getBoundingClientRect();
-      const width = rect.width;
-      const height = rect.height;
-      
+      const heroRect = hero.getBoundingClientRect();
+      const wordRect = finalWord.getBoundingClientRect();
+      const width = wordRect.width;
+      const height = wordRect.height;
+
       if (width === 0 || height === 0) return;
 
-      // Expand canvas slightly to allow particles to exist just outside the bounding box
-      const padX = width * 0.2;
-      const padY = height * 0.5;
-      const canvasWidth = width + padX * 2;
-      const canvasHeight = height + padY * 2;
-
-      canvas.width = canvasWidth * dpr;
-      canvas.height = canvasHeight * dpr;
-      // Adjust canvas CSS to center it over the word
+      canvasDpr = Math.min(2, dpr);
+      canvasWidth = Math.max(1, Math.round(heroRect.width));
+      canvasHeight = Math.max(1, Math.round(heroRect.height));
+      canvas.width = Math.round(canvasWidth * canvasDpr);
+      canvas.height = Math.round(canvasHeight * canvasDpr);
       canvas.style.width = `${canvasWidth}px`;
       canvas.style.height = `${canvasHeight}px`;
-      canvas.style.left = `-${padX}px`;
-      canvas.style.top = `-${padY}px`;
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
 
       const wordStyle = window.getComputedStyle(finalWord);
       const fontSize = wordStyle.fontSize || '16px';
@@ -684,138 +725,163 @@
 
       const offCanvas = document.createElement('canvas');
       const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
-      offCanvas.width = width * dpr;
-      offCanvas.height = height * dpr;
-      offCtx.scale(dpr, dpr);
-      
+      if (!offCtx) return;
+      offCanvas.width = Math.ceil(width * canvasDpr);
+      offCanvas.height = Math.ceil(height * canvasDpr);
+      offCtx.scale(canvasDpr, canvasDpr);
+
       offCtx.font = `${fontWeight} ${fontSize} ${fontFamily}`;
       offCtx.fillStyle = '#000';
       offCtx.textBaseline = 'alphabetic';
       offCtx.letterSpacing = letterSpacing;
-      
-      const baselineY = height * 0.82; 
+
+      const baselineY = height * 0.82;
       offCtx.fillText(word, 0, baselineY);
-      
+
       const imgData = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height).data;
       particles = [];
-      
-      const step = Math.max(2, Math.floor(dpr * 2)); 
-      
-      for (let y = 0; y < offCanvas.height; y += step) {
-        for (let x = 0; x < offCanvas.width; x += step) {
+
+      const sampleStep = Math.max(2, Math.round(canvasDpr * (canvasWidth < 760 ? 3 : 2.35)));
+      const targetOffsetX = wordRect.left - heroRect.left;
+      const targetOffsetY = wordRect.top - heroRect.top;
+      const heroCenterX = canvasWidth / 2;
+      const heroCenterY = canvasHeight / 2;
+      const alreadyComplete = isComplete;
+
+      for (let y = 0; y < offCanvas.height; y += sampleStep) {
+        for (let x = 0; x < offCanvas.width; x += sampleStep) {
           const alpha = imgData[(y * offCanvas.width + x) * 4 + 3];
           if (alpha > 128) {
-            // Target coordinates adjusted for padding
-            const targetX = (x / dpr) + padX;
-            const targetY = (y / dpr) + padY;
-            
-            // Start positions randomly scattered around the screen
+            const targetX = targetOffsetX + (x / canvasDpr);
+            const targetY = targetOffsetY + (y / canvasDpr);
             const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * Math.max(width, height) * 1.5;
-            const originX = targetX + Math.cos(angle) * distance;
-            const originY = targetY + Math.sin(angle) * distance;
-            
+            const orbitDistance = Math.max(canvasWidth, canvasHeight) * (0.28 + Math.random() * 0.62);
+            const randomViewportX = Math.random() * canvasWidth;
+            const randomViewportY = Math.random() * canvasHeight;
+            const originX = (randomViewportX * 0.42) + ((heroCenterX + Math.cos(angle) * orbitDistance) * 0.58);
+            const originY = (randomViewportY * 0.42) + ((heroCenterY + Math.sin(angle) * orbitDistance) * 0.58);
+
             particles.push({
-              x: originX,
-              y: originY,
+              x: alreadyComplete ? targetX + ((Math.random() - 0.5) * 3) : originX,
+              y: alreadyComplete ? targetY + ((Math.random() - 0.5) * 3) : originY,
               targetX,
               targetY,
               vx: 0,
               vy: 0,
-              delay: Math.random() * 500,
-              startTime: performance.now(),
-              // Give a small percentage of particles the flare color
+              delay: alreadyComplete ? 0 : Math.random() * 620,
+              seed: Math.random() * Math.PI * 2,
+              orbit: Math.random() > 0.5 ? 1 : -1,
+              aliveAmp: 0.45 + Math.random() * 1.65,
               color: Math.random() > 0.95 ? '#FF6700' : '#000000',
-              size: Math.random() * 0.8 + 0.4
+              size: Math.random() * 0.85 + 0.45
             });
           }
         }
       }
-      
+
       particles.sort(() => Math.random() - 0.5);
-      
-      let animationStartTime = performance.now();
-      
+
+      const animationStartTime = performance.now() - (alreadyComplete ? DOUGHERTY_PARTICLE_SEQUENCE_MS : 0);
+
       const draw = (time) => {
-        if (isComplete) return;
-        
-        // Trail effect instead of full clear
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-        
-        let allSettled = true;
         const elapsed = time - animationStartTime;
-        
+        const progress = clamp(elapsed / DOUGHERTY_PARTICLE_SEQUENCE_MS, 0, 1);
+        const easedProgress = easeOutCubic(progress);
+        const interactive = progress >= 1;
+        const fadeAlpha = interactive ? 0.36 : 0.24;
+
+        ctx.fillStyle = `rgba(255, 255, 255, ${fadeAlpha})`;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
         for (let i = 0; i < particles.length; i++) {
           const p = particles[i];
-          if (time - p.startTime < p.delay) {
-            allSettled = false;
+          if (elapsed < p.delay) {
             continue;
           }
-          
-          const dx = p.targetX - p.x;
-          const dy = p.targetY - p.y;
-          const dist = Math.hypot(dx, dy);
-          
-          // Noise/swirl effect during the early phase
-          let swirlX = 0;
-          let swirlY = 0;
-          
-          if (elapsed < 2500) {
-            // Magnetic swirling based on position
-            swirlX = Math.sin(p.y * 0.05 + time * 0.002) * 2;
-            swirlY = Math.cos(p.x * 0.05 + time * 0.002) * 2;
+
+          const fieldTime = time * 0.001;
+          const introSwirl = Math.max(0, 1 - easedProgress);
+          const aliveSwirl = interactive ? 1 : easedProgress * 0.18;
+          const aliveX = Math.sin((fieldTime * 1.4) + p.seed + (p.targetY * 0.018)) * p.aliveAmp * aliveSwirl;
+          const aliveY = Math.cos((fieldTime * 1.2) + p.seed + (p.targetX * 0.014)) * p.aliveAmp * aliveSwirl;
+          const targetX = p.targetX + aliveX;
+          const targetY = p.targetY + aliveY;
+
+          const dx = targetX - p.x;
+          const dy = targetY - p.y;
+
+          const flowX = Math.sin((p.y * 0.018) + (fieldTime * 5.2) + p.seed) * 2.8 * introSwirl;
+          const flowY = Math.cos((p.x * 0.016) + (fieldTime * 4.8) + p.seed) * 2.8 * introSwirl;
+          const springForce = interactive ? 0.034 : 0.012 + (easedProgress * 0.072);
+          const friction = interactive ? 0.86 : 0.835;
+
+          p.vx += (dx * springForce) + flowX;
+          p.vy += (dy * springForce) + flowY;
+
+          if (interactive && pointer.active) {
+            const pointerDx = p.x - pointer.x;
+            const pointerDy = p.y - pointer.y;
+            const pointerDistance = Math.max(1, Math.hypot(pointerDx, pointerDy));
+            const radius = clamp(Math.min(canvasWidth, canvasHeight) * 0.16, 92, 168);
+
+            if (pointerDistance < radius) {
+              const strength = Math.pow(1 - (pointerDistance / radius), 2);
+              const push = strength * 16;
+              const normalX = pointerDx / pointerDistance;
+              const normalY = pointerDy / pointerDistance;
+              p.vx += (normalX * push) + (-normalY * push * 0.22 * p.orbit);
+              p.vy += (normalY * push) + (normalX * push * 0.22 * p.orbit);
+            }
           }
-          
-          // Spring mechanics increase over time for a "snapping" finish
-          const springForce = Math.min(0.15, 0.01 + (elapsed / 3000) * 0.14);
-          const friction = 0.82;
-          
-          p.vx += (dx * springForce) + swirlX;
-          p.vy += (dy * springForce) + swirlY;
+
           p.vx *= friction;
           p.vy *= friction;
-          
+
           const prevX = p.x;
           const prevY = p.y;
-          
+
           p.x += p.vx;
           p.y += p.vy;
-          
-          if (dist > 0.5 || Math.abs(p.vx) > 0.1 || Math.abs(p.vy) > 0.1) {
-            allSettled = false;
+
+          if (interactive) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * 0.72, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+          } else {
+            ctx.beginPath();
+            ctx.moveTo(prevX - p.vx * 1.25, prevY - p.vy * 1.25);
+            ctx.lineTo(p.x, p.y);
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = p.size;
+            ctx.lineCap = 'round';
+            ctx.stroke();
           }
-          
-          // Draw as a streak/filing
-          ctx.beginPath();
-          ctx.moveTo(prevX - p.vx * 1.5, prevY - p.vy * 1.5);
-          ctx.lineTo(p.x, p.y);
-          ctx.strokeStyle = p.color;
-          ctx.lineWidth = p.size;
-          ctx.lineCap = 'round';
-          ctx.stroke();
         }
-        
-        if (allSettled && particles.length > 0) {
+
+        if (interactive && !isComplete) {
           isComplete = true;
           title.classList.add('is-particle-complete');
-          // Clear canvas once CSS animation takes over
-          ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        } else {
-          animationFrameId = requestAnimationFrame(draw);
         }
+
+        animationFrameId = requestAnimationFrame(draw);
       };
 
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
       animationFrameId = requestAnimationFrame(draw);
-
-      setTimeout(() => {
-        if (!isComplete) {
-          isComplete = true;
-          title.classList.add('is-particle-complete');
-          ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        }
-      }, DOUGHERTY_PARTICLE_SEQUENCE_MS);
     };
+
+    const scheduleRender = () => {
+      if (resizeFrameId) return;
+      resizeFrameId = window.requestAnimationFrame(() => {
+        resizeFrameId = 0;
+        startRender();
+      });
+    };
+
+    window.addEventListener('resize', scheduleRender, { passive: true });
 
     if (document.fonts?.ready) {
       Promise.race([

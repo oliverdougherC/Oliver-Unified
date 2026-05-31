@@ -64,6 +64,7 @@ body.schematic-mode {
   width: 100vw;
   height: 100vh;
   background-color: #FFFFFF;
+  overflow: hidden;
 }
 
 .schematic-grid {
@@ -170,14 +171,19 @@ body.schematic-mode {
 }
 
 .blueprint-title.is-particle-complete .blueprint-final-word {
-  animation: blueprintTitleMaterialize 1200ms cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  opacity: 0;
+}
+
+.blueprint-title.is-static-word .blueprint-final-word {
+  opacity: 1;
+  animation: none;
+  filter: none;
 }
 
 .particle-canvas {
   position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
+  inset: 0;
+  z-index: 11;
   display: block;
   width: 100%;
   height: 100%;
@@ -185,8 +191,7 @@ body.schematic-mode {
 }
 
 .blueprint-title.is-particle-complete .particle-canvas {
-  opacity: 0;
-  transition: opacity 1s ease;
+  opacity: 1;
 }
 
 .blueprint-grid-line,
