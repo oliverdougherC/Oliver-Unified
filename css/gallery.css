@@ -127,7 +127,7 @@ body.schematic-mode .gallery-hero-layout {
   font-family: var(--font-display);
   font-weight: 800;
   width: max-content;
-  font-size: 1em;
+  font-size: clamp(4.5rem, 11vw, 9rem);
   line-height: 1.0;
   letter-spacing: -0.02em;
   overflow: visible;
