@@ -13,11 +13,18 @@ const OUTPUT_DIR = path.join(ROOT, 'output', 'playwright', 'blueprint-check');
 const DEFAULT_BASE_URL = 'http://127.0.0.1:4173';
 let baseUrl = process.env.BLUEPRINT_CHECK_URL || DEFAULT_BASE_URL;
 
-const BROWSERS = [
+const ALL_BROWSERS = [
   { name: 'chromium', launcher: chromium },
   { name: 'firefox', launcher: firefox },
   { name: 'webkit', launcher: webkit }
 ];
+const REQUESTED_BROWSER_NAMES = (process.env.BLUEPRINT_CHECK_BROWSERS || '')
+  .split(',')
+  .map((name) => name.trim())
+  .filter(Boolean);
+const BROWSERS = REQUESTED_BROWSER_NAMES.length
+  ? ALL_BROWSERS.filter((browser) => REQUESTED_BROWSER_NAMES.includes(browser.name))
+  : ALL_BROWSERS;
 
 const FRAMES = [
   { label: 'build', delayMs: 2800 },
@@ -62,12 +69,18 @@ async function prepareContext(browser, viewport) {
     };
 
     try {
-      window.sessionStorage.removeItem('od-page-animations-seen');
+      if (window.sessionStorage.getItem('od-blueprint-storage-prepared') !== 'true') {
+        window.sessionStorage.removeItem('od-page-animations-seen');
+        window.sessionStorage.setItem('od-blueprint-storage-prepared', 'true');
+      }
     } catch (_error) {
       // Ignore storage access issues in automation contexts.
     }
     try {
-      window.localStorage.removeItem('od-color-mode');
+      if (window.localStorage.getItem('od-blueprint-storage-prepared') !== 'true') {
+        window.localStorage.removeItem('od-color-mode');
+        window.localStorage.setItem('od-blueprint-storage-prepared', 'true');
+      }
     } catch (_error) {
       // Ignore storage access issues in automation contexts.
     }
@@ -340,6 +353,179 @@ async function assertLateSettlePointerInteraction(page, browserName) {
   );
 }
 
+async function assertPointerTracksScroll(page, browserName) {
+  await clearAnimationMemory(page);
+  await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+  await waitForBlueprintReady(page);
+  await page.evaluate(() => {
+    document
+      .querySelector('.blueprint-title')
+      ?.dispatchEvent(new CustomEvent('od:home-wordmark-force-complete', { bubbles: true }));
+  });
+  await page.waitForTimeout(180);
+
+  const sample = await page.evaluate(() => {
+    const title = document.querySelector('.blueprint-title');
+    const canvas = title?.querySelector('.particle-canvas');
+    const canvasRect = canvas?.getBoundingClientRect();
+
+    if (!(title instanceof HTMLElement) || !(canvas instanceof HTMLCanvasElement) || !canvasRect) {
+      return null;
+    }
+
+    const context = canvas.getContext('2d');
+    const imageData = context?.getImageData(0, 0, canvas.width, canvas.height).data;
+    if (!imageData) return null;
+
+    const countActivePixels = (centerX, centerY, radiusPx) => {
+      let count = 0;
+      const minX = Math.max(0, centerX - radiusPx);
+      const maxX = Math.min(canvas.width - 1, centerX + radiusPx);
+      const minY = Math.max(0, centerY - radiusPx);
+      const maxY = Math.min(canvas.height - 1, centerY + radiusPx);
+      const radiusSquared = radiusPx * radiusPx;
+
+      for (let y = minY; y <= maxY; y += 1) {
+        for (let x = minX; x <= maxX; x += 1) {
+          const dx = x - centerX;
+          const dy = y - centerY;
+          if ((dx * dx) + (dy * dy) > radiusSquared) continue;
+          if (imageData[(y * canvas.width + x) * 4 + 3] > 0) {
+            count += 1;
+          }
+        }
+      }
+
+      return count;
+    };
+
+    const cssPixelScaleX = canvas.width / canvasRect.width;
+    const cssPixelScaleY = canvas.height / canvasRect.height;
+    const scrollDeltaCss = 32;
+    const scrollDeltaPx = Math.round(scrollDeltaCss * cssPixelScaleY);
+    const radiusCss = Math.max(26, Math.min(54, canvasRect.width * 0.035));
+    const radiusPx = Math.round(radiusCss * cssPixelScaleX * 0.62);
+    let best = null;
+
+    for (let y = radiusPx; y < canvas.height - radiusPx - scrollDeltaPx; y += 4) {
+      for (let x = radiusPx; x < canvas.width - radiusPx; x += 4) {
+        if (imageData[(y * canvas.width + x) * 4 + 3] <= 0) continue;
+
+        const oldLocalActivePixels = countActivePixels(x, y, radiusPx);
+        const newLocalActivePixels = countActivePixels(x, y + scrollDeltaPx, radiusPx);
+        const score = Math.min(oldLocalActivePixels, newLocalActivePixels);
+        if (score < 18 || (best && score <= best.score)) continue;
+
+        best = {
+          score,
+          sampleX: x,
+          sampleY: y,
+          radiusPx,
+          scrollDeltaCss,
+          oldLocalActivePixels,
+          newLocalActivePixels,
+          pointerClientX: canvasRect.left + (x / cssPixelScaleX),
+          pointerClientY: canvasRect.top + (y / cssPixelScaleY)
+        };
+      }
+    }
+
+    return best;
+  });
+
+  assert(sample, `[${browserName}] scroll pointer sample should be readable`);
+
+  await page.mouse.move(sample.pointerClientX, sample.pointerClientY);
+  await page.waitForTimeout(260);
+
+  const beforeScroll = await page.evaluate(({ sampleX, sampleY, radiusPx }) => {
+    const canvas = document.querySelector('.particle-canvas');
+    if (!(canvas instanceof HTMLCanvasElement)) return null;
+    const context = canvas.getContext('2d');
+    const imageData = context?.getImageData(0, 0, canvas.width, canvas.height).data;
+    if (!imageData) return null;
+
+    let localActivePixels = 0;
+    const minX = Math.max(0, sampleX - radiusPx);
+    const maxX = Math.min(canvas.width - 1, sampleX + radiusPx);
+    const minY = Math.max(0, sampleY - radiusPx);
+    const maxY = Math.min(canvas.height - 1, sampleY + radiusPx);
+    const radiusSquared = radiusPx * radiusPx;
+
+    for (let y = minY; y <= maxY; y += 1) {
+      for (let x = minX; x <= maxX; x += 1) {
+        const dx = x - sampleX;
+        const dy = y - sampleY;
+        if ((dx * dx) + (dy * dy) > radiusSquared) continue;
+        if (imageData[(y * canvas.width + x) * 4 + 3] > 0) {
+          localActivePixels += 1;
+        }
+      }
+    }
+
+    return { localActivePixels };
+  }, {
+    sampleX: sample.sampleX,
+    sampleY: sample.sampleY,
+    radiusPx: sample.radiusPx
+  });
+
+  assert(beforeScroll, `[${browserName}] pre-scroll particle response should be readable`);
+  assert(
+    beforeScroll.localActivePixels < sample.oldLocalActivePixels * 0.92,
+    `[${browserName}] cursor effect should activate before scrolling`
+  );
+
+  await page.evaluate((scrollDeltaCss) => window.scrollBy(0, scrollDeltaCss), sample.scrollDeltaCss);
+  await page.waitForTimeout(280);
+
+  const afterScroll = await page.evaluate(({ sampleX, sampleY, radiusPx, scrollDeltaCss }) => {
+    const canvas = document.querySelector('.particle-canvas');
+    const canvasRect = canvas?.getBoundingClientRect();
+    if (!(canvas instanceof HTMLCanvasElement) || !canvasRect) return null;
+    const context = canvas.getContext('2d');
+    const imageData = context?.getImageData(0, 0, canvas.width, canvas.height).data;
+    if (!imageData) return null;
+
+    const scrollDeltaPx = Math.round(scrollDeltaCss * (canvas.height / canvasRect.height));
+    const projectedY = sampleY + scrollDeltaPx;
+    let localActivePixels = 0;
+    const minX = Math.max(0, sampleX - radiusPx);
+    const maxX = Math.min(canvas.width - 1, sampleX + radiusPx);
+    const minY = Math.max(0, projectedY - radiusPx);
+    const maxY = Math.min(canvas.height - 1, projectedY + radiusPx);
+    const radiusSquared = radiusPx * radiusPx;
+
+    for (let y = minY; y <= maxY; y += 1) {
+      for (let x = minX; x <= maxX; x += 1) {
+        const dx = x - sampleX;
+        const dy = y - projectedY;
+        if ((dx * dx) + (dy * dy) > radiusSquared) continue;
+        if (imageData[(y * canvas.width + x) * 4 + 3] > 0) {
+          localActivePixels += 1;
+        }
+      }
+    }
+
+    return {
+      localActivePixels,
+      scrollY: window.scrollY
+    };
+  }, {
+    sampleX: sample.sampleX,
+    sampleY: sample.sampleY,
+    radiusPx: sample.radiusPx,
+    scrollDeltaCss: sample.scrollDeltaCss
+  });
+
+  assert(afterScroll, `[${browserName}] post-scroll particle response should be readable`);
+  assert(afterScroll.scrollY >= sample.scrollDeltaCss, `[${browserName}] test page should scroll under a stationary cursor`);
+  assert(
+    afterScroll.localActivePixels < sample.newLocalActivePixels * 0.92,
+    `[${browserName}] cursor effect should track the stationary viewport cursor after scrolling`
+  );
+}
+
 async function assertReloadSkipState(page, browserName) {
   await page.reload({ waitUntil: 'networkidle' });
   await waitForBlueprintReady(page);
@@ -394,6 +580,7 @@ async function runBrowser(browserEntry, viewport) {
 
     await assertBlueprintStructure(page, browserEntry.name);
     await assertLateSettlePointerInteraction(page, browserEntry.name);
+    await assertPointerTracksScroll(page, browserEntry.name);
     await assertReloadSkipState(page, browserEntry.name);
     await context.close();
   } finally {

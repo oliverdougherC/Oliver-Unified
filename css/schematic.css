@@ -156,7 +156,7 @@ body.schematic-mode {
   position: relative;
   width: max-content;
   max-width: 100%;
-  margin-top: -0.035em;
+  margin-top: 0.04em;
   line-height: 0.85;
   text-shadow: none;
 }
