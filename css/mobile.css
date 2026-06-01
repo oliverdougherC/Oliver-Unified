@@ -1,37 +1,45 @@
 /*
- * Dedicated mobile site styles.
+ * Mobile schematic styles.
  * Scope: /mobile/ and /mobile/resume/ only.
+ *
+ * Design: white (#FFFFFF) background, black (#000000) text,
+ *         #FF6700 flare accent. Flat 1px borders. No animations.
+ *
+ * See Design.md for canonical industrialist aesthetic.
  */
 
-.mobile-page {
-  --mobile-bg: var(--color-bg-primary);
-  --mobile-surface: color-mix(in srgb, var(--color-surface) 78%, transparent);
-  --mobile-surface-strong: var(--color-surface-hover);
-  --mobile-text: var(--color-text-primary);
-  --mobile-muted: var(--color-text-secondary);
-  --mobile-soft: var(--color-text-muted);
-  --mobile-border: var(--color-border-glass);
-  --mobile-accent: var(--color-accent);
-  --mobile-accent-strong: var(--color-accent-hover);
+/* ========================================
+   Base — scoped to .schematic-mobile
+   ======================================== */
+
+.schematic-mobile {
   min-height: 100vh;
   margin: 0;
   overflow-x: hidden;
-  font-family: var(--font-body);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 1rem;
+  font-weight: 400;
   line-height: 1.55;
-  color: var(--mobile-text);
-  background:
-    linear-gradient(180deg, var(--color-accent-subtle), transparent 22rem),
-    var(--mobile-bg);
+  color: #000000;
+  background: #FFFFFF;
 }
 
-.mobile-page a {
-  color: var(--mobile-accent);
+.schematic-mobile a {
+  color: #000000;
   text-decoration-thickness: 1px;
   text-underline-offset: 0.22em;
 }
 
-.mobile-topbar {
+.schematic-mobile a:hover,
+.schematic-mobile a:focus-visible {
+  color: #FF6700;
+}
+
+/* ========================================
+   Topbar
+   ======================================== */
+
+.schematic-mobile .mobile-topbar {
   position: sticky;
   top: 0;
   z-index: 20;
@@ -41,355 +49,465 @@
   gap: 1rem;
   min-height: 4.5rem;
   padding: 0.75rem 1rem;
-  background: color-mix(in srgb, var(--color-bg-primary) 90%, transparent);
-  border-bottom: 1px solid var(--mobile-border);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: #FFFFFF;
+  border-bottom: 1px solid #000000;
 }
 
-.mobile-brand {
+.schematic-mobile .mobile-brand {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 2.75rem;
   height: 2.75rem;
   flex: 0 0 auto;
-  border: 1px solid var(--mobile-border);
-  border-radius: 8px;
-  color: var(--mobile-text);
-  font-family: var(--font-display);
+  border: 1px solid #000000;
+  color: #000000;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 1.35rem;
+  font-weight: 800;
   text-decoration: none;
-  background: var(--mobile-surface);
-  box-shadow: var(--shadow-sm);
+  background: #FFFFFF;
 }
 
-.mobile-page .mobile-brand {
-  color: var(--mobile-text);
+.schematic-mobile .mobile-brand:hover,
+.schematic-mobile .mobile-brand:focus-visible {
+  border-color: #FF6700;
+  color: #FF6700;
 }
 
-.mobile-nav {
+.schematic-mobile .mobile-nav {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
 }
 
-.mobile-nav-link {
+.schematic-mobile .mobile-nav-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 2.75rem;
   padding: 0 0.9rem;
-  border: 1px solid var(--mobile-border);
-  border-radius: 8px;
-  color: var(--mobile-muted);
-  font-size: 0.95rem;
-  font-weight: 600;
+  border: 1px solid #000000;
+  color: #000000;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85rem;
+  font-weight: 400;
   text-decoration: none;
+  background: #FFFFFF;
 }
 
-.mobile-page .mobile-nav-link-active {
-  color: white;
-  background: var(--mobile-accent);
-  border-color: var(--mobile-accent);
+.schematic-mobile .mobile-nav-link:hover,
+.schematic-mobile .mobile-nav-link:focus-visible {
+  border-color: #FF6700;
+  color: #FF6700;
 }
 
-.mobile-section {
+.schematic-mobile .mobile-nav-link-active {
+  color: #FF6700;
+  border-color: #FF6700;
+}
+
+/* ========================================
+   Sections
+   ======================================== */
+
+.schematic-mobile .mobile-section {
   padding: 2.75rem 1rem;
-  border-bottom: 1px solid var(--mobile-border);
+  border-bottom: 1px solid #000000;
 }
 
-.mobile-hero {
+.schematic-mobile .mobile-hero {
   padding-top: 3rem;
 }
 
-.mobile-kicker,
-.mobile-section-label,
-.mobile-item-meta {
+/* ========================================
+   Metadata labels
+   ======================================== */
+
+.schematic-mobile .mobile-kicker,
+.schematic-mobile .mobile-section-label,
+.schematic-mobile .mobile-item-meta {
   margin: 0 0 0.75rem;
-  color: var(--mobile-soft);
-  font-family: var(--font-mono);
+  color: #000000;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.78rem;
+  font-weight: 200;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.mobile-page h1,
-.mobile-page h2,
-.mobile-page h3,
-.mobile-page p {
+/* ========================================
+   Headings
+   ======================================== */
+
+.schematic-mobile h1,
+.schematic-mobile h2,
+.schematic-mobile h3,
+.schematic-mobile p {
   overflow-wrap: anywhere;
 }
 
-.mobile-page h1 {
+.schematic-mobile h1 {
   margin: 0 0 1rem;
   max-width: 12ch;
-  font-family: var(--font-display);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 3.25rem;
-  font-weight: 400;
+  font-weight: 800;
   line-height: 0.98;
-  letter-spacing: 0;
-  text-shadow: 0.012em 0 currentColor, -0.012em 0 currentColor;
+  letter-spacing: -0.02em;
 }
 
-.mobile-page h2 {
+.schematic-mobile h2 {
   margin: 0 0 1rem;
-  font-family: var(--font-display);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 2.15rem;
-  font-weight: 400;
+  font-weight: 800;
   line-height: 1.05;
-  letter-spacing: 0;
-  text-shadow: 0.012em 0 currentColor, -0.012em 0 currentColor;
+  letter-spacing: -0.02em;
 }
 
-.mobile-page h3 {
+.schematic-mobile h3 {
   margin: 0;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 1.08rem;
+  font-weight: 800;
   line-height: 1.25;
   letter-spacing: 0;
 }
 
-.mobile-section > p:not(.mobile-section-label),
-.mobile-hero-copy,
-.mobile-detail-block p,
-.mobile-list-item p {
+/* ========================================
+   Body copy
+   ======================================== */
+
+.schematic-mobile .mobile-section > p:not(.mobile-section-label),
+.schematic-mobile .mobile-hero-copy,
+.schematic-mobile .mobile-detail-block p,
+.schematic-mobile .mobile-list-item p {
   margin: 0 0 1rem;
-  color: var(--mobile-muted);
+  color: #000000;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-weight: 200;
 }
 
-.mobile-hero-copy {
+.schematic-mobile .mobile-hero-copy {
   max-width: 34rem;
   font-size: 1.12rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 400;
 }
 
-.mobile-action-row {
+/* ========================================
+   Buttons
+   ======================================== */
+
+.schematic-mobile .mobile-action-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 1.5rem;
 }
 
-.mobile-button {
+.schematic-mobile .mobile-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 3rem;
   padding: 0 1rem;
-  border: 1px solid var(--mobile-border);
-  border-radius: 8px;
-  font-weight: 700;
+  border: 1px solid #000000;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-weight: 400;
+  font-size: 0.9rem;
   text-align: center;
   text-decoration: none;
+  background: #FFFFFF;
+  color: #000000;
 }
 
-.mobile-page .mobile-button-primary {
-  color: white;
-  background: var(--mobile-accent);
-  border-color: var(--mobile-accent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 4px rgba(0, 0, 0, 0.2);
+.schematic-mobile .mobile-button-primary {
+  color: #FFFFFF;
+  background: #FF6700;
+  border-color: #FF6700;
 }
 
-.mobile-page .mobile-button-secondary {
-  color: var(--mobile-text);
-  background: var(--mobile-surface);
+.schematic-mobile .mobile-button-secondary {
+  color: #000000;
+  background: #FFFFFF;
 }
 
-.mobile-feature-image {
+.schematic-mobile .mobile-button:hover,
+.schematic-mobile .mobile-button:focus-visible {
+  border-color: #FF6700;
+}
+
+.schematic-mobile .mobile-button-primary:hover,
+.schematic-mobile .mobile-button-primary:focus-visible {
+  color: #FFFFFF;
+  background: #000000;
+  border-color: #000000;
+}
+
+/* ========================================
+   Feature image
+   ======================================== */
+
+.schematic-mobile .mobile-feature-image {
   margin: 0;
   padding: 0 1rem 2.75rem;
-  border-bottom: 1px solid var(--mobile-border);
+  border-bottom: 1px solid #000000;
 }
 
-.mobile-feature-image img {
+.schematic-mobile .mobile-feature-image img {
   display: block;
   width: 100%;
   max-height: 25rem;
   object-fit: cover;
-  border: 1px solid var(--mobile-border);
-  border-radius: 8px;
-  background: var(--mobile-surface);
-  box-shadow: var(--shadow-glass);
+  border: 1px solid #000000;
+  background: #FFFFFF;
+  filter: grayscale(100%) contrast(1.2);
 }
 
-.mobile-feature-image figcaption {
+.schematic-mobile .mobile-feature-image figcaption {
   margin-top: 0.75rem;
-  color: var(--mobile-soft);
-  font-size: 0.9rem;
+  color: #000000;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  font-weight: 200;
 }
 
-.mobile-stat-grid {
+/* ========================================
+   Stat grid
+   ======================================== */
+
+.schematic-mobile .mobile-stat-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
+  gap: 1px;
   margin-top: 1.5rem;
+  background: #000000;
+  border: 1px solid #000000;
 }
 
-.mobile-stat,
-.mobile-list-item,
-.mobile-detail-block,
-.mobile-contact-links a {
-  border: 1px solid var(--mobile-border);
-  border-radius: 8px;
-  background: var(--mobile-surface);
-}
-
-.mobile-stat {
+.schematic-mobile .mobile-stat {
   display: grid;
   gap: 0.2rem;
   padding: 1rem;
+  background: #FFFFFF;
+  border: none;
 }
 
-.mobile-stat strong {
-  color: var(--mobile-text);
+.schematic-mobile .mobile-stat strong {
+  color: #000000;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 1.3rem;
+  font-weight: 800;
 }
 
-.mobile-stat span {
-  color: var(--mobile-muted);
-  font-size: 0.92rem;
+.schematic-mobile .mobile-stat span {
+  color: #000000;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  font-weight: 200;
 }
 
-.mobile-list {
+/* ========================================
+   List / Cards
+   ======================================== */
+
+.schematic-mobile .mobile-list {
   display: grid;
   gap: 0.85rem;
 }
 
-.mobile-list-item {
+.schematic-mobile .mobile-list-item,
+.schematic-mobile .mobile-detail-block {
   display: grid;
   gap: 0.85rem;
   padding: 1rem;
+  border: 1px solid #000000;
+  background: #FFFFFF;
 }
 
-.mobile-list-item a {
+.schematic-mobile .mobile-list-item a {
   font-weight: 700;
 }
 
-.mobile-chip-group {
+.schematic-mobile .mobile-detail-block p:last-child,
+.schematic-mobile .mobile-list-item p:last-child {
+  margin-bottom: 0;
+}
+
+/* ========================================
+   Chips / Tags
+   ======================================== */
+
+.schematic-mobile .mobile-chip-group {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.85rem;
 }
 
-.mobile-chip-group span {
+.schematic-mobile .mobile-chip-group span {
   display: inline-flex;
   align-items: center;
   min-height: 2rem;
   padding: 0.3rem 0.65rem;
-  border: 1px solid color-mix(in srgb, var(--mobile-accent) 26%, var(--mobile-border));
-  border-radius: 8px;
-  color: var(--mobile-text);
-  background: var(--color-accent-subtle);
-  font-size: 0.88rem;
-  font-weight: 600;
+  border: 1px solid #000000;
+  color: #000000;
+  background: transparent;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 400;
 }
 
-.mobile-detail-block {
-  padding: 1rem;
-}
+/* ========================================
+   Bullet list
+   ======================================== */
 
-.mobile-detail-block p:last-child,
-.mobile-list-item p:last-child {
-  margin-bottom: 0;
-}
-
-.mobile-bullet-list {
+.schematic-mobile .mobile-bullet-list {
   display: grid;
   gap: 0.6rem;
   margin: 0;
   padding-left: 1.1rem;
-  color: var(--mobile-muted);
+  color: #000000;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-weight: 200;
 }
 
-.mobile-skill-stack {
+/* ========================================
+   Skill stack
+   ======================================== */
+
+.schematic-mobile .mobile-skill-stack {
   display: grid;
   gap: 1.35rem;
 }
 
-.mobile-skill-stack h3 {
+.schematic-mobile .mobile-skill-stack h3 {
   margin-bottom: 0.75rem;
-  color: var(--mobile-accent);
+  color: #000000;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 400;
 }
 
-.mobile-contact-links {
+/* ========================================
+   Contact links
+   ======================================== */
+
+.schematic-mobile .mobile-contact-links {
   display: grid;
   gap: 0.75rem;
 }
 
-.mobile-contact-links a {
+.schematic-mobile .mobile-contact-links a {
   display: block;
   min-height: 3rem;
   padding: 0.85rem 1rem;
-  color: var(--mobile-text);
-  font-weight: 700;
+  border: 1px solid #000000;
+  color: #000000;
+  background: #FFFFFF;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-weight: 400;
+  font-size: 0.9rem;
   text-decoration: none;
 }
 
-.mobile-contact-links a:focus-visible,
-.mobile-contact-links a:hover,
-.mobile-button:focus-visible,
-.mobile-button:hover,
-.mobile-nav-link:focus-visible,
-.mobile-nav-link:hover {
-  border-color: var(--mobile-accent);
+.schematic-mobile .mobile-contact-links a:hover,
+.schematic-mobile .mobile-contact-links a:focus-visible {
+  border-color: #FF6700;
+  color: #FF6700;
 }
 
-.mobile-footer {
+/* ========================================
+   Footer
+   ======================================== */
+
+.schematic-mobile .mobile-footer {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   padding: 1.5rem 1rem 2rem;
-  color: var(--mobile-soft);
-  font-size: 0.9rem;
+  color: #000000;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  font-weight: 200;
+  border-top: 1px solid #000000;
 }
 
-.mobile-footer p {
+.schematic-mobile .mobile-footer p {
   margin: 0;
 }
 
-.mobile-footer a {
+.schematic-mobile .mobile-footer a {
   font-weight: 700;
+  color: #000000;
 }
 
+.schematic-mobile .mobile-footer a:hover,
+.schematic-mobile .mobile-footer a:focus-visible {
+  color: #FF6700;
+}
+
+/* ========================================
+   Focus visible
+   ======================================== */
+
+.schematic-mobile :focus-visible {
+  outline: 2px solid #FF6700;
+  outline-offset: 2px;
+}
+
+.schematic-mobile :focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ========================================
+   Responsive — ≥ 36rem (576px)
+   ======================================== */
+
 @media (min-width: 36rem) {
-  .mobile-topbar,
-  .mobile-section,
-  .mobile-feature-image,
-  .mobile-footer {
+  .schematic-mobile .mobile-topbar,
+  .schematic-mobile .mobile-section,
+  .schematic-mobile .mobile-feature-image,
+  .schematic-mobile .mobile-footer {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
 
-  .mobile-page h1 {
+  .schematic-mobile h1 {
     max-width: 16ch;
     font-size: 3.85rem;
   }
 
-  .mobile-stat-grid {
+  .schematic-mobile .mobile-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
+/* ========================================
+   Responsive — ≤ 22rem (352px)
+   ======================================== */
+
 @media (max-width: 22rem) {
-  .mobile-topbar {
+  .schematic-mobile .mobile-topbar {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .mobile-nav {
+  .schematic-mobile .mobile-nav {
     justify-content: stretch;
   }
 
-  .mobile-nav-link {
+  .schematic-mobile .mobile-nav-link {
     flex: 1;
   }
 
-  .mobile-page h1 {
+  .schematic-mobile h1 {
     font-size: 2.7rem;
   }
 
-  .mobile-page h2 {
+  .schematic-mobile h2 {
     font-size: 1.8rem;
   }
 }
