@@ -75,7 +75,7 @@ npm run optimize-images
 - `npm run format` / `format:check` — Text normalization (line endings, trailing whitespace, EOF newline)
 - `npm run check-links` — Local href/src link validation across all HTML files
 - `npm run smoke` — Structural checks: critical routes, gallery data, utilities bundle
-- `npm run quality` — Lint + format check + link check + smoke
+- `npm run quality` — Lint + format check + link check + smoke + blog check
 - `npm run quality:full` — Site quality + utilities check (complete verification)
 
 ### Utilities
@@ -125,7 +125,7 @@ npm run utilities:browser-check
 
 ## CI
 
-GitHub Actions runs lint, format check, typecheck, tests, build, smoke, and deploy on every push and PR to `main` and `beta`.
+GitHub Actions runs lint, format check, typecheck, tests, build, and smoke on every push and PR to `main` and `beta`. Deploy to GitHub Pages runs only on push to `main`.
 
 ## Documentation
 
