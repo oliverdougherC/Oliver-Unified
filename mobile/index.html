@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Oliver Dougherty - Mobile</title>
-  <meta name="description" content="A mobile-first profile hub for Oliver Dougherty.">
+  <title>Oliver Dougherty</title>
+  <meta name="description" content="Electrical Engineer. Building at the intersection of logic & art.">
+  <meta name="theme-color" content="#FFFFFF">
   <link rel="canonical" href="../index.html">
   <link rel="icon" type="image/svg+xml" href="/favicon-happy.svg?v=face-6" id="favicon">
   <link rel="alternate icon" href="/favicon-happy.ico?v=face-6" id="favicon-fallback">
@@ -12,14 +13,12 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&family=JetBrains+Mono:wght@200;400;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="../css/design-system.css">
   <link rel="stylesheet" href="../css/mobile.css">
 </head>
-<body class="mobile-page mobile-home-page">
+<body class="schematic-mobile mobile-home">
   <header class="mobile-topbar">
     <a class="mobile-brand" href="./" aria-current="page">OD</a>
     <nav class="mobile-nav" aria-label="Mobile site">
@@ -30,27 +29,18 @@
 
   <main>
     <section class="mobile-hero mobile-section">
-      <div class="mobile-kicker">Corvallis, OR · ECE</div>
+      <div class="mobile-kicker">Corvallis, OR &middot; ECE</div>
       <h1>Oliver Dougherty</h1>
-      <p class="mobile-hero-copy">
-        Electrical and Computer Engineering student building at the intersection of logic, systems, and visual craft.
-      </p>
-      <div class="mobile-action-row">
-        <a class="mobile-button mobile-button-primary" href="resume/">Read resume</a>
-      </div>
     </section>
 
-    <figure class="mobile-feature-image">
-      <img src="../assets/images/blueprint-david.jpg" alt="Blueprint-style study of Michelangelo's David" loading="eager" decoding="async">
-      <figcaption>Engineering discipline, visual judgment, and a bias toward craft.</figcaption>
-    </figure>
 
-    <section class="mobile-section" aria-labelledby="mobile-focus-title">
-      <p class="mobile-section-label">Current focus</p>
-      <h2 id="mobile-focus-title">Systems that stay understandable</h2>
+    <section class="mobile-section" aria-labelledby="mobile-about-title">
+      <p class="mobile-section-label">About</p>
+      <h2 id="mobile-about-title">Logic meets craft</h2>
       <p>
-        I care about work where the technical shape and the human experience reinforce each other: signal processing,
-        computer architecture, web systems, photography, and practical tools.
+        While my background in Electrical Engineering is built on mathematics and logic, my perspective is defined
+        by an appreciation for the arts. I channel this duality into my own photography and web design, striving
+        to create work that is as technically sound as it is visually compelling.
       </p>
       <div class="mobile-stat-grid" aria-label="Profile facts">
         <div class="mobile-stat">
@@ -74,28 +64,43 @@
       <div class="mobile-list">
         <article class="mobile-list-item">
           <div>
-            <p class="mobile-item-meta">2025 - Present</p>
+            <p class="mobile-item-meta">2025 &mdash; Present</p>
             <h3>Encoding DB</h3>
           </div>
           <p>Public FFmpeg-based video encoding database with a Node.js, Express, Prisma, and PostgreSQL backend.</p>
-          <a href="https://encodingdb.platinumlabs.dev" target="_blank" rel="noopener noreferrer">Visit Encoding DB</a>
+          <div class="mobile-chip-group">
+            <span>Node.js</span>
+            <span>FFmpeg</span>
+            <span>Video Engineering</span>
+          </div>
+          <a href="https://encodingdb.platinumlabs.dev" target="_blank" rel="noopener noreferrer">[VISIT]</a>
         </article>
 
         <article class="mobile-list-item">
           <div>
-            <p class="mobile-item-meta">2024 - Present</p>
+            <p class="mobile-item-meta">2024 &mdash; Present</p>
             <h3>Computer Hardware Club</h3>
           </div>
           <p>Founder and Vice-President of OSU's Computer Hardware Club, including server infrastructure and Docker/CUDA workshops.</p>
-          <a href="https://computerhardwareclub.org" target="_blank" rel="noopener noreferrer">Visit club site</a>
+          <div class="mobile-chip-group">
+            <span>Leadership</span>
+            <span>Docker</span>
+            <span>CUDA</span>
+          </div>
+          <a href="https://computerhardwareclub.org" target="_blank" rel="noopener noreferrer">[VISIT]</a>
         </article>
 
         <article class="mobile-list-item">
           <div>
-            <p class="mobile-item-meta">2025 - Present</p>
+            <p class="mobile-item-meta">2025 &mdash; Present</p>
             <h3>NatGen</h3>
           </div>
           <p>Collaborative PyTorch diffusion project for synthesizing nature sounds with SoundTrip LLC.</p>
+          <div class="mobile-chip-group">
+            <span>PyTorch</span>
+            <span>AI/ML</span>
+            <span>Audio</span>
+          </div>
         </article>
       </div>
     </section>
@@ -104,8 +109,8 @@
       <p class="mobile-section-label">Connect</p>
       <h2 id="mobile-contact-title">Contact</h2>
       <div class="mobile-contact-links">
-        <a href="mailto:oliverfdougherty@gmail.com">oliverfdougherty@gmail.com</a>
-        <a href="https://github.com/oliverdougherC" target="_blank" rel="noopener noreferrer">GitHub: oliverdougherC</a>
+        <a href="mailto:hi@oliverdougherty.com">hi@oliverdougherty.com</a>
+        <a href="https://github.com/oliverdougherC" target="_blank" rel="noopener noreferrer">github.com/oliverdougherC</a>
       </div>
     </section>
   </main>
