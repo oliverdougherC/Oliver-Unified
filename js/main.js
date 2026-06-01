@@ -656,6 +656,10 @@
     let canvasHeight = 0;
     let canvasDpr = 1;
     let animationStartTime = 0;
+    let cachedGeom = null;
+    let cachedFontKey = '';
+    let resizeDebounceId = 0;
+    let resizeObserver = null;
 
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
     const easeOutCubic = (value) => 1 - Math.pow(1 - clamp(value, 0, 1), 3);
@@ -690,10 +694,63 @@
       && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
     const maxParticlesForViewport = () => {
-      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
-      if (viewportWidth < 640) return 2400;
-      if (viewportWidth < 1024) return 5200;
+      if (canvasWidth < 640) return 2400;
+      if (canvasWidth < 1024) return 5200;
       return 9000;
+    };
+
+    const measureGeometry = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const wordRect = finalWord.getBoundingClientRect();
+      const width = wordRect.width;
+      const height = wordRect.height;
+      if (width === 0 || height === 0) return null;
+
+      const wordStyle = window.getComputedStyle(finalWord);
+      const fontSize = wordStyle.fontSize || '16px';
+      const fontSizePx = Number.parseFloat(fontSize) || height;
+      const fontFamily = wordStyle.fontFamily || 'sans-serif';
+      const fontWeight = wordStyle.fontWeight || '800';
+
+      const dprCapped = Math.min(dpr, 2.5);
+      const padX = clamp(width * 0.58, 160, 440);
+      const padTop = clamp(fontSizePx * 0.55, 72, 180);
+      const padBottom = clamp(fontSizePx * 0.82, 96, 240);
+      const cw = Math.max(1, Math.round(width + (padX * 2)));
+      const ch = Math.max(1, Math.round(height + padTop + padBottom));
+
+      return { dpr: dprCapped, width, height, fontSizePx, fontFamily, fontWeight, fontSize, padX, padTop, padBottom, canvasWidth: cw, canvasHeight: ch };
+    };
+
+    const getFontKey = (geom) => {
+      return `${word}:${Math.round(geom.fontSizePx)}:${geom.fontFamily}:${geom.fontWeight}`;
+    };
+
+    const applyCanvasGeometry = (geom) => {
+      canvasDpr = geom.dpr;
+      canvasWidth = geom.canvasWidth;
+      canvasHeight = geom.canvasHeight;
+      canvas.width = Math.round(canvasWidth * canvasDpr);
+      canvas.height = Math.round(canvasHeight * canvasDpr);
+      canvas.style.width = `${canvasWidth}px`;
+      canvas.style.height = `${canvasHeight}px`;
+      canvas.style.left = `${Math.round(-geom.padX)}px`;
+      canvas.style.top = `${Math.round(-geom.padTop)}px`;
+      ctx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
+    };
+
+    const morphTargets = (parts, oldGeom, newGeom) => {
+      const canvasScaleX = oldGeom.canvasWidth > 0 ? newGeom.canvasWidth / oldGeom.canvasWidth : 1;
+      const canvasScaleY = oldGeom.canvasHeight > 0 ? newGeom.canvasHeight / oldGeom.canvasHeight : 1;
+
+      for (const p of parts) {
+        const normX = (p.targetX - oldGeom.padX) / oldGeom.width;
+        const normY = (p.targetY - oldGeom.padTop) / oldGeom.height;
+        p.targetX = newGeom.padX + normX * newGeom.width;
+        p.targetY = newGeom.padTop + normY * newGeom.height;
+        p.originX *= canvasScaleX;
+        p.originY *= canvasScaleY;
+      }
     };
 
     const drawParticle = (particle, x = particle.x, y = particle.y) => {
@@ -876,42 +933,41 @@
         window.cancelAnimationFrame(hoverProjectionFrameId);
         hoverProjectionFrameId = 0;
       }
+      if (resizeDebounceId) {
+        window.clearTimeout(resizeDebounceId);
+        resizeDebounceId = 0;
+      }
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+        resizeObserver = null;
+      }
     }, { once: true });
 
     const startRender = (options = {}) => {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+        animationFrameId = 0;
+      }
       if (hoverFrameId) {
         window.cancelAnimationFrame(hoverFrameId);
         hoverFrameId = 0;
       }
       hoverPointer = null;
 
-      const getDpr = () => window.devicePixelRatio || 1;
-      const dpr = getDpr();
+      const geom = measureGeometry();
+      if (!geom) return;
+
+      applyCanvasGeometry(geom);
+
+      const fontKey = getFontKey(geom);
       const wordRect = finalWord.getBoundingClientRect();
       const width = wordRect.width;
       const height = wordRect.height;
-
-      if (width === 0 || height === 0) return;
-
       const wordStyle = window.getComputedStyle(finalWord);
       const fontSize = wordStyle.fontSize || '16px';
       const fontSizePx = Number.parseFloat(fontSize) || height;
       const fontFamily = wordStyle.fontFamily || 'sans-serif';
       const fontWeight = wordStyle.fontWeight || '800';
-
-      canvasDpr = Math.min(2, dpr);
-      const padX = clamp(width * 0.58, 160, 440);
-      const padTop = clamp(fontSizePx * 0.55, 72, 180);
-      const padBottom = clamp(fontSizePx * 0.82, 96, 240);
-      canvasWidth = Math.max(1, Math.round(width + (padX * 2)));
-      canvasHeight = Math.max(1, Math.round(height + padTop + padBottom));
-      canvas.width = Math.round(canvasWidth * canvasDpr);
-      canvas.height = Math.round(canvasHeight * canvasDpr);
-      canvas.style.width = `${canvasWidth}px`;
-      canvas.style.height = `${canvasHeight}px`;
-      canvas.style.left = `${Math.round(-padX)}px`;
-      canvas.style.top = `${Math.round(-padTop)}px`;
-      ctx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
 
       const measurementCanvas = document.createElement('canvas');
       const measurementCtx = measurementCanvas.getContext('2d');
@@ -989,8 +1045,8 @@
 
       if (alphaMaxX <= alphaMinX || alphaMaxY <= alphaMinY) return;
 
-      const targetOffsetX = padX;
-      const targetOffsetY = padTop;
+      const targetOffsetX = geom.padX;
+      const targetOffsetY = geom.padTop;
       const alphaMinXCss = alphaMinX / canvasDpr;
       const alphaMaxXCss = alphaMaxX / canvasDpr;
       const alphaMinYCss = alphaMinY / canvasDpr;
@@ -1023,16 +1079,22 @@
 
           const targetX = targetOffsetX + sampleX - sourcePad;
           const targetY = targetOffsetY + ((sampleY - alphaMinYCss) / alphaHeightCss) * height;
-          const edgeRoll = random();
+
+          const normX = (targetX - geom.padX) / width;
+          const normY = (targetY - geom.padTop) / height;
+          const attrSeed = hashString(`pattr:${normX.toFixed(5)}:${normY.toFixed(5)}:${word}:${Math.round(baseDotSize * 100)}`);
+          const attrRng = createSeededRandom(attrSeed);
+
+          const edgeRoll = attrRng();
           const originEdge = random();
           let originX = heroCenterX + ((random() - 0.5) * canvasWidth * 0.42);
           let originY = heroCenterY + ((random() - 0.5) * canvasHeight * 0.36);
 
           if (originEdge < 0.32) {
-            originX = padX * (0.35 + random() * 0.58);
+            originX = geom.padX * (0.35 + random() * 0.58);
             originY = canvasHeight * (0.26 + random() * 0.48);
           } else if (originEdge < 0.64) {
-            originX = canvasWidth - (padX * (0.35 + random() * 0.58));
+            originX = canvasWidth - (geom.padX * (0.35 + random() * 0.58));
             originY = canvasHeight * (0.26 + random() * 0.48);
           } else if (originEdge < 0.82) {
             originX = heroCenterX + ((random() - 0.5) * canvasWidth * 0.46);
@@ -1048,19 +1110,21 @@
             vy: (random() - 0.5) * 0.8,
             targetX,
             targetY,
-            delay: (targetX / canvasWidth) * 470 + random() * 580,
-            seed: random() * Math.PI * 2,
-            charge: random() > 0.5 ? 1 : -1,
-            field: 0.72 + random() * 0.68,
+            delay: (targetX / canvasWidth) * 470 + attrRng() * 580,
+            seed: attrRng() * Math.PI * 2,
+            charge: attrRng() > 0.5 ? 1 : -1,
+            field: 0.72 + attrRng() * 0.68,
             order: random(),
             color: edgeRoll > 0.955 ? '#FF6700' : '#000000',
-            size: baseDotSize * (0.82 + random() * 0.58)
+            size: baseDotSize * (0.82 + attrRng() * 0.58)
           });
         }
       }
 
       sampledParticles.sort((a, b) => a.order - b.order);
       particles = sampledParticles.slice(0, maxParticlesForViewport());
+      cachedGeom = geom;
+      cachedFontKey = fontKey;
       syncHoverPointerFromViewportPosition(lastPointerViewportPosition);
 
       if (options.static || shouldSkipPageAnimation()) {
@@ -1135,21 +1199,51 @@
         animationFrameId = window.requestAnimationFrame(draw);
       };
 
-      if (animationFrameId) {
-        window.cancelAnimationFrame(animationFrameId);
-      }
       animationFrameId = window.requestAnimationFrame(draw);
     };
 
-    const scheduleRender = () => {
+    const handleResize = () => {
       if (resizeFrameId) return;
       resizeFrameId = window.requestAnimationFrame(() => {
         resizeFrameId = 0;
-        startRender({ static: isComplete });
+
+        const newGeom = measureGeometry();
+        if (!newGeom) return;
+
+        const fontKey = getFontKey(newGeom);
+
+        if (fontKey !== cachedFontKey || !cachedGeom || !particles.length) {
+          startRender({ static: isComplete });
+          return;
+        }
+
+        morphTargets(particles, cachedGeom, newGeom);
+        applyCanvasGeometry(newGeom);
+        cachedGeom = newGeom;
+
+        hoverPointer = null;
+        if (lastPointerViewportPosition) {
+          syncHoverPointerFromViewportPosition(lastPointerViewportPosition);
+        }
+
+        if (isComplete) {
+          if (hoverPointer && supportsFinePointer()) {
+            queueHoverFrame();
+          } else {
+            drawStaticFrame();
+          }
+        }
       });
     };
 
-    window.addEventListener('resize', scheduleRender, { passive: true });
+    resizeObserver = new ResizeObserver(() => {
+      if (resizeDebounceId) window.clearTimeout(resizeDebounceId);
+      resizeDebounceId = window.setTimeout(() => {
+        resizeDebounceId = 0;
+        handleResize();
+      }, 200);
+    });
+    resizeObserver.observe(title);
 
     if (document.fonts?.ready) {
       Promise.race([
