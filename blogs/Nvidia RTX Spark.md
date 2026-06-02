@@ -1,17 +1,17 @@
 ---
 date: June 2 2026
 ---
-Yesterday, Nvidia unveiled the "RTX Spark" to the world. Well, kind of. They *announced* it, and showed off some specs. This was following cryptic social media posts from Nvidia, Microsoft, and ARM about "A new era of PC". This is pretty funny to say since Apple had the same idea 6 years ago. That being said, Apple Silicon is a technological miracle, and a non-Apple alternative is always welcome. Naming is still a little up in the air, but it looks like they will offer 2 chips, the N1X and N1, with the N1 being a less powerful, cheaper version of the N1X.
+Yesterday, Nvidia unveiled the "RTX Spark" to the world. Well, kind of. They *announced* it, and showed off some specs. This was following cryptic social media posts from Nvidia, Microsoft, and ARM about "A new era of PC". This is a pretty funny statement considering Apple did the same thing 6 years ago. Overzealous marketing aside, Apple Silicon is a technological miracle, and a non-Apple alternative is always welcome. Naming is still a little up in the air, but it looks like they will offer 2 chips, the N1X and N1, with the N1 being a less powerful, cheaper version of the N1X.
 
-If the name "RTX Spark" sounds strangely familiar, then you probably remember when Nvidia released the DGX Spark, a mini-pc with the GB10 chip. The GB10 and N1X are essentially identical, with the N1X basically acting as a consumer rebrand (and possibly slight revision) of the GB10. Before I give my opinion, here are the specs of the chip(s):
+If the name "RTX Spark" sounds strangely familiar, then you probably remember when Nvidia released the "DGX Spark", a mini-pc with the GB10 chip. The GB10 and N1X are essentially identical, with the N1X basically acting as a consumer rebrand (and possibly slight revision) of the GB10. Before I give my opinion, here are the specs of the chip(s):
 
 ## Specs
 ### CPU (Grace)
 
-| Variant | Cores        | Configuration                                            |
-| ------- | ------------ | -------------------------------------------------------- |
-| N1X     | **20 cores** | 10× Cortex-X925 (performance) + 10× Cortex-A725 (medium) |
-| N1      | **12 cores** | 8× Cortex-X925 + 4× Cortex-A725                          |
+| Variant | Cores        | Configuration                                                              |
+| ------- | ------------ | -------------------------------------------------------------------------- |
+| N1X     | **20 cores** | 10× Cortex-X925 (performance) + 10× Cortex-A725 (efficiency) **(10P+10E)** |
+| N1      | **12 cores** | 8× Cortex-X925 + 4× Cortex-A725 **(8P+4E)**                                |
 
 ### GPU (Blackwell RTX)
 
@@ -19,6 +19,7 @@ If the name "RTX Spark" sounds strangely familiar, then you probably remember wh
 | ------- | ---------- | ----------------------- |
 | N1X     | 6,144      | RTX 5070 Mobile (5070M) |
 | N1      | 2,560      | RTX 5050                |
+|         |            |                         |
 
 ### Memory (Unified)
 
@@ -30,7 +31,7 @@ If the name "RTX Spark" sounds strangely familiar, then you probably remember wh
 | Raw Bandwidth        | **~301 GB/s**                                        |
 | Aggregate GPU Access | Up to 600 GB/s over NVLink-C2C coherent interconnect |
 
-One thing I want to clarify since I've seen quite a bit of confusion online: is the memory bandwidth 300GB/s or 600GB/s? This is a very important distinction to make, as this will likely be a deal breaker for all the local AI people out there. The true answer is **300GB/s**. The 600GB/s figure refers to the bridge between the CPU and GPU, ensuring that inter-chiplet communication never becomes the bottleneck. These are identical figures to what we saw in the GB10 chip (DGX Spark). Anyway, here is my opinion of the RTX spark.
+One thing I want to clarify since I've seen quite a bit of confusion online: *is the memory bandwidth 300GB/s or 600GB/s*? This is a very important distinction to make, as this will likely be a deal breaker for all the local AI people out there. The true answer is **300GB/s**. The 600GB/s figure refers to the bridge between the CPU and GPU, ensuring that inter-chiplet communication never becomes the bottleneck. These are identical figures to what we saw in the GB10 chip (DGX Spark). Anyway, here is my opinion of the RTX spark.
 
 ## My Take
 
