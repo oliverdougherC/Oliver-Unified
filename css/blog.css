@@ -490,3 +490,56 @@
 .latex-inline {
   font-style: normal;
 }
+
+/* Tables */
+.blog-body > table {
+  width: max-content;
+  max-width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.blog-body > table th {
+  font-family: var(--font-interface);
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--schematic-flare);
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--schematic-border);
+  text-align: left;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.blog-body > table td {
+  font-family: var(--font-body-text);
+  font-weight: 200;
+  color: var(--schematic-text);
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: top;
+}
+
+.blog-body > table tbody tr:hover td {
+  background-color: rgba(254, 208, 187, 0.04);
+}
+
+.blog-body > table tbody tr:last-child td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Responsive: smaller padding on narrow screens */
+@media (max-width: 900px) {
+  .blog-body > table {
+    font-size: 0.85rem;
+  }
+
+  .blog-body > table th,
+  .blog-body > table td {
+    padding: 0.5rem 0.65rem;
+  }
+}
