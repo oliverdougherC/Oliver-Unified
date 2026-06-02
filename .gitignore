@@ -59,3 +59,20 @@ blogs/.obsidian/
 # Test coverage output
 coverage/
 .nyc_output/
+
+# Merge/patch artifacts
+*.orig
+*.rej
+
+# Backup files
+*.bak
+*.bak.*
+
+# Vite cache
+.vite/
+
+# ESLint cache
+.eslintcache
+
+# pnpm store
+.pnpm-store/

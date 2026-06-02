@@ -29,7 +29,7 @@ The site is built on a dark base with warm parchment tones for text. Each page h
 | **Utilities** | Pure White | `#ffffff` |
 
 ### Light Mode
-A global light mode (`[data-color-mode="light"]`) overrides all themes with warm parchment backgrounds (`#f3f0e7`) and darker accent tones. The utilities page disables light mode via `data-disable-color-mode`.
+A global light mode (`[data-color-mode="light"]`) overrides most themes with warm parchment backgrounds (`#f3f0e7`) and darker accent tones. The utilities page forces dark mode via CSS-only: its theme block provides no light-mode overrides, so switching to light mode has no visual effect on the utilities page.
 
 ## Typography
 
