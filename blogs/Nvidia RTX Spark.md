@@ -17,8 +17,8 @@ If the name "RTX Spark" sounds strangely familiar, then you probably remember wh
 
 | Variant | CUDA Cores | Performance Equivalent  |
 | ------- | ---------- | ----------------------- |
-| N1X     | 6,144      | Mobile RTX 5070 (5070M) |
-| N1      | 2,560      | Desktop RTX 5050        |
+| N1X     | 6,144      | RTX 5070 Mobile (5070M) |
+| N1      | 2,560      | RTX 5050                |
 
 ### Memory (Unified)
 
@@ -30,22 +30,6 @@ If the name "RTX Spark" sounds strangely familiar, then you probably remember wh
 | Raw Bandwidth        | **~301 GB/s**                                        |
 | Aggregate GPU Access | Up to 600 GB/s over NVLink-C2C coherent interconnect |
 
-### Power & Thermals
-
-| Metric          | Value                                   |
-| --------------- | --------------------------------------- |
-| Max Package TDP | **~140 W** (N1X), **~45W** (N1)         |
-| Idle/Light Load | Scales down to "low single-digit" watts |
-
-### Connectivity & Display
-
-| Feature        | Details                                                                        |
-| -------------- | ------------------------------------------------------------------------------ |
-| PCIe           | PCIe 5.0 (NVMe SSD)                                                            |
-| Display Output | Up to 4 concurrent displays (3× DP + 1× HDMI); 4K@120Hz DP, 8K@120Hz HDMI 2.1a |
-| Networking     | ConnectX-7 NIC support (Ethernet)                                              |
-| USB/Ethernet   | Over PCIe                                                                      |
-
 One thing I want to clarify since I've seen quite a bit of confusion online: is the memory bandwidth 300GB/s or 600GB/s? This is a very important distinction to make, as this will likely be a deal breaker for all the local AI people out there. The true answer is **300GB/s**. The 600GB/s figure refers to the bridge between the CPU and GPU, ensuring that inter-chiplet communication never becomes the bottleneck. These are identical figures to what we saw in the GB10 chip (DGX Spark). Anyway, here is my opinion of the RTX spark.
 
 ## My Take
@@ -54,4 +38,4 @@ Now, its hard to have a definitive opinion since firm price details have not bee
 
 Theres also another huge, ugly, sinister elephant in the room that I have yet to address: Microslop. Microsoft is genuinely one of the worst companies in tech right now, and Windows is one of, if not the worst operating system right now, **especially** for AI workflows. This is an ARM CPU though, so what about Windows on ARM? Guess what, buddy? Even worse :)
 
-Regardless, a lot is still up in the air, mainly pricing, which will be the real determining factor. I think its a cool chip and possibly a big jump forward for windows laptops, but ultimately the success of this process will depend on how low Nvidia can price it, and how quickly Microslop can get their act together.
+Regardless, a lot is still up in the air, mainly pricing, which will be the real determining factor. I think its a cool chip and possibly a big jump forward for windows laptops (especially for power efficiency and battery life), but ultimately the success of this processor will depend on how low Nvidia can price it, and how quickly Microslop can get their act together.
