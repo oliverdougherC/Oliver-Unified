@@ -186,6 +186,11 @@
   overflow-wrap: anywhere;
 }
 
+.blog-body strong,
+.blog-body b {
+  font-weight: 700;
+}
+
 .blog-body li {
   margin-bottom: 0.5rem;
 }

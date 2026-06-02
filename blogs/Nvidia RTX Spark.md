@@ -19,7 +19,6 @@ If the name "RTX Spark" sounds strangely familiar, then you probably remember wh
 | ------- | ---------- | ----------------------- |
 | N1X     | 6,144      | RTX 5070 Mobile (5070M) |
 | N1      | 2,560      | RTX 5050                |
-|         |            |                         |
 
 ### Memory (Unified)
 
