@@ -13,33 +13,34 @@ export const RETRO_VM_CONFIG: RetroVmConfig = {
   biosUrl: '../../assets/utilities/vm/seabios.bin',
   vgaBiosUrl: '../../assets/utilities/vm/vgabios.bin',
   cdromUrl: '../../assets/utilities/vm/tinycore-retro-vm.iso',
-  cdromSizeBytes: 20_082_688,
-  memorySize: 256 * MB,
-  vgaMemorySize: 8 * MB,
+  cdromSizeBytes: 109_017_088,
+  memorySize: 768 * MB,
+  vgaMemorySize: 16 * MB,
   // SeaBIOS boot-order bit layout: CD-ROM first, then disk fallback.
   bootOrder: 0x210,
   bootHintDelayMs: 4000,
   bootMenuPrompt: /Press ENTER to boot/i,
   maxClipboardPasteChars: 2048,
   copy: {
-    assetLabel: 'Tiny Core Linux 11 · 20 MB remastered retro ISO',
+    assetLabel: 'Tiny Core Linux 11 · 104 MB remastered ISO with curl, Firefox ESR, and neofetch',
     sessionLabel: 'Ephemeral per tab · clean boot every launch',
-    bridgeLabelOnline: 'Clipboard paste + experimental relay hook',
+    bridgeLabelOnline: 'Clipboard paste + TCP relay networking',
     bridgeLabelOffline: 'Clipboard paste only · offline-first rollback',
     supportNoteOnline:
-      'Desktop browser recommended. Click into the VM screen to capture the mouse. Press Escape to release it, or to exit fullscreen. Relay-backed networking remains experimental.',
+      'Desktop browser recommended. Click into the VM screen to capture the mouse. Press Escape to release it, or to exit fullscreen. Network access uses a TCP relay for outbound guest connections.',
     supportNoteOffline:
       'Desktop browser recommended. Click into the VM screen to capture the mouse. Press Escape to release it, or to exit fullscreen. This Tiny Core rollback is offline-first.',
     progressMeta: RETRO_VM_DISTRO,
-    screenBadgeOnline: 'Experimental relay',
+    screenBadgeOnline: 'Network relay',
     screenBadgeOffline: 'Local only'
   },
   network: {
-    // Relay-backed networking is intentionally dormant until a relay URL is configured.
-    enabled: false,
-    relayUrl: null,
+    enabled: true,
+    relayUrl: 'wisps://vm-proxy.oliverdougherty.com/wisp/',
     nicType: 'ne2k',
     id: 0,
+    dnsMethod: 'doh',
+    dohServer: 'cloudflare-dns.com',
     mtu: 1500
   }
 };

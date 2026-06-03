@@ -6,7 +6,16 @@ SOURCE_ISO="${ROOT_DIR}/assets/utilities/vm/TinyCore-11.0.iso"
 OUTPUT_ISO="${ROOT_DIR}/assets/utilities/vm/tinycore-retro-vm.iso"
 WORK_DIR="${ROOT_DIR}/.tmp/tinycore-retro-vm-build"
 GENERATED_DIR="${WORK_DIR}/generated"
+EXTENSIONS_DIR="${WORK_DIR}/tinycore-extensions"
+DEFAULT_EXTENSIONS_FILE="${WORK_DIR}/default-extensions.lst"
 ALPINE_IMAGE="${ALPINE_IMAGE:-alpine:3.21}"
+TINYCORE_EXTENSION_REPO="${TINYCORE_EXTENSION_REPO:-http://tinycorelinux.net/11.x/x86/tcz}"
+RETRO_VM_DEFAULT_EXTENSIONS=(
+  "curl.tcz"
+  "firefox-ESR.tcz"
+  "firefox_getLatest.tcz"
+  "neofetch.tcz"
+)
 
 require_tool() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -17,6 +26,7 @@ require_tool() {
 
 require_tool docker
 require_tool rsvg-convert
+require_tool curl
 
 if [ ! -f "${SOURCE_ISO}" ]; then
   echo "Missing Tiny Core base ISO: ${SOURCE_ISO}" >&2
@@ -31,7 +41,47 @@ fi
 rm -rf "${WORK_DIR}"
 mkdir -p \
   "${GENERATED_DIR}/opt/backgrounds" \
-  "${GENERATED_DIR}/usr/local/share/pixmaps"
+  "${GENERATED_DIR}/usr/local/share/pixmaps" \
+  "${EXTENSIONS_DIR}"
+
+printf "%s\n" "${RETRO_VM_DEFAULT_EXTENSIONS[@]}" > "${DEFAULT_EXTENSIONS_FILE}"
+
+download_extension_closure() {
+  local queue=("$@")
+  local seen_file="${WORK_DIR}/downloaded-extensions.lst"
+  local extension dep
+
+  : > "${seen_file}"
+
+  while [ "${#queue[@]}" -gt 0 ]; do
+    extension="${queue[0]}"
+    queue=("${queue[@]:1}")
+
+    if [[ "${extension}" != *.tcz ]]; then
+      extension="${extension}.tcz"
+    fi
+
+    if grep -qxF "${extension}" "${seen_file}"; then
+      continue
+    fi
+    printf "%s\n" "${extension}" >> "${seen_file}"
+
+    echo "Fetching Tiny Core extension ${extension}"
+    curl -fsSLo "${EXTENSIONS_DIR}/${extension}" "${TINYCORE_EXTENSION_REPO}/${extension}"
+    curl -fsSLo "${EXTENSIONS_DIR}/${extension}.md5.txt" "${TINYCORE_EXTENSION_REPO}/${extension}.md5.txt"
+
+    if curl -fsLo "${EXTENSIONS_DIR}/${extension}.dep" "${TINYCORE_EXTENSION_REPO}/${extension}.dep"; then
+      while IFS= read -r dep; do
+        dep="${dep%%#*}"
+        dep="${dep#"${dep%%[![:space:]]*}"}"
+        dep="${dep%"${dep##*[![:space:]]}"}"
+        [ -n "${dep}" ] && queue+=("${dep}")
+      done < "${EXTENSIONS_DIR}/${extension}.dep"
+    fi
+  done
+}
+
+download_extension_closure "${RETRO_VM_DEFAULT_EXTENSIONS[@]}"
 
 cp "${ROOT_DIR}/vm-src/tinycore/branding/bliss-wallpaper.png" \
   "${GENERATED_DIR}/opt/backgrounds/retro-vm-wallpaper.png"
@@ -83,6 +133,9 @@ docker run --rm \
 
     chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-guide
     chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-browser
+    chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-network
+    chmod 755 /tmp/rootfs/usr/local/bin/install-firefox
+    chmod 755 /tmp/rootfs/opt/bootlocal.sh
     chmod 755 /tmp/rootfs/etc/skel/.setbackground
 
     cd /repo/assets/utilities/vm
@@ -90,10 +143,20 @@ docker run --rm \
 
     cp /repo/assets/utilities/vm/flwm_topside.tcz /tmp/iso/cde/optional/
     cp /repo/assets/utilities/vm/flwm_topside.tcz.md5.txt /tmp/iso/cde/optional/
+    find /repo/.tmp/tinycore-retro-vm-build/tinycore-extensions -maxdepth 1 -type f -exec cp {} /tmp/iso/cde/optional/ \;
+
+    cd /tmp/iso/cde/optional
+    for md5_file in *.tcz.md5.txt; do
+      md5sum -c "$md5_file" >/dev/null
+    done
 
     sed -i "s/^flwm\\.tcz$/flwm_topside.tcz/" /tmp/iso/cde/onboot.lst
     sed -i "s/^flwm\\.tcz$/flwm_topside.tcz/" /tmp/iso/cde/copy2fs.lst
     sed -i "s/^flwm\\.tcz$/flwm_topside.tcz/" /tmp/iso/cde/xbase.lst
+    while IFS= read -r extension; do
+      [ -n "$extension" ] || continue
+      grep -qxF "$extension" /tmp/iso/cde/onboot.lst || printf "%s\n" "$extension" >> /tmp/iso/cde/onboot.lst
+    done < /repo/.tmp/tinycore-retro-vm-build/default-extensions.lst
 
     cd /tmp/rootfs
     find . | cpio -o -H newc --quiet | gzip -2 > /tmp/iso/boot/core.gz

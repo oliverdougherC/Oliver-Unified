@@ -32,6 +32,7 @@ const SKIP_DIRECTORIES = new Set([
   '.idea',
   '.omx',
   '.playwright-mcp',
+  '.wrangler',
   '.vscode',
   'dist',
   'node_modules',

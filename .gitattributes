@@ -1,6 +1,5 @@
 # Auto-detect text files and normalize line endings to LF
 * text=auto
-
 # Explicitly mark binary assets
 *.png binary
 *.jpg binary
@@ -13,7 +12,7 @@
 *.cur binary
 *.crs binary
 *.flac binary
-*.iso binary
+*.iso filter=lfs diff=lfs merge=lfs -text
 *.tcz binary
 *.bin binary
 *.pdf binary

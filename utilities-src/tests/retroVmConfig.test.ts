@@ -7,13 +7,15 @@ import {
 } from '@utilities/retroVmConfig';
 
 describe('retro VM config', () => {
-  it('defaults to the Tiny Core offline-first rollback profile', () => {
+  it('defaults to the Tiny Core TCP relay profile', () => {
     expect(RETRO_VM_CONFIG.distro).toBe('Tiny Core Linux 11');
     expect(RETRO_VM_CONFIG.guestName).toBe('Tiny Core');
-    expect(RETRO_VM_CONFIG.network.enabled).toBe(false);
+    expect(RETRO_VM_CONFIG.network.enabled).toBe(true);
+    expect(RETRO_VM_CONFIG.network.relayUrl).toBe('wisps://vm-proxy.oliverdougherty.com/wisp/');
+    expect(isRetroVmNetworkReady(RETRO_VM_CONFIG)).toBe(true);
     expect(RETRO_VM_CONFIG.bootOrder).toBe(0x210);
     expect(RETRO_VM_CONFIG.copy.assetLabel).toMatch(/Tiny Core Linux 11/i);
-    expect(RETRO_VM_CONFIG.copy.screenBadgeOffline).toMatch(/Local only/i);
+    expect(RETRO_VM_CONFIG.copy.screenBadgeOnline).toMatch(/Network relay/i);
   });
 
   it('maps dataset overrides into runtime copy and offline network state', () => {
@@ -133,8 +135,8 @@ describe('retro VM config', () => {
     expect(netDevice?.router_ip).toBeUndefined();
     expect(netDevice?.vm_ip).toBeUndefined();
     expect(netDevice?.masquerade).toBeUndefined();
-    expect(netDevice?.dns_method).toBeUndefined();
-    expect(netDevice?.doh_server).toBeUndefined();
+    expect(netDevice?.dns_method).toBe('doh');
+    expect(netDevice?.doh_server).toBe('cloudflare-dns.com');
     expect(netDevice?.cors_proxy).toBeUndefined();
   });
 
@@ -154,11 +156,11 @@ describe('retro VM config', () => {
     }
   });
 
-  it('falls back for unrecognized boolean flag values', () => {
+  it('falls back to the default enabled state for unrecognized boolean flag values', () => {
     const unrecognizedValues = ['', '  ', 'enabled', 'disabled', 'y', 'n', 'maybe', '2'];
     for (const val of unrecognizedValues) {
       const config = resolveRetroVmConfigFromDataset({ vmNetworkEnabled: val });
-      expect(config.network.enabled, `expected '${val}' to fall back`).toBe(false);
+      expect(config.network.enabled, `expected '${val}' to fall back`).toBe(true);
     }
   });
 });

@@ -6,15 +6,22 @@ This Tiny Core remaster is tuned for:
 - fast boot
 - a retro desktop shell
 - stable local input
-- offline-first sessions
+- outbound network access through the page relay
+- automatic DHCP on eth0 at boot
+- curl, Firefox ESR, and neofetch available at boot
 
 Launchers:
 
 - Guide: this window
-- Browser: reserved for a future lightweight browser pass
+- Browser: Firefox ESR
 
 Tips:
 
 - Click the VM to capture the pointer
 - Press Escape to release it
 - Fullscreen stays edge-to-edge
+- Run retro-vm-network to retry DHCP on eth0
+- Run install-firefox only if you want to replace ESR with latest Firefox
+- Try curl https://example.com after networking is up
+- Run neofetch for system info
+- Tiny Core uses tce-load / tce-ab, not apt

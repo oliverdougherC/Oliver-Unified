@@ -1,10 +1,24 @@
-Retro Browser Slot
-==================
+Retro Browser
+=============
 
-This rollback keeps Tiny Core fast and lightweight.
+Firefox ESR is installed by default and opens from the desktop
+Browser launcher. The launcher uses a small emulator-friendly
+profile to reduce first-run work.
 
-The in-guest browser is intentionally deferred in this pass
-unless a lightweight option can be added without hurting
-boot speed or the retro desktop feel.
+Networking is configured automatically at boot. If you need to
+retry DHCP manually, run:
 
-For now, this launcher is a placeholder.
+  retro-vm-network
+
+Tiny Core does not use apt. Its built-in package system is tce:
+
+  tce-load -wi <extension-name>
+  tce-ab
+
+To replace the bundled ESR build with the latest Firefox that
+Tiny Core can package, run:
+
+  install-firefox
+
+That command can take a while because it downloads Firefox from
+Mozilla and creates a local Tiny Core extension.
