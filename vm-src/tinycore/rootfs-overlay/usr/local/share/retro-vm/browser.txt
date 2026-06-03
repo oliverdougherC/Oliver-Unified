@@ -1,18 +1,21 @@
-Retro Browser Slot
-==================
+Retro Browser
+=============
 
-This rollback keeps Tiny Core fast and lightweight.
-
-Network access is available through the host page relay.
-Bring up the guest NIC with:
+Networking is configured automatically at boot. If you need to
+retry DHCP manually, run:
 
   retro-vm-network
 
-Tiny Core does not use apt. Use Tiny Core extensions instead:
+Tiny Core does not use apt. Its built-in package system is tce:
 
-  tce-ab
   tce-load -wi <extension-name>
+  tce-ab
 
-Firefox may be installable if a compatible Tiny Core extension
-is available for this release. A large browser is not bundled so
-the VM can keep its fast boot and small ISO.
+To install the latest Firefox available through Tiny Core's
+Firefox installer extension, run:
+
+  retro-vm-install-firefox
+
+After installation, the desktop Browser launcher will open Firefox
+if the firefox command is available. The ISO does not bundle Firefox
+itself, so boot stays small and quick.

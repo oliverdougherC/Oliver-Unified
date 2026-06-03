@@ -39,6 +39,9 @@ function sendSafe(socket, frame) {
 async function closeTcpStream(stream) {
   stream.closed = true;
   try {
+    await stream.socket?.close();
+  } catch {}
+  try {
     await stream.writer?.close();
   } catch {
     try {
@@ -53,6 +56,7 @@ async function closeTcpStream(stream) {
 function handleWispSocket(webSocket, env) {
   const settings = readSettings(env);
   const streams = new Map();
+  webSocket.binaryType = 'arraybuffer';
 
   const closeStream = async (streamId, reason = CLOSE_REASONS.VOLUNTARY, notify = true) => {
     const stream = streams.get(streamId);
@@ -125,6 +129,7 @@ function handleWispSocket(webSocket, env) {
     const stream = {
       streamId: frame.streamId,
       pending: [],
+      socket: null,
       reader: null,
       writer: null,
       closed: false
@@ -132,7 +137,12 @@ function handleWispSocket(webSocket, env) {
     streams.set(frame.streamId, stream);
 
     try {
-      const socket = connect({ hostname: destination.hostname, port: destination.port });
+      const socket = connect(
+        { hostname: destination.hostname, port: destination.port },
+        { allowHalfOpen: true }
+      );
+      stream.socket = socket;
+      await socket.opened;
       stream.reader = socket.readable.getReader();
       stream.writer = socket.writable.getWriter();
       sendSafe(webSocket, encodeContinue(frame.streamId, settings.bufferPackets));
@@ -163,7 +173,10 @@ function handleWispSocket(webSocket, env) {
   };
 
   const handleMessage = async (event) => {
-    const frame = parseFrame(event.data, settings.maxFrameBytes);
+    const data = typeof Blob !== 'undefined' && event.data instanceof Blob
+      ? await event.data.arrayBuffer()
+      : event.data;
+    const frame = parseFrame(data, settings.maxFrameBytes);
     if (!frame.ok) {
       sendSafe(webSocket, encodeClose(frame.streamId, frame.reason));
       return;

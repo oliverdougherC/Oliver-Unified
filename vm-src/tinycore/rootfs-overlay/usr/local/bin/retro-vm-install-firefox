@@ -1,0 +1,32 @@
+#!/bin/sh
+set -eu
+
+if [ "$(id -u)" -eq 0 ]; then
+  echo "Run this as the tc user, not root." >&2
+  exit 1
+fi
+
+if ! command -v tce-load >/dev/null 2>&1; then
+  echo "Tiny Core package tool tce-load was not found." >&2
+  exit 127
+fi
+
+echo "Ensuring network is configured..."
+if command -v retro-vm-network >/dev/null 2>&1; then
+  sudo retro-vm-network eth0 || true
+fi
+
+echo
+echo "Installing Tiny Core's Firefox latest installer extension..."
+tce-load -wi firefox_getLatest.tcz
+
+echo
+echo "Downloading and packaging the latest Firefox available for Tiny Core..."
+printf '\n' | firefox_getLatest.sh -a
+
+echo
+if command -v firefox >/dev/null 2>&1; then
+  echo "Firefox is installed. Launch it with: firefox"
+else
+  echo "Firefox installer completed, but firefox is not on PATH yet. Reboot the VM and try: firefox"
+fi

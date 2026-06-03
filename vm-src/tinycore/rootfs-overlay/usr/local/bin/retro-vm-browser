@@ -1,7 +1,11 @@
 #!/bin/sh
-TITLE="Retro Browser Slot"
+TITLE="Retro Browser"
 GEOMETRY="92x24+52+96"
 COMMAND='clear; cat /usr/local/share/retro-vm/browser.txt; printf "\n"; exec sh'
+
+if command -v firefox >/dev/null 2>&1; then
+  exec firefox "$@"
+fi
 
 if command -v aterm >/dev/null 2>&1; then
   exec aterm -title "$TITLE" -geometry "$GEOMETRY" -e /bin/sh -lc "$COMMAND"
