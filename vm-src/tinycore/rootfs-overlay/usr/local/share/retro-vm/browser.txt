@@ -3,8 +3,16 @@ Retro Browser Slot
 
 This rollback keeps Tiny Core fast and lightweight.
 
-The in-guest browser is intentionally deferred in this pass
-unless a lightweight option can be added without hurting
-boot speed or the retro desktop feel.
+Network access is available through the host page relay.
+Bring up the guest NIC with:
 
-For now, this launcher is a placeholder.
+  retro-vm-network
+
+Tiny Core does not use apt. Use Tiny Core extensions instead:
+
+  tce-ab
+  tce-load -wi <extension-name>
+
+Firefox may be installable if a compatible Tiny Core extension
+is available for this release. A large browser is not bundled so
+the VM can keep its fast boot and small ISO.

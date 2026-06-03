@@ -1037,7 +1037,7 @@ async function runLocalAssistantCheck(browser, pageUrl) {
         assert(Math.abs(generatedMetrics.form.bottom - readyMetrics.form.bottom) <= 2, 'Local Assistant composer position should remain stable after generation.');
         assert(!generatedMetrics.center?.visible, 'Local Assistant center panel should stay hidden after generation.');
         assert(/Local Assistant/i.test(generatedMetrics.messageText), 'Local Assistant should render an assistant response.');
-        assert(/\d|--/.test(generatedMetrics.tpsText), 'Local Assistant should expose token/sec telemetry.');
+        assert(/\d|--/.test(generatedMetrics.tpsText), 'Local Assistant should expose token/src telemetry.');
         assert(generatedMetrics.promptTokens > 0, 'Local Assistant should expose prompt token telemetry.');
         assert(generatedMetrics.contextLimitTokens > 0, 'Local Assistant should expose context limit telemetry.');
 
@@ -2288,10 +2288,10 @@ async function main() {
       assert(initialVmState.state === 'idle', 'Retro VM should be idle on first paint.');
       assert(initialVmState.running === 'false', 'Retro VM should not report a running session before launch.');
       assert(initialVmState.launchDisabled === false, 'Retro VM launch should be available on desktop.');
-      assert(initialVmState.networkReady === 'false', 'Retro VM should default to offline until a relay URL is configured.');
-      assert(/local only/i.test(initialVmState.screenBadge), 'Retro VM should surface Tiny Core local-only status when no relay URL is configured.');
+      assert(initialVmState.networkReady === 'true', 'Retro VM should default to network-ready when the WISP relay URL is configured.');
+      assert(/network relay/i.test(initialVmState.screenBadge), 'Retro VM should surface Tiny Core network-relay status when the relay URL is configured.');
       assert(/tiny core linux 11/i.test(initialVmState.assetLabel), 'Retro VM should advertise the Tiny Core rollback image.');
-      assert(/offline-first rollback/i.test(initialVmState.bridgeLabel), 'Retro VM should surface offline-first bridge copy by default.');
+      assert(/tcp relay networking/i.test(initialVmState.bridgeLabel), 'Retro VM should surface TCP relay bridge copy by default.');
       assert(retroVmRequests.length === 0, 'Retro VM should not fetch guest assets before launch.');
 
         await page.click('#retroVmLaunchBtn');
