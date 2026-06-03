@@ -83,6 +83,7 @@ docker run --rm \
 
     chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-guide
     chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-browser
+    chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-network
     chmod 755 /tmp/rootfs/etc/skel/.setbackground
 
     cd /repo/assets/utilities/vm

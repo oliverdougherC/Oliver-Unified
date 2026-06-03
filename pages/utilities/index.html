@@ -282,15 +282,15 @@
           <section class="utility-shell utility-shell--vm" id="retroVmApp" data-utility-root="retro-vm" data-animate="fade-up" aria-label="Virtual Machine" data-vm-state="idle" data-vm-supported="unknown" data-vm-running="false" data-vm-booted="false" data-vm-capture-state="uncaptured">
                     <script type="application/json" id="retroVmConfig">
                       {
-                        "vmNetworkEnabled": "false",
-                        "vmRelayUrl": "",
+                        "vmNetworkEnabled": "true",
+                        "vmRelayUrl": "wisps://vm-proxy.oliverdougherty.com/wisp/",
                         "vmAssetLabel": "Tiny Core Linux 11 · 20 MB remastered retro ISO",
                         "vmSessionLabel": "Ephemeral per tab · clean boot every launch",
-                        "vmBridgeLabelOnline": "Clipboard paste + experimental relay hook",
+                        "vmBridgeLabelOnline": "Clipboard paste + TCP relay networking",
                         "vmBridgeLabelOffline": "Clipboard paste only · offline-first rollback",
-                        "vmSupportNoteOnline": "Desktop browser recommended. Click into the VM screen to capture the mouse. Press Escape to release it, or to exit fullscreen. Relay-backed networking remains experimental.",
+                        "vmSupportNoteOnline": "Desktop browser recommended. Click into the VM screen to capture the mouse. Press Escape to release it, or to exit fullscreen. Network access uses a TCP relay for outbound guest connections.",
                         "vmSupportNoteOffline": "Desktop browser recommended. Click into the VM screen to capture the mouse. Press Escape to release it, or to exit fullscreen. This Tiny Core rollback is offline-first.",
-                        "vmScreenBadgeOnline": "Experimental relay",
+                        "vmScreenBadgeOnline": "Network relay",
                         "vmScreenBadgeOffline": "Local only",
                         "vmProgressMeta": "Tiny Core Linux 11"
                       }

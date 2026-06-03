@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+
+IFACE="${1:-eth0}"
+
+if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
+  exec sudo "$0" "$@"
+fi
+
+echo "Requesting a DHCP lease on ${IFACE}..."
+udhcpc -i "$IFACE" -q -n
+
+echo
+echo "Network setup complete. Try: wget -O- http://example.com"

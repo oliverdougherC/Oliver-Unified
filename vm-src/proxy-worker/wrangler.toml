@@ -1,0 +1,14 @@
+name = "v86-network-proxy"
+main = "src/index.js"
+compatibility_date = "2026-06-02"
+
+[vars]
+ALLOWED_ORIGINS = "https://oliverdougherty.com,https://www.oliverdougherty.com"
+ALLOWED_PORTS = "80,443"
+MAX_STREAMS = "32"
+MAX_FRAME_BYTES = "65536"
+WISP_BUFFER_PACKETS = "32"
+
+[[routes]]
+pattern = "vm-proxy.oliverdougherty.com"
+custom_domain = true

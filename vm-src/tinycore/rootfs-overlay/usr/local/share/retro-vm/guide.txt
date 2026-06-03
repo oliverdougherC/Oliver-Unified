@@ -6,15 +6,17 @@ This Tiny Core remaster is tuned for:
 - fast boot
 - a retro desktop shell
 - stable local input
-- offline-first sessions
+- outbound network access through the page relay
 
 Launchers:
 
 - Guide: this window
-- Browser: reserved for a future lightweight browser pass
+- Browser: network and extension notes
 
 Tips:
 
 - Click the VM to capture the pointer
 - Press Escape to release it
 - Fullscreen stays edge-to-edge
+- Run retro-vm-network to request DHCP on eth0
+- Tiny Core uses tce-load, not apt
