@@ -13,7 +13,7 @@ export const RETRO_VM_CONFIG: RetroVmConfig = {
   biosUrl: '../../assets/utilities/vm/seabios.bin',
   vgaBiosUrl: '../../assets/utilities/vm/vgabios.bin',
   cdromUrl: '../../assets/utilities/vm/tinycore-retro-vm.iso',
-  cdromSizeBytes: 109_017_088,
+  cdromSizeBytes: 23_019_520,
   memorySize: 768 * MB,
   vgaMemorySize: 16 * MB,
   // SeaBIOS boot-order bit layout: CD-ROM first, then disk fallback.
