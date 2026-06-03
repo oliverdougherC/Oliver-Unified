@@ -2,9 +2,20 @@
 TITLE="Retro Browser"
 GEOMETRY="92x24+52+96"
 COMMAND='clear; cat /usr/local/share/retro-vm/browser.txt; printf "\n"; exec sh'
+PROFILE_DIR="${HOME:-/home/tc}/.mozilla/firefox/retro-vm"
+PROFILE_TEMPLATE="/usr/local/share/retro-vm/firefox-profile"
 
 if command -v firefox >/dev/null 2>&1; then
-  exec firefox "$@"
+  mkdir -p "$PROFILE_DIR"
+  if [ -d "$PROFILE_TEMPLATE" ]; then
+    cp -f "$PROFILE_TEMPLATE"/user.js "$PROFILE_DIR"/user.js 2>/dev/null || true
+  fi
+
+  if [ "$#" -eq 0 ]; then
+    set -- "http://example.org"
+  fi
+
+  exec firefox -profile "$PROFILE_DIR" -no-remote "$@"
 fi
 
 if command -v aterm >/dev/null 2>&1; then

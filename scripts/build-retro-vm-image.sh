@@ -12,6 +12,7 @@ ALPINE_IMAGE="${ALPINE_IMAGE:-alpine:3.21}"
 TINYCORE_EXTENSION_REPO="${TINYCORE_EXTENSION_REPO:-http://tinycorelinux.net/11.x/x86/tcz}"
 RETRO_VM_DEFAULT_EXTENSIONS=(
   "curl.tcz"
+  "firefox-ESR.tcz"
   "firefox_getLatest.tcz"
   "neofetch.tcz"
 )
@@ -133,7 +134,7 @@ docker run --rm \
     chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-guide
     chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-browser
     chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-network
-    chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-install-firefox
+    chmod 755 /tmp/rootfs/usr/local/bin/install-firefox
     chmod 755 /tmp/rootfs/opt/bootlocal.sh
     chmod 755 /tmp/rootfs/etc/skel/.setbackground
 
