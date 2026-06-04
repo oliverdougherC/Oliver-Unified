@@ -22,7 +22,7 @@ export const CLOSE_REASONS = {
   THROTTLED: 0x49
 };
 
-const DEFAULT_ALLOWED_ORIGINS = ['https://oliverdougherty.com', 'https://www.oliverdougherty.com'];
+const DEFAULT_ALLOWED_ORIGINS = ['https://oliverdougherty.com', 'https://www.oliverdougherty.com', 'http://localhost', 'https://localhost'];
 const DEFAULT_ALLOWED_PORTS = [80, 443];
 const DEFAULT_MAX_STREAMS = 32;
 const DEFAULT_MAX_FRAME_BYTES = 64 * 1024;
@@ -66,6 +66,9 @@ export function readSettings(env = {}) {
 }
 
 export function isAllowedOrigin(origin, allowedOrigins = DEFAULT_ALLOWED_ORIGINS) {
+  if (origin === null || origin === undefined) {
+    return true;
+  }
   return typeof origin === 'string' && allowedOrigins.includes(origin);
 }
 

@@ -13,7 +13,7 @@ export const RETRO_VM_CONFIG: RetroVmConfig = {
   biosUrl: '../../assets/utilities/vm/seabios.bin',
   vgaBiosUrl: '../../assets/utilities/vm/vgabios.bin',
   cdromUrl: '../../assets/utilities/vm/tinycore-retro-vm.iso',
-  cdromSizeBytes: 23_019_520,
+  cdromSizeBytes: 23_279_616,
   memorySize: 768 * MB,
   vgaMemorySize: 16 * MB,
   // SeaBIOS boot-order bit layout: CD-ROM first, then disk fallback.
@@ -22,7 +22,7 @@ export const RETRO_VM_CONFIG: RetroVmConfig = {
   bootMenuPrompt: /Press ENTER to boot/i,
   maxClipboardPasteChars: 2048,
   copy: {
-    assetLabel: 'Tiny Core Linux 11 · 104 MB remastered ISO with curl, Firefox ESR, and neofetch',
+    assetLabel: 'Tiny Core Linux 11 · 22 MB remastered ISO with curl and neofetch',
     sessionLabel: 'Ephemeral per tab · clean boot every launch',
     bridgeLabelOnline: 'Clipboard paste + TCP relay networking',
     bridgeLabelOffline: 'Clipboard paste only · offline-first rollback',
@@ -42,6 +42,8 @@ export const RETRO_VM_CONFIG: RetroVmConfig = {
     dnsMethod: 'doh',
     dohServer: 'cloudflare-dns.com',
     mtu: 1500
+    // masquerade: true can be set as a fallback when the relay is unreachable.
+    // v86 handles WebSocket reconnection internally with exponential backoff.
   }
 };
 

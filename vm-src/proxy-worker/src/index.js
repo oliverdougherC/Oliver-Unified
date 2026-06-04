@@ -227,7 +227,13 @@ export default {
 
     const origin = request.headers.get('origin');
     if (!isAllowedOrigin(origin, settings.allowedOrigins)) {
-      return json({ ok: false, error: 'origin_not_allowed' }, { status: 403 });
+      const headers = new Headers({ 'Content-Type': 'application/json' });
+      headers.set('X-Wisp-Origin-Rejected', String(origin ?? 'null'));
+      headers.set('X-Wisp-Allowed-Origins', settings.allowedOrigins.join(', '));
+      return new Response(
+        JSON.stringify({ ok: false, error: 'origin_not_allowed', origin: origin ?? null }),
+        { status: 403, headers }
+      );
     }
 
     if (!isWebSocketUpgrade(request)) {

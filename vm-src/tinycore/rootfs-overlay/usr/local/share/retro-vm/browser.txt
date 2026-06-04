@@ -1,9 +1,13 @@
 Retro Browser
 =============
 
-Firefox ESR is installed by default and opens from the desktop
-Browser launcher. The launcher uses a small emulator-friendly
-profile to reduce first-run work.
+Firefox is not bundled in the compact VM image. Install it on
+demand by running:
+
+  install-firefox
+
+After installation, reopen the desktop Browser launcher. It uses
+a small emulator-friendly profile to reduce first-run work.
 
 Networking is configured automatically at boot. If you need to
 retry DHCP manually, run:
@@ -15,10 +19,5 @@ Tiny Core does not use apt. Its built-in package system is tce:
   tce-load -wi <extension-name>
   tce-ab
 
-To replace the bundled ESR build with the latest Firefox that
-Tiny Core can package, run:
-
-  install-firefox
-
-That command can take a while because it downloads Firefox from
-Mozilla and creates a local Tiny Core extension.
+The install command can take a while because it downloads Firefox
+from Mozilla and creates a local Tiny Core extension.

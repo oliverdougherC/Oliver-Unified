@@ -12,8 +12,6 @@ ALPINE_IMAGE="${ALPINE_IMAGE:-alpine:3.21}"
 TINYCORE_EXTENSION_REPO="${TINYCORE_EXTENSION_REPO:-http://tinycorelinux.net/11.x/x86/tcz}"
 RETRO_VM_DEFAULT_EXTENSIONS=(
   "curl.tcz"
-  "firefox-ESR.tcz"
-  "firefox_getLatest.tcz"
   "neofetch.tcz"
 )
 
@@ -107,10 +105,23 @@ rsvg-convert \
 
 docker run --rm \
   --platform linux/amd64 \
+  --user 0:0 \
   -v "${ROOT_DIR}:/repo" \
   "${ALPINE_IMAGE}" sh -lc '
     set -euo pipefail
     apk add --no-cache cpio gzip libarchive-tools xorriso >/dev/null
+
+    assert_root_setuid_file() {
+      path="$1"
+      expected_mode="$2"
+      owner="$(stat -c %u "$path")"
+      mode="$(stat -c %a "$path")"
+
+      if [ "$owner" != "0" ] || [ "$mode" != "$expected_mode" ]; then
+        echo "$path must be owned by root with mode $expected_mode; found uid $owner mode $mode" >&2
+        exit 1
+      fi
+    }
 
     mkdir -p /tmp/iso /tmp/rootfs
     bsdtar -xf /repo/assets/utilities/vm/TinyCore-11.0.iso -C /tmp/iso
@@ -131,12 +142,19 @@ docker run --rm \
     cp -R /repo/vm-src/tinycore/rootfs-overlay/. /tmp/rootfs/
     cp -R /repo/.tmp/tinycore-retro-vm-build/generated/. /tmp/rootfs/
 
+    # Docker Desktop can expose bind-mounted files with the macOS account uid.
+    # Tiny Core requires these setuid executables to remain owned by root.
+    chown -R 0 /tmp/rootfs
     chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-guide
     chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-browser
     chmod 755 /tmp/rootfs/usr/local/bin/retro-vm-network
     chmod 755 /tmp/rootfs/usr/local/bin/install-firefox
     chmod 755 /tmp/rootfs/opt/bootlocal.sh
     chmod 755 /tmp/rootfs/etc/skel/.setbackground
+    chmod 4755 /tmp/rootfs/bin/busybox.suid
+    chmod 4111 /tmp/rootfs/usr/bin/sudo
+    assert_root_setuid_file /tmp/rootfs/bin/busybox.suid 4755
+    assert_root_setuid_file /tmp/rootfs/usr/bin/sudo 4111
 
     cd /repo/assets/utilities/vm
     md5sum -c flwm_topside.tcz.md5.txt >/dev/null
@@ -160,6 +178,12 @@ docker run --rm \
 
     cd /tmp/rootfs
     find . | cpio -o -H newc --quiet | gzip -2 > /tmp/iso/boot/core.gz
+
+    mkdir /tmp/verify-rootfs
+    cd /tmp/verify-rootfs
+    gzip -dc /tmp/iso/boot/core.gz | cpio -idmu --quiet
+    assert_root_setuid_file /tmp/verify-rootfs/bin/busybox.suid 4755
+    assert_root_setuid_file /tmp/verify-rootfs/usr/bin/sudo 4111
 
     cd /tmp/iso
     xorriso -as mkisofs \

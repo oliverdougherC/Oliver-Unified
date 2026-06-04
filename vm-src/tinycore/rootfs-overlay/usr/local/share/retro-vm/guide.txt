@@ -8,12 +8,12 @@ This Tiny Core remaster is tuned for:
 - stable local input
 - outbound network access through the page relay
 - automatic DHCP on eth0 at boot
-- curl, Firefox ESR, and neofetch available at boot
+- curl and neofetch available at boot
 
 Launchers:
 
 - Guide: this window
-- Browser: Firefox ESR
+- Browser: Firefox installer and launcher
 
 Tips:
 
@@ -21,7 +21,7 @@ Tips:
 - Press Escape to release it
 - Fullscreen stays edge-to-edge
 - Run retro-vm-network to retry DHCP on eth0
-- Run install-firefox only if you want to replace ESR with latest Firefox
+- Run install-firefox to download and package Firefox on demand
 - Try curl https://example.com after networking is up
 - Run neofetch for system info
 - Tiny Core uses tce-load / tce-ab, not apt

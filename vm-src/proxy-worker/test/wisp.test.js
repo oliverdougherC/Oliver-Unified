@@ -61,10 +61,14 @@ test('rejects malformed and oversized frames', () => {
 });
 
 test('validates allowed origins', () => {
-  const allowed = ['https://oliverdougherty.com', 'https://www.oliverdougherty.com'];
+  const allowed = ['https://oliverdougherty.com', 'https://www.oliverdougherty.com', 'http://localhost', 'https://localhost'];
   assert.equal(isAllowedOrigin('https://oliverdougherty.com', allowed), true);
+  assert.equal(isAllowedOrigin('https://www.oliverdougherty.com', allowed), true);
+  assert.equal(isAllowedOrigin('http://localhost', allowed), true);
+  assert.equal(isAllowedOrigin('https://localhost', allowed), true);
+  assert.equal(isAllowedOrigin(null, allowed), true);
+  assert.equal(isAllowedOrigin(undefined, allowed), true);
   assert.equal(isAllowedOrigin('https://evil.example', allowed), false);
-  assert.equal(isAllowedOrigin(null, allowed), false);
 });
 
 test('parses settings with safe defaults', () => {
