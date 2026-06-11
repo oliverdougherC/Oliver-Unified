@@ -23,9 +23,9 @@ The site is built on a dark base with warm parchment tones for text. Each page h
 
 | Page | Theme Accent | Hex |
 | :--- | :--- | :--- |
-| **Gallery** | Lavender | `#9693CC` |
-| **Archive** | Sage | `#CDDBCD` |
-| **Resume** | Steel Blue | `#6C8FD5` |
+| **Landing** | Pumpkin Spice | `#FF6700` |
+| **Gallery** | Blue | `#004BA8` |
+| **Resume** | Green | `#2BA84A` |
 | **Utilities** | Pure White | `#ffffff` |
 
 ### Light Mode
