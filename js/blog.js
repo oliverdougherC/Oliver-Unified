@@ -1,6 +1,15 @@
 (function () {
   'use strict';
 
+  /* Set to true to re-enable the blog */
+  var BLOG_ENABLED = false;
+
+  /* Immediately redirect away if blog is disabled */
+  if (!BLOG_ENABLED) {
+    window.location.replace('../../index.html');
+    return;
+  }
+
   var posts = [];
   var currentSlug = null;
 
