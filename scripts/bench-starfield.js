@@ -60,16 +60,14 @@
 
   // --- Pause/resume the starfield ---
   function pauseStarfield() {
-    // Dispatch the same event the utilities-shell uses to pause rendering
-    window.dispatchEvent(new CustomEvent('utilities-load-state', {
-      detail: { source: 'benchmark', active: false, pauseRendering: true }
-    }));
+    // Stop the renderer outright (worker or main) to measure page cost without the starfield.
+    window.__starfield && typeof window.__starfield.pause === 'function' && window.__starfield.pause();
+    document.getElementById('starfield').style.visibility = 'hidden';
   }
 
   function resumeStarfield() {
-    window.dispatchEvent(new CustomEvent('utilities-load-state', {
-      detail: { source: 'benchmark', active: false, pauseRendering: false }
-    }));
+    document.getElementById('starfield').style.visibility = '';
+    window.__starfield && typeof window.__starfield.resume === 'function' && window.__starfield.resume();
   }
 
   // --- Canvas info ---
@@ -165,10 +163,10 @@
     console.log('  Strong candidate for replacement with pre-rendered or CSS-based alternative.');
   }
 
-  console.log('\n  NOTE: rAF measures main-thread scheduling. OffscreenCanvas worker drawing');
-  console.log('  happens on a background thread. The real cost is GPU compositing of the');
-  console.log('  canvas layer, which this benchmark cannot directly measure.');
-  console.log('  For GPU power impact, check Activity Monitor > Energy tab while on this page.');
+  console.log('  NOTE: rendering runs on a Web Worker (OffscreenCanvas) when supported, else the');
+  console.log('  main thread; the main-thread rAF FPS measured here reflects scheduling headroom');
+  console.log('  freed by offloading the draw loop. GPU compositing of the canvas layer still');
+  console.log('  occurs; check Activity Monitor > Energy tab for power impact.');
 
   console.groupEnd();
 })();

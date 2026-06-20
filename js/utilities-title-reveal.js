@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var buttons = Array.from(document.querySelectorAll('.utilities-buttons button'));
+  var buttons = Array.from(document.querySelectorAll('.utilities-buttons button, .utilities-buttons a'));
   var homeBtn = document.querySelector('.nav-home-btn');
   var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 

@@ -16,7 +16,8 @@ const REQUIRED_PAGES = [
   'pages/resume/index.html',
   'pages/gallery/index.html',
   'pages/archive/index.html',
-  'pages/utilities/index.html'
+  'pages/utilities/index.html',
+  'pages/utilities/rt-demo/index.html'
 ];
 
 const VARIANT_CONFIG = {
@@ -63,11 +64,22 @@ function validatePages() {
 
     const html = fs.readFileSync(pagePath, 'utf8');
     assert(html.includes('<title>'), `Missing <title> tag in ${page}`);
-    if (page !== 'index.html' && page !== 'pages/resume/index.html' && page !== 'pages/gallery/index.html') {
+    if (
+      page !== 'index.html' &&
+      page !== 'pages/resume/index.html' &&
+      page !== 'pages/gallery/index.html' &&
+      page !== 'pages/utilities/rt-demo/index.html'
+    ) {
       assert(html.includes('data-current-year'), `Missing dynamic year placeholder in ${page}`);
     }
 
-    if (page !== 'index.html' && page !== 'pages/resume/index.html' && page !== 'pages/gallery/index.html' && page !== 'pages/utilities/index.html') {
+    if (
+      page !== 'index.html' &&
+      page !== 'pages/resume/index.html' &&
+      page !== 'pages/gallery/index.html' &&
+      page !== 'pages/utilities/index.html' &&
+      page !== 'pages/utilities/rt-demo/index.html'
+    ) {
       assert(html.includes('id="navToggle"'), `Missing shared nav toggle in ${page}`);
     }
   }
@@ -102,12 +114,21 @@ function validatePages() {
   assert(dashboardHtml.includes('id="retroVmApp"'), 'Retro VM shell missing.');
   assert(dashboardHtml.includes('id="retroVmLaunchBtn"'), 'Retro VM launch button missing.');
   assert(dashboardHtml.includes('id="retroVmScreen"'), 'Retro VM screen container missing.');
+  assert(dashboardHtml.includes('href="./rt-demo/"'), 'RT Demo title-card link missing.');
   assert(dashboardHtml.includes('assets/utilities-app.js'), 'Utilities bundle include missing');
   assert(!dashboardHtml.includes('servicesRefreshBtn'), 'Legacy services refresh UI should not ship');
   assert(!dashboardHtml.includes('data-health-url='), 'Legacy service health attributes should not ship');
 
+  const rtDemoHtml = fs.readFileSync(path.join(ROOT, 'pages', 'utilities', 'rt-demo', 'index.html'), 'utf8');
+  assert(rtDemoHtml.includes('id="rtDemoCanvas"'), 'RT Demo canvas missing.');
+  assert(rtDemoHtml.includes('id="rtDemoFps"'), 'RT Demo FPS counter missing.');
+  assert(rtDemoHtml.includes('id="rtDemoInfoButton"'), 'RT Demo info button missing.');
+  assert(rtDemoHtml.includes('assets/rt-demo.js'), 'RT Demo bundle include missing.');
+
   const utilitiesBundlePath = path.join(ROOT, 'pages', 'utilities', 'assets', 'utilities-app.js');
   assert(fs.existsSync(utilitiesBundlePath), 'Utilities bundle missing: pages/utilities/assets/utilities-app.js');
+  const rtDemoBundlePath = path.join(ROOT, 'pages', 'utilities', 'assets', 'rt-demo.js');
+  assert(fs.existsSync(rtDemoBundlePath), 'RT Demo bundle missing: pages/utilities/assets/rt-demo.js');
   const utilitiesWorkerDir = path.join(ROOT, 'pages', 'utilities', 'assets', 'assets');
   assert(fs.existsSync(utilitiesWorkerDir), 'Utilities worker asset directory missing: pages/utilities/assets/assets');
   const utilitiesWorkerEntries = fs.readdirSync(utilitiesWorkerDir);

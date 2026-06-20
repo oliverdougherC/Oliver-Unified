@@ -150,7 +150,7 @@ async function assertTitleIdle(page, client, baseUrl) {
   const unexpectedPaintAnimations = paintAnimations.filter((animation) => !ALLOWED_TITLE_IDLE_ANIMATIONS.has(animation.name));
   const raster = await traceRasterWork(page, client, 2500);
 
-  if (!/full-motion|reduced-motion/i.test(idle.starfield.mode)) {
+  if (!/twinkle|reduced-motion/i.test(idle.starfield.mode)) {
     throw new Error(`Starfield should remain in a normal idle mode. Saw ${idle.starfield.mode || 'none'}.`);
   }
   if (unexpectedPaintAnimations.length > 0) {
@@ -177,7 +177,7 @@ async function assertRouteIdle(page, client, baseUrl, utilityId) {
   const idle = await measureIdleWindow(page, client, ROUTE_SAMPLE_MS);
   const paintAnimations = await runningPaintHeavyAnimations(page);
 
-  if (!/full-motion|reduced-motion/i.test(idle.starfield.mode)) {
+  if (!/twinkle|reduced-motion/i.test(idle.starfield.mode)) {
     throw new Error(`${utilityId} route should leave the starfield in a normal idle mode. Saw ${idle.starfield.mode || 'none'}.`);
   }
   if (paintAnimations.length > 0) {

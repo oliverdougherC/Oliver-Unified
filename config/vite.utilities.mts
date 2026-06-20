@@ -16,10 +16,13 @@ export default defineConfig({
     sourcemap: false,
     target: 'es2022',
     rollupOptions: {
-      input: path.resolve(__dirname, '../utilities-src/src/main.ts'),
+      input: {
+        'utilities-app': path.resolve(__dirname, '../utilities-src/src/main.ts'),
+        'rt-demo': path.resolve(__dirname, '../utilities-src/src/rtDemo.ts')
+      },
       output: {
         format: 'es',
-        entryFileNames: 'utilities-app.js',
+        entryFileNames: '[name].js',
         chunkFileNames: '[name].js',
         assetFileNames: '[name][extname]'
       }

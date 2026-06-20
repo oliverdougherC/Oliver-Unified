@@ -56,44 +56,6 @@ const LOAD_PSEUDO_PROGRESS_CAP = 96;
 const LOAD_COPY_FADE_MS = 250;
 const THINKING_CONTENT_MARKER = '__thinking__';
 const STREAMING_CONTENT_MARKER = '__streaming__';
-const LOCAL_ASSISTANT_LOAD_SOURCE = 'local-assistant';
-
-function createLocalAssistantPerformanceController(source) {
-  if (typeof window.createUtilityPerformanceController === 'function') {
-    return window.createUtilityPerformanceController(source);
-  }
-
-  let active = false;
-  let currentMode = 'settle-background';
-  return {
-    setActive(nextActive, options = {}) {
-      const nextMode = options.mode === 'pause-background' ? 'pause-background' : 'settle-background';
-      if (active === Boolean(nextActive) && currentMode === nextMode) return;
-      active = Boolean(nextActive);
-      currentMode = nextMode;
-      window.dispatchEvent(new CustomEvent('utilities-load-state', {
-        detail: {
-          source,
-          active,
-          mode: currentMode,
-          pauseRendering: currentMode === 'pause-background'
-        }
-      }));
-    },
-    cleanup() {
-      if (!active) return;
-      active = false;
-      window.dispatchEvent(new CustomEvent('utilities-load-state', {
-        detail: {
-          source,
-          active: false,
-          mode: currentMode,
-          pauseRendering: currentMode === 'pause-background'
-        }
-      }));
-    }
-  };
-}
 
 export class LocalLlmUtility {
   constructor(root) {
@@ -132,8 +94,6 @@ export class LocalLlmUtility {
     this._streamRenderTimer = 0;
     this._streamRenderDue = false;
     this._streamShouldStick = false;
-    this._loadStateActive = false;
-    this._performanceState = createLocalAssistantPerformanceController(LOCAL_ASSISTANT_LOAD_SOURCE);
     this.loadingSequenceTimer = null;
     this.loadingSequenceIndex = 0;
     this.loadingSequenceStartedAt = 0;
@@ -336,7 +296,6 @@ export class LocalLlmUtility {
     this.tps = null;
     this.numTokens = 0;
     this.diagnostics = null;
-    this.setLocalAssistantLoadState(true);
     this.hideDiagnostics();
     this.stopPromptCycle();
     this.updateProgressBar();
@@ -442,7 +401,6 @@ export class LocalLlmUtility {
       this.clearGenerationTimeout();
       this.hideTypingIndicator();
       this.cancelStreamRender();
-      this.setLocalAssistantLoadState(false);
       this.assistantDraft = null;
       this.markGenerationComplete();
       this.captureContextStats(null);
@@ -468,7 +426,6 @@ export class LocalLlmUtility {
     if (message.type === 'disposed') {
       this.clearGenerationTimeout();
       this.cancelStreamRender();
-      this.setLocalAssistantLoadState(false);
       if (this.assistantDraft) {
         this.messages = this.messages.filter((msg) => msg !== this.assistantDraft);
         this.assistantDraft = null;
@@ -599,7 +556,6 @@ export class LocalLlmUtility {
   applyReadyMessage(message) {
     this.pendingReadyMessage = null;
     this.stopLoadingSequence();
-    this.setLocalAssistantLoadState(false);
     clearTimeout(this._copyTimer);
     this._copyTimer = null;
     this._currentCopyTarget = '';
@@ -703,13 +659,6 @@ export class LocalLlmUtility {
   updateTelemetry() {
     this.backendLabel.textContent = this.backend === 'webgpu' ? 'WebGPU' : this.backend;
     this.tpsLabel.textContent = Number.isFinite(this.tps) ? this.tps.toFixed(1) : '--';
-  }
-
-  setLocalAssistantLoadState(active) {
-    const nextActive = Boolean(active);
-    if (this._loadStateActive === nextActive) return;
-    this._loadStateActive = nextActive;
-    this._performanceState.setActive(nextActive);
   }
 
   updateProgressBar() {
@@ -957,7 +906,6 @@ export class LocalLlmUtility {
 
     this.tps = null;
     this.numTokens = 0;
-    this.setLocalAssistantLoadState(true);
     this.input.value = '';
     this.autoSizeInput();
     this.updatePromptVisibility();
@@ -1048,7 +996,6 @@ export class LocalLlmUtility {
     if (this.status !== WORKER_STATE.UNSUPPORTED && this.status !== WORKER_STATE.ERROR) {
       this.hideTypingIndicator();
       this.updateStatus(WORKER_STATE.READY, 'Ready.');
-      this.setLocalAssistantLoadState(false);
       this.startPromptCycle();
       this.renderStatePanel();
     }
@@ -1066,7 +1013,6 @@ export class LocalLlmUtility {
       this.announceLastAssistantMessage();
     }
     this.updateStatus(WORKER_STATE.READY, 'Generation stopped.');
-    this.setLocalAssistantLoadState(false);
     this.startPromptCycle();
     this.renderStatePanel();
     this.markGenerationComplete(generationId);
@@ -1251,7 +1197,6 @@ export class LocalLlmUtility {
   showLoadFailure(message) {
     this.stopLoadingSequence({ clearPending: true });
     this.cancelStreamRender();
-    this.setLocalAssistantLoadState(false);
     const fallback = buildFailureCopy(message, this.diagnostics);
     this.updateStatus(message.status || WORKER_STATE.ERROR, fallback.message);
     this.progress = 0;
@@ -1267,7 +1212,6 @@ export class LocalLlmUtility {
     fallback.likelyFix = message.likelyFix || 'Retry the message. If it happens again, reset the model and reload it.';
     this.hideTypingIndicator();
     this.cancelStreamRender();
-    this.setLocalAssistantLoadState(false);
     this.updateStatus(WORKER_STATE.ERROR, message.message || 'Local generation failed.');
     this.showDiagnostics(fallback);
     this.finishAssistantMessage(message.message || 'The local model could not finish this reply.', message.generationId);
@@ -1340,7 +1284,6 @@ export class LocalLlmUtility {
     this.markGenerationComplete();
     this.captureContextStats(null);
     this.hideDiagnostics();
-    this.setLocalAssistantLoadState(false);
     this.stopPromptCycle();
     this.stopLoadingSequence({ clearPending: true });
     this.worker?.postMessage({ type: 'reset' });
@@ -1360,7 +1303,6 @@ export class LocalLlmUtility {
     this.tps = null;
     this.numTokens = 0;
     this.cancelStreamRender();
-    this.setLocalAssistantLoadState(false);
     this.markGenerationComplete();
     this.captureContextStats(null);
     this.hideDiagnostics();
@@ -1402,7 +1344,6 @@ export class LocalLlmUtility {
     }
     this.clearGenerationTimeout();
     this.cancelStreamRender();
-    this.setLocalAssistantLoadState(false);
     if (this._inputFrameId) {
       window.cancelAnimationFrame(this._inputFrameId);
       this._inputFrameId = 0;
@@ -1433,7 +1374,6 @@ export class LocalLlmUtility {
     this.terminateWorker({ clearCache: true, delayMs: unload ? 0 : 400 });
     this.clearGenerationTimeout();
     this.cancelStreamRender();
-    this.setLocalAssistantLoadState(false);
     this.modelReady = false;
     this.progress = 0;
     this.tps = null;
@@ -1510,7 +1450,6 @@ export class LocalLlmUtility {
     this.terminateWorker({ clearCache: false });
     this.modelReady = false;
     this.cancelStreamRender();
-    this.setLocalAssistantLoadState(false);
     this.showGenerationFailure({
       status: WORKER_STATE.ERROR,
       category: 'generation-timeout',

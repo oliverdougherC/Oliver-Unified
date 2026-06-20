@@ -26,7 +26,7 @@ The site is a static, hand-authored HTML/CSS/JS project. There is no templating 
 - `js/blog.js`: blog SPA engine — fetches `blogs/manifest.json`, parses markdown via `marked`, hash routes posts, builds sidebar.
 - `js/blog-code-highlight.js`: Prism-based code highlighting for blog posts (exports `window.highlightBlogCode()`).
 - `js/blog-math.js`: KaTeX math rendering for blog posts (exports `window.renderBlogMath()`).
-- `js/starfield.js`: landing page background starfield animation.
+- `js/starfield.js`: utilities-page stationary twinkling starfield with nebula, diffraction spikes, and comets; rendered on a Web Worker (OffscreenCanvas) with a main-thread fallback.
 - `js/utilities-shell.js`: tabbed utilities dashboard shell (routing between utility panels).
 - `js/local-llm-chat.js`: Local LLM chat UI controller.
 - `js/local-llm-config.js`: Local LLM configuration (models, endpoints, worker settings).

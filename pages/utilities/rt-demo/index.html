@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="rt-demo">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RT Demo</title>
+  <meta name="description" content="An interactive WebGPU ray tracing lighting demo.">
+  <link rel="icon" type="image/svg+xml" href="/favicon-happy.svg?v=face-6" id="favicon">
+  <link rel="alternate icon" href="/favicon-happy.ico?v=face-6" id="favicon-fallback">
+  <script src="../../../js/favicon-swap.js" defer></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"></noscript>
+
+  <link rel="stylesheet" href="../../../css/rt-demo.css?v=rt-demo-2026-06-20">
+</head>
+<body>
+  <main class="rt-demo" id="rtDemoApp">
+    <canvas id="rtDemoCanvas" aria-label="Interactive WebGPU ray tracing demo with draggable material spheres"></canvas>
+    <div class="rt-fps" id="rtDemoFps" aria-live="off">FPS --</div>
+    <div class="rt-info">
+      <button class="rt-info-button" id="rtDemoInfoButton" type="button" aria-label="About RT Demo" aria-expanded="false" aria-controls="rtDemoInfoMenu">i</button>
+      <aside class="rt-info-menu" id="rtDemoInfoMenu" hidden>
+        <p>This scene is ray traced in a WGSL shader on your GPU. Each pixel fires a ray into the scene, tests intersections, casts a shadow ray toward the light, and bounces reflected rays off mirror-like materials.</p>
+        <p>Drag the spheres or the light to change the shadows, highlights, and reflections in real time.</p>
+      </aside>
+    </div>
+  </main>
+  <script type="module" src="../assets/rt-demo.js?v=rt-demo-2026-06-20"></script>
+</body>
+</html>

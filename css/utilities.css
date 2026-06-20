@@ -243,7 +243,7 @@ html[data-active-utility] .nav-back-btn {
     font-size: 1.05rem;
   }
 
-  .utilities-buttons button {
+  .utilities-buttons :is(button, a) {
     min-width: 18rem;
     min-height: 5rem;
     padding-inline: 2.25rem;
@@ -1895,8 +1895,8 @@ html[data-active-utility] .nav-back-btn {
   .utilities-view,
   .utilities-title-wrapper,
   .utilities-title,
-  .utilities-buttons button,
-  .utilities-buttons button::before,
+  .utilities-buttons :is(button, a),
+  .utilities-buttons :is(button, a)::before,
   .utility-stage.is-active,
   .utility-stage.is-exiting,
   .stress-mode-button,
@@ -1913,12 +1913,12 @@ html[data-active-utility] .nav-back-btn {
 
   .utilities-title-wrapper,
   .utilities-title,
-  .utilities-buttons button {
+  .utilities-buttons :is(button, a) {
     opacity: 1;
     transform: none;
   }
 
-  .utilities-buttons button {
+  .utilities-buttons :is(button, a) {
     pointer-events: auto;
   }
 }
@@ -3231,8 +3231,11 @@ html[data-active-utility] .nav-back-btn {
   max-width: 56rem;
 }
 
-.utilities-buttons button {
+.utilities-buttons :is(button, a) {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font: inherit;
   font-size: var(--text-base);
   font-weight: var(--weight-normal);
@@ -3244,6 +3247,7 @@ html[data-active-utility] .nav-back-btn {
   -webkit-backdrop-filter: blur(8px);
   color: #ffffff;
   cursor: pointer;
+  text-decoration: none;
   opacity: 0;
   pointer-events: none;
   transform: scale(0.85) translateY(10px);
@@ -3254,7 +3258,7 @@ html[data-active-utility] .nav-back-btn {
     background 0.8s var(--ease-smooth);
 }
 
-.utilities-buttons button::before {
+.utilities-buttons :is(button, a)::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -3269,51 +3273,51 @@ html[data-active-utility] .nav-back-btn {
     box-shadow 0.8s var(--ease-smooth);
 }
 
-.utilities-buttons button.is-visible {
+.utilities-buttons :is(button, a).is-visible {
   opacity: 1;
   pointer-events: auto;
   transform: scale(1) translateY(0);
 }
 
-.utilities-buttons button:hover {
+.utilities-buttons :is(button, a):hover {
   transform: translateY(-4px) scale(1.03);
   background: rgba(255, 255, 255, 0.08);
 }
 
-.utilities-buttons button:focus-visible {
+.utilities-buttons :is(button, a):focus-visible {
   outline: var(--utilities-focus-outline);
   outline-offset: 4px;
   background: rgba(255, 255, 255, 0.08);
   box-shadow: var(--utilities-focus-shadow);
 }
 
-.utilities-buttons button:is(:hover, :focus-visible)::before {
+.utilities-buttons :is(button, a):is(:hover, :focus-visible)::before {
   opacity: 1;
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.38),
     0 0 18px rgba(255, 255, 255, 0.12);
 }
 
-.utilities-buttons button[data-color="lavender"] {
+.utilities-buttons :is(button, a)[data-color="lavender"] {
   animation: float-lavender 8s ease-in-out infinite;
 }
-.utilities-buttons button[data-color="pink"] {
+.utilities-buttons :is(button, a)[data-color="pink"] {
   animation: float-pink 9s ease-in-out infinite;
   animation-delay: -2s;
 }
-.utilities-buttons button[data-color="mint"] {
+.utilities-buttons :is(button, a)[data-color="mint"] {
   animation: float-mint 7.5s ease-in-out infinite;
   animation-delay: -4s;
 }
-.utilities-buttons button[data-color="coral"] {
+.utilities-buttons :is(button, a)[data-color="coral"] {
   animation: float-coral 8.5s ease-in-out infinite;
   animation-delay: -1s;
 }
-.utilities-buttons button[data-color="sky"] {
+.utilities-buttons :is(button, a)[data-color="sky"] {
   animation: float-sky 9.5s ease-in-out infinite;
   animation-delay: -3s;
 }
-.utilities-buttons button[data-color="ember"] {
+.utilities-buttons :is(button, a)[data-color="ember"] {
   animation: float-ember 8.8s ease-in-out infinite;
   animation-delay: -5s;
 }
@@ -3333,7 +3337,7 @@ html[data-active-utility] .nav-back-btn {
 }
 
 html[data-active-utility] .utilities-title-wrapper,
-html[data-active-utility] .utilities-buttons button {
+html[data-active-utility] .utilities-buttons :is(button, a) {
   animation-play-state: paused;
 }
 
@@ -3346,7 +3350,7 @@ html.utilities-returned .utilities-title {
   animation-delay: -100s;
 }
 
-html.skip-page-animation[data-page-id="utilities"] .utilities-buttons button {
+html.skip-page-animation[data-page-id="utilities"] .utilities-buttons :is(button, a) {
   opacity: 1;
   pointer-events: auto;
   transform: scale(1) translateY(0);
@@ -3458,7 +3462,7 @@ html.skip-page-animation[data-page-id="utilities"] .utilities-buttons button {
     gap: 1rem;
   }
 
-  .utilities-buttons button {
+  .utilities-buttons :is(button, a) {
     padding: 0.85rem 1.4rem;
     font-size: var(--text-sm);
   }

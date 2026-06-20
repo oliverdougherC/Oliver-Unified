@@ -18,7 +18,6 @@ import {
 } from './audioFourierCore';
 import { resolveAudioPlaybackButtonState } from './audioFourierUiState';
 import { createAudioWaveRenderer, type AudioWaveRenderer } from './audioFourierWaveRenderer';
-import { createUtilityPerformanceController } from './utilityPerformance';
 import type { AudioFourierSourceTransfer, AudioFourierSuccessMessage, AudioFourierWorkerRequest, AudioFourierWorkerResponse } from './audioFourierWorkerTypes';
 import { arrayBufferLikeToArrayBuffer, sliceArrayBufferView } from './bufferUtils';
 
@@ -200,7 +199,6 @@ export class AudioFourierController {
   private readonly reducedMotionChangeHandler = this.onReducedMotionChange.bind(this);
   private readonly spectrumBackgroundCanvas: HTMLCanvasElement;
   private readonly componentBackgroundCanvas: HTMLCanvasElement;
-  private readonly performanceState = createUtilityPerformanceController('audio-fourier');
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -498,7 +496,6 @@ export class AudioFourierController {
     this.statusChip.textContent = state === 'animating' ? 'Playing' : state === 'ready' ? 'Ready' : state[0].toUpperCase() + state.slice(1);
     this.statusChip.className = `utility-status-chip utility-status-chip--${state}`;
     this.root.dataset.audioState = state;
-    this.performanceState.setActive(state === 'processing' || state === 'animating');
     this.syncButtons();
   }
 
@@ -1494,6 +1491,5 @@ export class AudioFourierController {
     this.stopAnimationFrame();
     this.sliderRafPending = false;
     this.setState('idle', 'Destroyed.');
-    this.performanceState.cleanup();
   }
 }

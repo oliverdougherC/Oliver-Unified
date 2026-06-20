@@ -141,12 +141,6 @@ Shown on errors. Displays:
 - Retry button
 - Clear cache button (deletes cached model files)
 
-### Performance signaling
-
-The Local Assistant emits `utilities-load-state` custom events to signal the starfield background:
-- `active: true, mode: 'settle-background'` during loading/generation
-- `active: false` when idle or disposed
-
 ## File Reference
 
 | File | Purpose |

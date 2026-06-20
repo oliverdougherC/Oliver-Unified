@@ -6,7 +6,6 @@ import {
   resolveRetroVmConfigFromDataset
 } from './retroVmConfig';
 import { detectRetroVmSupport, resolveRetroVmStatusView, transitionRetroVmState } from './retroVmSupport';
-import { createUtilityPerformanceController } from './utilityPerformance';
 import type { RetroVmConfig, RetroVmDatasetConfig, RetroVmProgress, RetroVmState } from './retroVmTypes';
 import type { V86, V86DownloadProgress } from 'v86';
 import v86WasmUrl from 'v86/build/v86.wasm?url';
@@ -644,9 +643,7 @@ export class RetroVmController {
   private graphicalModeActive = false;
   private isLaunching = false;
   private captureState: 'uncaptured' | 'captured' = 'uncaptured';
-  private readonly performanceState = createUtilityPerformanceController('retro-vm');
   private readonly beforeUnloadHandler = () => {
-    this.performanceState.cleanup();
     this.destroySession().catch((error) => {
       debugRetroVm('Failed to destroy the VM session during page teardown.', error);
     });
@@ -1172,7 +1169,6 @@ export class RetroVmController {
   private setState(next: RetroVmState, reason?: string) {
     this.state = next;
     this.root.dataset.vmState = next;
-    this.performanceState.setActive(next === 'loading' || next === 'resetting');
     if (reason && (next === 'error' || next === 'unsupported')) {
       this.supportNote.textContent = reason;
     }
@@ -1246,6 +1242,5 @@ export class RetroVmController {
     this.destroySession().catch((error) => {
       debugRetroVm('VM session teardown failed during dispose.', error);
     });
-    this.performanceState.cleanup();
   }
 }

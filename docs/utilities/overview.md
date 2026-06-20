@@ -23,7 +23,6 @@ The utilities page (`/pages/utilities/`) is an interactive dashboard housing fiv
 
 ## Shared infrastructure
 
-- `utilityPerformance.ts` — load-state signaling to the starfield background
 - `workerRuntime.ts` — shared ImageTransform worker request handler with bitmap preparation and cancellation
 - `math.ts` — `clamp`, `assertPowerOfTwo` and other math utilities
 - `bufferUtils.ts` — ArrayBuffer slicing and conversion helpers

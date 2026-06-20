@@ -17,7 +17,6 @@ import {
 import { resolveOutputDimensions, transformPreparedImages } from './transformCore';
 import type { PreparedImageTransfer, TransformMetadata, TransformPresetId } from './types';
 import { DEMOS, type ImageSelection, type SelectionKind, type StateKind } from './uiState';
-import { createUtilityPerformanceController } from './utilityPerformance';
 import type { WorkerRequest, WorkerResponse, WorkerSuccessMessage } from './workerTypes';
 import { clamp } from './math';
 import { arrayBufferLikeToArrayBuffer } from './bufferUtils';
@@ -96,7 +95,6 @@ class UtilitiesApp {
   private state: StateKind = 'idle';
   private workerUnavailable = false;
   private workerFallbackScheduled = false;
-  private readonly performanceState = createUtilityPerformanceController('image-transform');
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -401,7 +399,6 @@ class UtilitiesApp {
       this.statusChip.textContent = chipLabel;
       this.statusChip.className = `utility-status-chip utility-status-chip--${state}`;
     }
-    this.performanceState.setActive(state === 'processing' || state === 'animating');
     this.syncButtons();
   }
 

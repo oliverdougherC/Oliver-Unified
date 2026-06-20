@@ -342,23 +342,6 @@ async function readStarfieldState(page) {
   });
 }
 
-function isSettlingStarfieldMode(mode) {
-  return /settling|settled|resuming/i.test(mode || '');
-}
-
-function isPausedStarfieldMode(mode) {
-  return /paused/i.test(mode || '');
-}
-
-async function waitForSettlingStarfield(page, timeout = 1500) {
-  await page.waitForFunction(
-    () => /settling|settled|resuming/i.test(document.getElementById('starfield')?.dataset.starfieldMode || ''),
-    null,
-    { timeout }
-  );
-  return readStarfieldState(page);
-}
-
 function countActiveCanvasPixels(pixels) {
   let count = 0;
   for (let index = 0; index < pixels.length; index += 4) {
@@ -1148,10 +1131,6 @@ async function runLocalAssistantCheck(browser, pageUrl) {
     assert(streamingSnapshot.hasStreamingClass, 'Long-stream Local Assistant should render draft text in streaming mode.');
     assert(!streamingSnapshot.hasStrongMarkup, 'Long-stream Local Assistant should defer markdown markup while streaming.');
     assert(streamingSnapshot.nearBottom, 'Long-stream Local Assistant should keep transcript stuck to the bottom while streaming.');
-    assert(
-      isSettlingStarfieldMode(streamingSnapshot.starfieldMode),
-      `Starfield should settle during local generation. Saw ${streamingSnapshot.starfieldMode || 'none'}.`
-    );
 
     const responsiveness = await longStreamPage.evaluate(async () => {
       const samples = [];
@@ -1199,7 +1178,7 @@ async function runLocalAssistantCheck(browser, pageUrl) {
     assert(!finalSnapshot.hasStreamingClass, 'Long-stream Local Assistant should clear streaming mode after completion.');
     assert(finalSnapshot.hasStrongMarkup, 'Long-stream Local Assistant should render markdown after completion.');
     assert(finalSnapshot.hasMath, 'Long-stream Local Assistant should render math after completion.');
-    assert(!/busy|load/i.test(finalSnapshot.starfieldMode), `Starfield should leave busy mode after generation. Saw ${finalSnapshot.starfieldMode || 'none'}.`);
+    assert(/twinkle|reduced-motion/i.test(finalSnapshot.starfieldMode), `Starfield should be in a normal mode after generation. Saw ${finalSnapshot.starfieldMode || 'none'}.`);
   } finally {
     await longStreamPage.close();
   }
@@ -1608,14 +1587,10 @@ async function main() {
     const sourceStagePixels = await readCanvasPixels(page, 'transformSourceCanvas');
     await page.click('#transformPlayBtn');
     await waitForStatusMatch(page, 'Animating', 5000);
-    const replayTransformStarfield = await waitForSettlingStarfield(page);
+    const replayTransformStarfield = await readStarfieldState(page);
     assert(
       replayTransformStarfield.count === initialStarfield.count,
       'Starfield density should remain stable during Image Transform replay animation.'
-    );
-    assert(
-      isSettlingStarfieldMode(replayTransformStarfield.mode),
-      `Starfield should settle smoothly during Image Transform animation. Saw ${replayTransformStarfield.mode || 'none'}.`
     );
     await waitForProgressFill(page, 65, 15000);
 
@@ -1814,7 +1789,7 @@ async function main() {
     await page.click('#audioFourierGenerateBtn');
     await waitForAudioStatusMatch(page, 'Fourier proxy ready|auditory midpoint|Playing selected|Press Play', 60000, 'built-in song preset ready');
     await ensureAudioFourierPlayback(page, 'built-in song preset playback starts');
-    const activeAudioStarfield = await waitForSettlingStarfield(page);
+    const activeAudioStarfield = await readStarfieldState(page);
 
     const generatedReadyState = await page.evaluate(() => ({
       status: document.getElementById('audioFourierStatusText')?.textContent?.trim() ?? '',
@@ -1873,10 +1848,6 @@ async function main() {
     assert(
       activeAudioStarfield.count === initialAudioStarfield.count,
       'Starfield density should remain stable during Audio Fourier generation and playback.'
-    );
-    assert(
-      isSettlingStarfieldMode(activeAudioStarfield.mode),
-      `Starfield should settle smoothly during Audio Fourier playback. Saw ${activeAudioStarfield.mode || 'none'}.`
     );
 
     const generatedWavePixels = await readCanvasPixels(page, 'audioFourierWaveCanvas');
@@ -2093,11 +2064,6 @@ async function main() {
     assert(stressRunningState.workers === '2', 'Stress Test browser check should honor the worker-count test cap.');
     assert(stressRunningState.backend === 'none', 'CPU-only Stress Test should not start GPU work.');
     assert(stressRunningState.stopDisabled === false, 'Stress Test stop should enable while running.');
-    const stressRunningStarfield = await readStarfieldState(page);
-    assert(
-      isPausedStarfieldMode(stressRunningStarfield.mode),
-      `Stress Test should pause the shared background while running. Saw ${stressRunningStarfield.mode || 'none'}.`
-    );
     await page.waitForFunction(() => {
       const app = document.getElementById('stressTestApp');
       return Number(app?.dataset.stressTotalRenderedFrames ?? '0') >= 2 && app?.dataset.stressCanvasActive === 'true';
@@ -2463,6 +2429,100 @@ async function main() {
         }
       } finally {
         await mobilePage.close();
+      }
+    });
+
+    await runUtilitySection(utilitySectionFailures, 'RT Demo', async () => {
+      const rtPage = await browser.newPage({
+        viewport: { width: 1280, height: 800 }
+      });
+      try {
+        await rtPage.addInitScript(() => {
+          window.__OD_RT_DEMO_MOCK_WEBGPU__ = true;
+        });
+        await rtPage.goto(`${baseUrl}/pages/utilities/rt-demo/index.html`, { waitUntil: 'networkidle' });
+        await rtPage.waitForFunction(() => window.__RT_DEMO_STATE__?.status === 'mock', { timeout: 10000 });
+        await rtPage.waitForFunction(() => /^FPS\s+\d+/.test(document.getElementById('rtDemoFps')?.textContent ?? ''), { timeout: 10000 });
+
+        const initial = await rtPage.evaluate(() => ({
+          title: document.title,
+          status: window.__RT_DEMO_STATE__?.status ?? '',
+          fpsText: document.getElementById('rtDemoFps')?.textContent ?? '',
+          visibleElementIds: Array.from(document.body.querySelectorAll('*'))
+            .filter((element) => {
+              const rect = element.getBoundingClientRect();
+              const styles = window.getComputedStyle(element);
+              return rect.width > 0 && rect.height > 0 && styles.visibility !== 'hidden' && styles.display !== 'none';
+            })
+            .map((element) => element.id || element.tagName.toLowerCase()),
+          firstSphereX: window.__RT_DEMO_STATE__?.spheres?.[0]?.x ?? 0,
+          firstSphereZ: window.__RT_DEMO_STATE__?.spheres?.[0]?.z ?? 0,
+          canvas: document.getElementById('rtDemoCanvas')?.getBoundingClientRect().toJSON()
+        }));
+
+        assert(initial.title === 'RT Demo', 'RT Demo page title should identify the standalone utility.');
+        assert(initial.status === 'mock', 'RT Demo mock renderer should initialize for browser regression.');
+        assert(/^FPS\s+\d+/.test(initial.fpsText), 'RT Demo FPS counter should update.');
+        assert(initial.visibleElementIds.includes('rtDemoCanvas'), 'RT Demo canvas should be visible.');
+        assert(initial.visibleElementIds.includes('rtDemoFps'), 'RT Demo FPS overlay should be visible.');
+        assert(initial.visibleElementIds.includes('rtDemoInfoButton'), 'RT Demo info button should be visible.');
+        assert(!initial.visibleElementIds.includes('nav'), 'RT Demo should not show shared utility navigation.');
+        assert(!initial.visibleElementIds.includes('rtDemoInfoMenu'), 'RT Demo info menu should be hidden initially.');
+
+        await rtPage.click('#rtDemoInfoButton');
+        await rtPage.waitForFunction(() => !document.getElementById('rtDemoInfoMenu')?.hidden, { timeout: 5000 });
+        const openInfo = await rtPage.evaluate(() => ({
+          expanded: document.getElementById('rtDemoInfoButton')?.getAttribute('aria-expanded') ?? '',
+          text: document.getElementById('rtDemoInfoMenu')?.textContent ?? ''
+        }));
+        assert(openInfo.expanded === 'true', 'RT Demo info button should expose expanded state.');
+        assert(/WGSL shader/i.test(openInfo.text) && /Drag the spheres/i.test(openInfo.text), 'RT Demo info menu should explain rendering and interaction.');
+        await rtPage.keyboard.press('Escape');
+        await rtPage.waitForFunction(() => document.getElementById('rtDemoInfoMenu')?.hidden, { timeout: 5000 });
+
+        const canvasBox = await rtPage.locator('#rtDemoCanvas').boundingBox();
+        assert(canvasBox, 'RT Demo canvas should have a bounding box.');
+        await rtPage.mouse.move(canvasBox.x + canvasBox.width * 0.37, canvasBox.y + canvasBox.height * 0.53);
+        await rtPage.mouse.down();
+        await rtPage.mouse.move(canvasBox.x + canvasBox.width * 0.45, canvasBox.y + canvasBox.height * 0.57, { steps: 8 });
+        await rtPage.mouse.up();
+        const dragged = await rtPage.evaluate(() => ({
+          selectedIndex: window.__RT_DEMO_STATE__?.selectedIndex ?? -1,
+          firstSphereX: window.__RT_DEMO_STATE__?.spheres?.[0]?.x ?? 0,
+          firstSphereZ: window.__RT_DEMO_STATE__?.spheres?.[0]?.z ?? 0
+        }));
+        assert(
+          Math.abs(dragged.firstSphereX - initial.firstSphereX) > 0.01 ||
+            Math.abs(dragged.firstSphereZ - initial.firstSphereZ) > 0.01 ||
+            dragged.selectedIndex >= 0,
+          'RT Demo pointer drag should update object selection or position state.'
+        );
+      } finally {
+        await rtPage.close();
+      }
+
+      const unsupportedPage = await browser.newPage({
+        viewport: { width: 900, height: 600 }
+      });
+      try {
+        await unsupportedPage.addInitScript(() => {
+          Object.defineProperty(navigator, 'gpu', {
+            configurable: true,
+            value: undefined
+          });
+        });
+        await unsupportedPage.goto(`${baseUrl}/pages/utilities/rt-demo/index.html`, { waitUntil: 'networkidle' });
+        await unsupportedPage.waitForFunction(() => window.__RT_DEMO_STATE__?.status === 'unsupported', { timeout: 10000 });
+        const unsupported = await unsupportedPage.evaluate(() => ({
+          status: window.__RT_DEMO_STATE__?.status ?? '',
+          fpsText: document.getElementById('rtDemoFps')?.textContent ?? '',
+          canvasVisible: Boolean(document.getElementById('rtDemoCanvas')?.getBoundingClientRect().width)
+        }));
+        assert(unsupported.status === 'unsupported', 'RT Demo should expose a controlled unsupported WebGPU state.');
+        assert(unsupported.fpsText === 'FPS --', 'RT Demo unsupported state should leave FPS inactive.');
+        assert(unsupported.canvasVisible, 'RT Demo unsupported state should still render through the canvas.');
+      } finally {
+        await unsupportedPage.close();
       }
     });
     await page.close();

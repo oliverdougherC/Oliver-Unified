@@ -10,7 +10,6 @@ import {
   type StressState
 } from './stressTestCore';
 import { startAdaptiveGpuStress, type StressGpuStressHandle } from './stressTestGpu';
-import { createUtilityPerformanceController } from './utilityPerformance';
 import type { StressTestWorkerRequest, StressTestWorkerResponse } from './stressTestWorkerTypes';
 
 interface StressWorkerRecord {
@@ -35,7 +34,6 @@ type StressMetricId = 'elapsed' | 'workers' | 'gpu' | 'fps' | 'dropped' | 'itera
 const DEFAULT_MODE: StressMode = 'both';
 const METRIC_INTERVAL_MS = 250;
 const CPU_THERMAL_NODE_COUNT = 42;
-const STRESS_STARFIELD_LOAD_SOURCE = 'stress-test';
 const STRESS_METRIC_HIDE_ORDER: Record<StressMode, StressMetricId[]> = {
   // Hide least relevant metrics first when the control panel is height-limited.
   cpu: ['dropped', 'gpu', 'fps', 'iterations', 'elapsed', 'workers'],
@@ -114,8 +112,6 @@ export class StressTestController {
   private gpuWorkloadLevel = 0;
   private lastError = '';
   private gpuCanvasActive = false;
-  private performanceActive = false;
-  private readonly performanceState = createUtilityPerformanceController(STRESS_STARFIELD_LOAD_SOURCE);
 
   private cpuVisualFrameId = 0;
   private controlPanelFitFrameId = 0;
@@ -213,8 +209,6 @@ export class StressTestController {
 
   dispose() {
     this.stop();
-    this.syncPerformanceState(true);
-    this.performanceState.cleanup();
     this.stopCpuVisuals();
     this.stopMetricLoop();
     if (this.controlPanelFitFrameId) {
@@ -747,18 +741,9 @@ export class StressTestController {
     this.modeButtons.forEach((button) => {
       button.disabled = active;
     });
-    this.syncPerformanceState();
     this.queueControlPanelFitSync();
   }
 
-  private syncPerformanceState(forceInactive = false) {
-    const active = !forceInactive && (this.state === 'starting' || this.state === 'running' || this.state === 'stopping');
-    if (this.performanceActive === active) {
-      return;
-    }
-    this.performanceActive = active;
-    this.performanceState.setActive(active, { mode: 'pause-background' });
-  }
 
   private queueControlPanelFitSync() {
     if (this.controlPanelFitFrameId) {

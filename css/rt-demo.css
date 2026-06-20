@@ -1,0 +1,137 @@
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #040506;
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #f4f0e8;
+}
+
+button {
+  font: inherit;
+}
+
+.rt-demo {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #040506;
+}
+
+#rtDemoCanvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  cursor: grab;
+  touch-action: none;
+  background: #040506;
+}
+
+#rtDemoCanvas.is-dragging {
+  cursor: grabbing;
+}
+
+.rt-fps,
+.rt-info {
+  position: fixed;
+  z-index: 2;
+}
+
+.rt-fps {
+  top: max(0.9rem, env(safe-area-inset-top));
+  left: max(0.9rem, env(safe-area-inset-left));
+  min-width: 5.1rem;
+  padding: 0.46rem 0.62rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.5rem;
+  background: rgba(4, 5, 6, 0.48);
+  color: rgba(255, 255, 255, 0.88);
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  user-select: none;
+}
+
+.rt-info {
+  top: max(0.9rem, env(safe-area-inset-top));
+  right: max(0.9rem, env(safe-area-inset-right));
+}
+
+.rt-info-button {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  background: rgba(4, 5, 6, 0.48);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.rt-info-button:hover,
+.rt-info-button[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.34);
+}
+
+.rt-info-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.95);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgba(4, 5, 6, 0.7);
+}
+
+.rt-info-menu {
+  position: absolute;
+  top: calc(100% + 0.65rem);
+  right: 0;
+  width: min(19rem, calc(100vw - 1.8rem));
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.5rem;
+  background: rgba(8, 9, 11, 0.78);
+  color: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.rt-info-menu p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.rt-info-menu p + p {
+  margin-top: 0.58rem;
+}
+
+@media (max-width: 640px) {
+  .rt-fps {
+    min-width: 4.7rem;
+    font-size: 0.7rem;
+  }
+
+  .rt-info-button {
+    width: 2rem;
+    height: 2rem;
+  }
+}
