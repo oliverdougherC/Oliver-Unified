@@ -121,7 +121,9 @@ function validatePages() {
 
   const rtDemoHtml = fs.readFileSync(path.join(ROOT, 'pages', 'utilities', 'rt-demo', 'index.html'), 'utf8');
   assert(rtDemoHtml.includes('id="rtDemoCanvas"'), 'RT Demo canvas missing.');
+  assert(rtDemoHtml.includes('id="rtDemoCloseButton"'), 'RT Demo close control missing.');
   assert(rtDemoHtml.includes('id="rtDemoFps"'), 'RT Demo FPS counter missing.');
+  assert(rtDemoHtml.includes('id="rtDemoCameraButton"'), 'RT Demo camera control missing.');
   assert(rtDemoHtml.includes('id="rtDemoInfoButton"'), 'RT Demo info button missing.');
   assert(rtDemoHtml.includes('assets/rt-demo.js'), 'RT Demo bundle include missing.');
 

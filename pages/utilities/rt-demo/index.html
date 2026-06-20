@@ -14,12 +14,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"></noscript>
 
-  <link rel="stylesheet" href="../../../css/rt-demo.css?v=rt-demo-2026-06-20">
+  <link rel="stylesheet" href="../../../css/rt-demo.css?v=rt-demo-2026-06-20b">
 </head>
 <body>
   <main class="rt-demo" id="rtDemoApp">
     <canvas id="rtDemoCanvas" aria-label="Interactive WebGPU ray tracing demo with draggable material spheres"></canvas>
-    <div class="rt-fps" id="rtDemoFps" aria-live="off">FPS --</div>
+    <div class="rt-top-left" aria-label="RT Demo controls">
+      <a class="rt-close-button" id="rtDemoCloseButton" href="../" aria-label="Close RT Demo">x</a>
+      <div class="rt-fps" id="rtDemoFps" aria-live="off">FPS --</div>
+      <button class="rt-camera-button" id="rtDemoCameraButton" type="button" aria-label="Pause orbiting camera" aria-pressed="false" title="Pause camera">||</button>
+    </div>
     <div class="rt-info">
       <button class="rt-info-button" id="rtDemoInfoButton" type="button" aria-label="About RT Demo" aria-expanded="false" aria-controls="rtDemoInfoMenu">i</button>
       <aside class="rt-info-menu" id="rtDemoInfoMenu" hidden>
@@ -28,6 +32,6 @@
       </aside>
     </div>
   </main>
-  <script type="module" src="../assets/rt-demo.js?v=rt-demo-2026-06-20"></script>
+  <script type="module" src="../assets/rt-demo.js?v=rt-demo-2026-06-20b"></script>
 </body>
 </html>

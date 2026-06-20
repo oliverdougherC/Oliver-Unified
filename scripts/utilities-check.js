@@ -2457,6 +2457,7 @@ async function main() {
             .map((element) => element.id || element.tagName.toLowerCase()),
           firstSphereX: window.__RT_DEMO_STATE__?.spheres?.[0]?.x ?? 0,
           firstSphereZ: window.__RT_DEMO_STATE__?.spheres?.[0]?.z ?? 0,
+          cameraPaused: window.__RT_DEMO_STATE__?.cameraPaused ?? null,
           canvas: document.getElementById('rtDemoCanvas')?.getBoundingClientRect().toJSON()
         }));
 
@@ -2464,10 +2465,13 @@ async function main() {
         assert(initial.status === 'mock', 'RT Demo mock renderer should initialize for browser regression.');
         assert(/^FPS\s+\d+/.test(initial.fpsText), 'RT Demo FPS counter should update.');
         assert(initial.visibleElementIds.includes('rtDemoCanvas'), 'RT Demo canvas should be visible.');
+        assert(initial.visibleElementIds.includes('rtDemoCloseButton'), 'RT Demo close control should be visible.');
         assert(initial.visibleElementIds.includes('rtDemoFps'), 'RT Demo FPS overlay should be visible.');
+        assert(initial.visibleElementIds.includes('rtDemoCameraButton'), 'RT Demo camera control should be visible.');
         assert(initial.visibleElementIds.includes('rtDemoInfoButton'), 'RT Demo info button should be visible.');
         assert(!initial.visibleElementIds.includes('nav'), 'RT Demo should not show shared utility navigation.');
         assert(!initial.visibleElementIds.includes('rtDemoInfoMenu'), 'RT Demo info menu should be hidden initially.');
+        assert(initial.cameraPaused === false, 'RT Demo camera should orbit by default.');
 
         await rtPage.click('#rtDemoInfoButton');
         await rtPage.waitForFunction(() => !document.getElementById('rtDemoInfoMenu')?.hidden, { timeout: 5000 });
@@ -2480,11 +2484,20 @@ async function main() {
         await rtPage.keyboard.press('Escape');
         await rtPage.waitForFunction(() => document.getElementById('rtDemoInfoMenu')?.hidden, { timeout: 5000 });
 
+        await rtPage.click('#rtDemoCameraButton');
+        await rtPage.waitForFunction(() => window.__RT_DEMO_STATE__?.cameraPaused === true, { timeout: 5000 });
+        const pausedCamera = await rtPage.evaluate(() => ({
+          pressed: document.getElementById('rtDemoCameraButton')?.getAttribute('aria-pressed') ?? '',
+          label: document.getElementById('rtDemoCameraButton')?.getAttribute('aria-label') ?? ''
+        }));
+        assert(pausedCamera.pressed === 'true', 'RT Demo camera button should expose pressed state after pausing.');
+        assert(/resume/i.test(pausedCamera.label), 'RT Demo camera button should advertise resume after pausing.');
+
         const canvasBox = await rtPage.locator('#rtDemoCanvas').boundingBox();
         assert(canvasBox, 'RT Demo canvas should have a bounding box.');
-        await rtPage.mouse.move(canvasBox.x + canvasBox.width * 0.37, canvasBox.y + canvasBox.height * 0.53);
+        await rtPage.mouse.move(canvasBox.x + canvasBox.width * 0.5, canvasBox.y + canvasBox.height * 0.51);
         await rtPage.mouse.down();
-        await rtPage.mouse.move(canvasBox.x + canvasBox.width * 0.45, canvasBox.y + canvasBox.height * 0.57, { steps: 8 });
+        await rtPage.mouse.move(canvasBox.x + canvasBox.width * 0.58, canvasBox.y + canvasBox.height * 0.55, { steps: 8 });
         await rtPage.mouse.up();
         const dragged = await rtPage.evaluate(() => ({
           selectedIndex: window.__RT_DEMO_STATE__?.selectedIndex ?? -1,

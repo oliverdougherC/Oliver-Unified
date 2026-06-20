@@ -4,6 +4,7 @@ type RtDemoStatus = 'booting' | 'webgpu' | 'mock' | 'unsupported' | 'error';
 
 interface SceneSphere {
   position: Vec3;
+  velocity: Vec3;
   radius: number;
   color: Vec3;
   material: MaterialKind;
@@ -24,6 +25,8 @@ interface DragState {
   index: number;
   planeY: number;
   offset: Vec3;
+  lastPosition: Vec3;
+  lastTimestamp: number;
 }
 
 interface GpuAdapterLike {
@@ -76,6 +79,7 @@ declare global {
     __RT_DEMO_STATE__?: {
       status: RtDemoStatus;
       selectedIndex: number;
+      cameraPaused: boolean;
       frameCount: number;
       fps: number;
       spheres: Array<{ x: number; y: number; z: number; radius: number; material: number }>;
@@ -92,17 +96,29 @@ const SPHERE_COUNT = 5;
 const FLOATS_PER_VEC4 = 4;
 const UNIFORM_VEC4_COUNT = 16;
 const UNIFORM_FLOAT_COUNT = UNIFORM_VEC4_COUNT * FLOATS_PER_VEC4;
-const CAMERA_POSITION: Vec3 = [0, 2.35, 6.2];
-const CAMERA_TARGET: Vec3 = [0, 0.92, 0];
+const CAMERA_TARGET: Vec3 = [0, 0.68, 0];
+const CAMERA_DISTANCE = 6.85;
+const CAMERA_HEIGHT = 4.6;
+const CAMERA_ORBIT_SPEED = 0.16;
+const CAMERA_INITIAL_ANGLE = 0.28;
 const FOV_SCALE = Math.tan((48 * Math.PI / 180) / 2);
 const FLOOR_Y = 0;
+const PHYSICAL_SPHERE_COUNT = 4;
+const GRAVITY = 5.8;
+const RESTITUTION = 0.42;
+const SURFACE_FRICTION = 4.2;
+const AIR_DRAG = 0.24;
+const THROW_DAMPING = 0.42;
+const MAX_THROW_SPEED = 2.7;
+const TABLE_LIMIT_X = 2.75;
+const TABLE_LIMIT_Z = 2.15;
 
 const INITIAL_SPHERES: SceneSphere[] = [
-  { position: [-1.32, 0.46, -0.25], radius: 0.46, color: [0.93, 0.28, 0.16], material: 0, movable: true },
-  { position: [0.0, 0.62, 0.18], radius: 0.62, color: [0.82, 0.84, 0.88], material: 1, movable: true },
-  { position: [1.22, 0.5, -0.55], radius: 0.5, color: [0.22, 0.62, 0.94], material: 2, movable: true },
-  { position: [-0.42, 0.34, 1.08], radius: 0.34, color: [0.86, 0.76, 0.36], material: 0, movable: true },
-  { position: [0.92, 2.65, 1.18], radius: 0.2, color: [1.0, 0.82, 0.46], material: 3, movable: true }
+  { position: [-1.32, 0.46, -0.25], velocity: [0, 0, 0], radius: 0.46, color: [0.93, 0.28, 0.16], material: 0, movable: true },
+  { position: [0.0, 0.62, 0.18], velocity: [0, 0, 0], radius: 0.62, color: [0.82, 0.84, 0.88], material: 1, movable: true },
+  { position: [1.22, 0.5, -0.55], velocity: [0, 0, 0], radius: 0.5, color: [0.22, 0.62, 0.94], material: 2, movable: true },
+  { position: [-0.42, 0.34, 1.08], velocity: [0, 0, 0], radius: 0.34, color: [0.86, 0.76, 0.36], material: 0, movable: true },
+  { position: [0.92, 2.65, 1.18], velocity: [0, 0, 0], radius: 0.2, color: [1.0, 0.82, 0.46], material: 3, movable: true }
 ];
 
 const WGSL_SOURCE = `
@@ -192,7 +208,7 @@ fn intersectFloor(ray: Ray) -> Hit {
   hit.index = -2;
   hit.position = vec3f(0.0);
   hit.normal = vec3f(0.0, 1.0, 0.0);
-  hit.color = vec3f(0.58, 0.56, 0.52);
+  hit.color = vec3f(0.12, 0.12, 0.11);
   hit.material = 0.0;
   let denom = ray.direction.y;
   if (abs(denom) < 0.0001) {
@@ -209,7 +225,7 @@ fn intersectFloor(ray: Ray) -> Hit {
   let grid = step(0.035, abs(fract(position.x * 1.55) - 0.5)) * step(0.035, abs(fract(position.z * 1.55) - 0.5));
   hit.distance = t;
   hit.position = position;
-  hit.color = mix(vec3f(0.42, 0.41, 0.39), vec3f(0.64, 0.62, 0.58), grid);
+  hit.color = mix(vec3f(0.07, 0.07, 0.065), vec3f(0.16, 0.155, 0.14), grid);
   return hit;
 }
 
@@ -229,10 +245,7 @@ fn traceClosest(ray: Ray, ignoreIndex: i32) -> Hit {
 }
 
 fn sky(direction: vec3f) -> vec3f {
-  let t = clamp(direction.y * 0.5 + 0.5, 0.0, 1.0);
-  let horizon = vec3f(0.34, 0.38, 0.42);
-  let zenith = vec3f(0.025, 0.035, 0.055);
-  return mix(horizon, zenith, t);
+  return vec3f(0.028, 0.029, 0.027);
 }
 
 fn directLight(hit: Hit) -> vec3f {
@@ -251,7 +264,7 @@ fn directLight(hit: Hit) -> vec3f {
   let attenuation = 5.2 / max(1.0, lightDistance * lightDistance);
   let warmLight = vec3f(1.0, 0.84, 0.58);
   let diffuse = hit.color * warmLight * ndotl * attenuation * visibility;
-  let ambient = hit.color * vec3f(0.035, 0.045, 0.055);
+  let ambient = hit.color * vec3f(0.018, 0.02, 0.022);
   return diffuse + ambient;
 }
 
@@ -340,6 +353,14 @@ function normalize(v: Vec3): Vec3 {
   return [v[0] / length, v[1] / length, v[2] / length];
 }
 
+function limitMagnitude(v: Vec3, maxLength: number): Vec3 {
+  const length = Math.hypot(v[0], v[1], v[2]);
+  if (length <= maxLength || length === 0) {
+    return v;
+  }
+  return scale(v, maxLength / length);
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -357,19 +378,25 @@ function getGlobalGpuFlag(groupName: 'GPUBufferUsage' | 'GPUTextureUsage', flagN
 class RtDemoApp {
   private readonly canvas: HTMLCanvasElement;
   private readonly fpsLabel: HTMLElement;
+  private readonly cameraButton: HTMLButtonElement;
   private readonly infoButton: HTMLButtonElement;
   private readonly infoMenu: HTMLElement;
   private readonly spheres = INITIAL_SPHERES.map((sphere) => ({
     ...sphere,
     position: [...sphere.position] as Vec3,
+    velocity: [...sphere.velocity] as Vec3,
     color: [...sphere.color] as Vec3
   }));
-  private readonly cameraForward = normalize(subtract(CAMERA_TARGET, CAMERA_POSITION));
-  private readonly cameraRight = normalize(cross(this.cameraForward, [0, 1, 0]));
-  private readonly cameraUp = normalize(cross(this.cameraRight, this.cameraForward));
+  private cameraPosition: Vec3 = [0, CAMERA_HEIGHT, CAMERA_DISTANCE];
+  private cameraForward: Vec3 = [0, 0, -1];
+  private cameraRight: Vec3 = [1, 0, 0];
+  private cameraUp: Vec3 = [0, 1, 0];
+  private cameraAngle = CAMERA_INITIAL_ANGLE;
+  private cameraPaused = false;
   private resizeObserver: ResizeObserver | null = null;
   private frameId = 0;
   private frameCount = 0;
+  private lastPhysicsTimestamp = 0;
   private fpsFrameCount = 0;
   private fpsLastTimestamp = 0;
   private fps = 0;
@@ -387,12 +414,15 @@ class RtDemoApp {
   constructor() {
     this.canvas = this.requireElement<HTMLCanvasElement>('rtDemoCanvas', HTMLCanvasElement);
     this.fpsLabel = this.requireElement<HTMLElement>('rtDemoFps', HTMLElement);
+    this.cameraButton = this.requireElement<HTMLButtonElement>('rtDemoCameraButton', HTMLButtonElement);
     this.infoButton = this.requireElement<HTMLButtonElement>('rtDemoInfoButton', HTMLButtonElement);
     this.infoMenu = this.requireElement<HTMLElement>('rtDemoInfoMenu', HTMLElement);
+    this.updateCamera(0);
   }
 
   async init() {
     this.bindInfoMenu();
+    this.bindCameraButton();
     this.bindPointerEvents();
     this.resizeObserver = new ResizeObserver(() => this.resizeCanvas());
     this.resizeObserver.observe(this.canvas);
@@ -453,6 +483,32 @@ class RtDemoApp {
     });
   }
 
+  private bindCameraButton() {
+    this.cameraButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.cameraPaused = !this.cameraPaused;
+      this.cameraButton.setAttribute('aria-pressed', this.cameraPaused ? 'true' : 'false');
+      this.cameraButton.setAttribute('aria-label', this.cameraPaused ? 'Resume orbiting camera' : 'Pause orbiting camera');
+      this.cameraButton.title = this.cameraPaused ? 'Resume camera' : 'Pause camera';
+      this.cameraButton.textContent = this.cameraPaused ? '>' : '||';
+      this.syncTestState();
+    });
+  }
+
+  private updateCamera(deltaSeconds: number) {
+    if (!this.cameraPaused) {
+      this.cameraAngle += deltaSeconds * CAMERA_ORBIT_SPEED;
+    }
+    this.cameraPosition = [
+      Math.sin(this.cameraAngle) * CAMERA_DISTANCE,
+      CAMERA_HEIGHT,
+      Math.cos(this.cameraAngle) * CAMERA_DISTANCE
+    ];
+    this.cameraForward = normalize(subtract(CAMERA_TARGET, this.cameraPosition));
+    this.cameraRight = normalize(cross(this.cameraForward, [0, 1, 0]));
+    this.cameraUp = normalize(cross(this.cameraRight, this.cameraForward));
+  }
+
   private bindPointerEvents() {
     this.canvas.addEventListener('pointerdown', (event) => {
       const ray = this.rayFromPointer(event.clientX, event.clientY);
@@ -468,8 +524,11 @@ class RtDemoApp {
       this.dragState = {
         index: hit.index,
         planeY: sphere.position[1],
-        offset: subtract(sphere.position, hitPoint)
+        offset: subtract(sphere.position, hitPoint),
+        lastPosition: [...sphere.position] as Vec3,
+        lastTimestamp: event.timeStamp
       };
+      sphere.velocity = [0, 0, 0];
       this.canvas.setPointerCapture(event.pointerId);
       this.canvas.classList.add('is-dragging');
       this.syncTestState();
@@ -492,11 +551,21 @@ class RtDemoApp {
       const point = add(ray.origin, scale(ray.direction, distance));
       const next = add(point, this.dragState.offset);
       const sphere = this.spheres[this.dragState.index];
-      sphere.position = [
+      const nextPosition: Vec3 = [
         clamp(next[0], -2.7, 2.7),
         sphere.material === 3 ? clamp(next[1], 1.35, 3.05) : Math.max(sphere.radius, next[1]),
         clamp(next[2], -1.95, 2.15)
       ];
+      const elapsedSeconds = Math.max(0.001, (event.timeStamp - this.dragState.lastTimestamp) / 1000);
+      sphere.velocity = sphere.material === 3
+        ? [0, 0, 0]
+        : limitMagnitude(
+          scale(subtract(nextPosition, this.dragState.lastPosition), THROW_DAMPING / elapsedSeconds),
+          MAX_THROW_SPEED
+        );
+      sphere.position = nextPosition;
+      this.dragState.lastPosition = [...nextPosition] as Vec3;
+      this.dragState.lastTimestamp = event.timeStamp;
       this.syncTestState();
       event.preventDefault();
     });
@@ -608,9 +677,14 @@ class RtDemoApp {
       return;
     }
     this.fpsLastTimestamp = performance.now();
+    this.lastPhysicsTimestamp = this.fpsLastTimestamp;
     const tick = (timestamp: number) => {
       this.frameId = window.requestAnimationFrame(tick);
       this.resizeCanvas();
+      const deltaSeconds = Math.min(0.033, Math.max(0, (timestamp - this.lastPhysicsTimestamp) / 1000));
+      this.lastPhysicsTimestamp = timestamp;
+      this.updateCamera(deltaSeconds);
+      this.stepPhysics(deltaSeconds);
       this.updateFps(timestamp);
       if (this.status === 'mock') {
         this.renderMock();
@@ -627,6 +701,108 @@ class RtDemoApp {
     if (this.frameId) {
       window.cancelAnimationFrame(this.frameId);
       this.frameId = 0;
+    }
+  }
+
+  private stepPhysics(deltaSeconds: number) {
+    if (deltaSeconds <= 0) {
+      return;
+    }
+
+    const draggedIndex = this.dragState?.index ?? -1;
+    for (let index = 0; index < PHYSICAL_SPHERE_COUNT; index += 1) {
+      if (index === draggedIndex) {
+        this.keepSphereInBounds(this.spheres[index]);
+        continue;
+      }
+      const sphere = this.spheres[index];
+      sphere.velocity[1] -= GRAVITY * deltaSeconds;
+      sphere.velocity = scale(sphere.velocity, Math.max(0, 1 - AIR_DRAG * deltaSeconds));
+      sphere.position = add(sphere.position, scale(sphere.velocity, deltaSeconds));
+      this.resolveFloorAndBounds(sphere, deltaSeconds);
+    }
+
+    for (let pass = 0; pass < 3; pass += 1) {
+      this.resolveSphereCollisions(draggedIndex);
+    }
+  }
+
+  private resolveFloorAndBounds(sphere: SceneSphere, deltaSeconds = 1 / 60) {
+    const minY = FLOOR_Y + sphere.radius;
+    if (sphere.position[1] < minY) {
+      sphere.position[1] = minY;
+      if (sphere.velocity[1] < 0) {
+        sphere.velocity[1] = -sphere.velocity[1] * RESTITUTION;
+      }
+      const friction = Math.max(0, 1 - SURFACE_FRICTION * deltaSeconds);
+      sphere.velocity[0] *= friction;
+      sphere.velocity[2] *= friction;
+      if (Math.abs(sphere.velocity[1]) < 0.045) {
+        sphere.velocity[1] = 0;
+      }
+    }
+
+    const minX = -TABLE_LIMIT_X + sphere.radius;
+    const maxX = TABLE_LIMIT_X - sphere.radius;
+    if (sphere.position[0] < minX || sphere.position[0] > maxX) {
+      sphere.position[0] = clamp(sphere.position[0], minX, maxX);
+      sphere.velocity[0] *= -RESTITUTION;
+    }
+
+    const minZ = -TABLE_LIMIT_Z + sphere.radius;
+    const maxZ = TABLE_LIMIT_Z - sphere.radius;
+    if (sphere.position[2] < minZ || sphere.position[2] > maxZ) {
+      sphere.position[2] = clamp(sphere.position[2], minZ, maxZ);
+      sphere.velocity[2] *= -RESTITUTION;
+    }
+  }
+
+  private keepSphereInBounds(sphere: SceneSphere) {
+    sphere.position[0] = clamp(sphere.position[0], -TABLE_LIMIT_X + sphere.radius, TABLE_LIMIT_X - sphere.radius);
+    sphere.position[2] = clamp(sphere.position[2], -TABLE_LIMIT_Z + sphere.radius, TABLE_LIMIT_Z - sphere.radius);
+    sphere.position[1] = Math.max(FLOOR_Y + sphere.radius, sphere.position[1]);
+  }
+
+  private resolveSphereCollisions(draggedIndex: number) {
+    for (let leftIndex = 0; leftIndex < PHYSICAL_SPHERE_COUNT; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < PHYSICAL_SPHERE_COUNT; rightIndex += 1) {
+        const left = this.spheres[leftIndex];
+        const right = this.spheres[rightIndex];
+        const delta = subtract(right.position, left.position);
+        const distance = Math.hypot(delta[0], delta[1], delta[2]) || 0.0001;
+        const minDistance = left.radius + right.radius;
+        if (distance >= minDistance) {
+          continue;
+        }
+        const normal = scale(delta, 1 / distance);
+        const penetration = minDistance - distance;
+        const leftDragged = leftIndex === draggedIndex;
+        const rightDragged = rightIndex === draggedIndex;
+
+        if (leftDragged && !rightDragged) {
+          right.position = add(right.position, scale(normal, penetration));
+        } else if (rightDragged && !leftDragged) {
+          left.position = add(left.position, scale(normal, -penetration));
+        } else {
+          left.position = add(left.position, scale(normal, -penetration * 0.5));
+          right.position = add(right.position, scale(normal, penetration * 0.5));
+        }
+
+        const relativeVelocity = subtract(right.velocity, left.velocity);
+        const separatingSpeed = dot(relativeVelocity, normal);
+        if (separatingSpeed < 0) {
+          const impulse = -(1 + RESTITUTION) * separatingSpeed / 2;
+          if (!leftDragged) {
+            left.velocity = subtract(left.velocity, scale(normal, impulse));
+          }
+          if (!rightDragged) {
+            right.velocity = add(right.velocity, scale(normal, impulse));
+          }
+        }
+
+        this.resolveFloorAndBounds(left);
+        this.resolveFloorAndBounds(right);
+      }
     }
   }
 
@@ -655,7 +831,7 @@ class RtDemoApp {
         {
           view: this.context.getCurrentTexture().createView(),
           loadOp: 'clear',
-          clearValue: { r: 0.015, g: 0.017, b: 0.02, a: 1 },
+          clearValue: { r: 0.055, g: 0.055, b: 0.05, a: 1 },
           storeOp: 'store'
         }
       ]
@@ -670,7 +846,7 @@ class RtDemoApp {
   private writeUniforms(time: number) {
     this.uniformData.fill(0);
     this.writeVec4(0, this.canvas.width, this.canvas.height, time, this.selectedIndex);
-    this.writeVec4(1, CAMERA_POSITION[0], CAMERA_POSITION[1], CAMERA_POSITION[2], 0);
+    this.writeVec4(1, this.cameraPosition[0], this.cameraPosition[1], this.cameraPosition[2], 0);
     this.writeVec4(2, this.cameraRight[0], this.cameraRight[1], this.cameraRight[2], this.getViewportFovScale());
     this.writeVec4(3, this.cameraUp[0], this.cameraUp[1], this.cameraUp[2], 0);
     this.writeVec4(4, this.cameraForward[0], this.cameraForward[1], this.cameraForward[2], SPHERE_COUNT);
@@ -796,7 +972,7 @@ class RtDemoApp {
       scale(this.cameraUp, -y * fovScale)
     ));
     return {
-      origin: CAMERA_POSITION,
+      origin: this.cameraPosition,
       direction
     };
   }
@@ -827,7 +1003,7 @@ class RtDemoApp {
   }
 
   private project(position: Vec3) {
-    const relative = subtract(position, CAMERA_POSITION);
+    const relative = subtract(position, this.cameraPosition);
     const x = dot(relative, this.cameraRight);
     const y = dot(relative, this.cameraUp);
     const depth = dot(relative, this.cameraForward);
@@ -848,6 +1024,7 @@ class RtDemoApp {
     window.__RT_DEMO_STATE__ = {
       status: this.status,
       selectedIndex: this.selectedIndex,
+      cameraPaused: this.cameraPaused,
       frameCount: this.frameCount,
       fps: this.fps,
       spheres: this.spheres.map((sphere) => ({
