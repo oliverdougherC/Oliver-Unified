@@ -82,7 +82,7 @@ npm run optimize-images
 
 - `npm run utilities:build` — Rebuild shipped bundle into `pages/utilities/assets/`
 - `npm run utilities:check` — TypeScript check + 209 unit tests
-- `npm run utilities:browser-check` — Playwright regression (Image Transform, Audio Fourier, Retro VM, Local Assistant, Stress Test, RT Demo)
+- `npm run utilities:browser-check` — Playwright regression (Image Transform, Audio Fourier, Retro VM, Local Assistant, Stress Test)
 - `npm run utilities:perf` — Transform timing probe (image + audio)
 - `npm run utilities:cache:build` — Precompute built-in transform cache JSON
 - `npm run utilities:data:update` — Fetch live CDC/WHO/SSA mortality data

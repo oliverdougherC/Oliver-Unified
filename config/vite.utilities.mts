@@ -17,8 +17,7 @@ export default defineConfig({
     target: 'es2022',
     rollupOptions: {
       input: {
-        'utilities-app': path.resolve(__dirname, '../utilities-src/src/main.ts'),
-        'rt-demo': path.resolve(__dirname, '../utilities-src/src/rtDemo.ts')
+        'utilities-app': path.resolve(__dirname, '../utilities-src/src/main.ts')
       },
       output: {
         format: 'es',
