@@ -1,26 +1,31 @@
 ## Descriptions of what the accompanying photos contain
 
-- ```squirrel.jpg``` &rarr; A head-on shot of a squirrel standing in a grassy field.
 - ```lighthouse.jpg``` &rarr; A medium-long zoom shot of a white lighthouse sitting alone at the end of a peninsula.
-- ```Caught.jpg``` &rarr; A near birds-eye view down onto a staircase where a young woman looks up into the camera as she walks up the stairs.
-- ```looking_for_shells.jpg``` &rarr; A long zoom shot of 1 woman and 2 children on a rocky beach looking for shells.
-- ```ember_m4.jpg``` &rarr; A close up of the rear end of a BMW M4 competition, showing off the badges and the "EMBER M4" license plate.
-- ```pond.jpg``` &rarr; A close-medium top view shot of a coi pond.
-- ```nose.jpg``` &rarr; A medium, 30 degree shot of the front end of a Audi RS6.
-- ```stare.jpg``` &rarr; A medium, perfectly head on shot of an Audi RS6.
-- ```hills.jpg``` &rarr; A landscape shot of rolling, green hills.
-- ```fog.jpg``` &rarr; A landscape shot of a bed of fog laying on distant hills.
-- ```swing.jpg``` &rarr; A long, 45 degree shot of two men in the follow through of their golf swing.
-- ```stroller.jpg``` &rarr; A long, 80 degree shot of a young woman pushing a stroller.
-- ```putt.jpg``` &rarr; A long shot of 2 men while 1 putts a golf ball.
-- ```hawk.jpg``` &rarr; A zoomed shot of a hawk sitting on a tree branch.
-- ```in_flight.jpg``` &rarr; A zoomed shot of a small bird as it zips downward.
-- ```moon.jpg``` &rarr; A zoomed shot of the moon.
-- ```chairs.jpg``` &rarr; A rear shot of 2 chairs on a tropical beach.
-- ```yellow.jpg``` &rarr; A stylized night shot of a yellow traffic light.
-- ```night.jpg``` &rarr; A wide angle shot of a small park at night.
-- ```yield.jpg``` &rarr; A stylized close up of a yield sign.
-- ```lights.jpg``` &rarr; A styled shot of a large, concrete building from the sidewalk.
-- ```union.jpg``` &rarr; A long, night shot of a big, union building with a dome roof.
-- ```sitting.jpg``` &rarr; A zoomed, slightly raised shot of a squirrel sitting on a fence.
-- ```forest.jpg``` &rarr; A landscape shot of a seeming neverending forest.
+- ```Attitude.jpg``` &rarr; A close-up detail shot of a BMW badge and grille, emphasizing the sharp lines of the kidney grille.
+- ```Bridge.jpg``` &rarr; A wide-angle shot of a concrete highway bridge stretching across a valley at golden hour.
+- ```Chairs.jpeg``` &rarr; A rear shot of two chairs on a tropical beach, with the ocean stretching out behind them.
+- ```Creek.jpg``` &rarr; A landscape shot of a small creek winding through a rocky, tree-lined valley.
+- ```Drive.jpg``` &rarr; A long shot of a golfer mid-swing on a driving range, with the club follow-through frozen in motion.
+- ```Endless.jpg``` &rarr; A landscape shot of rolling hills that seem to stretch endlessly under a moody sky.
+- ```Fog.jpg``` &rarr; A landscape shot of a bed of fog laying on distant hills, with the tree line cutting across the frame.
+- ```Hawk.jpg``` &rarr; A zoomed shot of a hawk sitting on a tree branch, with its piercing gaze directed at the camera.
+- ```Home.jpg``` &rarr; A medium shot of a residential house framed by trees, captured from across the street.
+- ```Ice.jpg``` &rarr; A landscape shot of a frozen pond with patches of ice and snow along the shoreline.
+- ```Lexus.jpg``` &rarr; A medium shot of a Lexus parked on the street, highlighting the sculpted lines of the front fascia.
+- ```Looking for Shells.jpg``` &rarr; A long zoom shot of one woman and two children on a rocky beach, crouched down looking for shells.
+- ```Moss Wall.jpg``` &rarr; A close-up shot of a moss-covered wall in the forest, with textures and greens dominating the frame.
+- ```Oops.jpg``` &rarr; A near birds-eye view down onto a staircase where a young woman looks up into the camera as she walks up the stairs.
+- ```Portrait.jpg``` &rarr; A medium shot of a bird perched on a branch, with soft bokeh blurring the background foliage.
+- ```Putt.jpg``` &rarr; A long shot of two men on a practice green, one putting a golf ball while the other watches.
+- ```RS6.jpg``` &rarr; A medium, perfectly head-on shot of an Audi RS6, with the car centered and the camera at eye level.
+- ```Spooky.jpg``` &rarr; A stylized night shot of a dimly lit street corner with fog rolling in from the shadows.
+- ```Squirrel.jpg``` &rarr; A head-on shot of a squirrel standing in a grassy field, with its paws together in a curious pose.
+- ```Station.jpg``` &rarr; A night shot of a transit station with glowing lights and a lone figure in the frame.
+- ```Structure.jpg``` &rarr; A stylized close-up of a modern building facade, with geometric lines and ambient lighting.
+- ```Taking a Break.jpg``` &rarr; A zoomed shot of a squirrel sitting on a fence, with a blurred background of trees and grass.
+- ```The Fall.jpg``` &rarr; A landscape shot of autumn foliage in the forest, with warm orange and red leaves against the green.
+- ```Union.jpg``` &rarr; A long, night shot of a large civic building with a dome roof, illuminated against the dark sky.
+- ```Vapor.jpg``` &rarr; A night shot of a street corner with steam or vapor rising from a manhole, lit by street lamps.
+- ```Watchdog.jpg``` &rarr; A zoomed shot of a large dog sitting in a field, alert and watching something in the distance.
+- ```Waterfall.jpg``` &rarr; A landscape shot of a waterfall cascading down rocky cliffs, with mist rising from the pool below.
+- ```Stroller.jpg``` &rarr; A long, 80 degree shot of a young woman pushing a stroller.

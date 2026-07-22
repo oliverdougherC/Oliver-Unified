@@ -10,11 +10,11 @@
         "teaser": "A solitary landmark, clean horizon, and restrained distance make this the clearest opening note in the set."
       },
       "src": {
-        "thumb": "../../assets/photos/thumbs/a7rii_474.jpg",
-        "medium": "../../assets/photos/medium/a7rii_474.jpg",
-        "large": "../../assets/photos/large/a7rii_474.jpg",
-        "avif": "../../assets/photos/large/a7rii_474.avif",
-        "webp": "../../assets/photos/large/a7rii_474.webp"
+        "thumb": "../../assets/photos/thumbs/lighthouse.jpg",
+        "medium": "../../assets/photos/medium/lighthouse.jpg",
+        "large": "../../assets/photos/large/lighthouse.jpg",
+        "avif": "../../assets/photos/large/lighthouse.avif",
+        "webp": "../../assets/photos/large/lighthouse.webp"
       },
       "meta": {
         "date": "2025-11-09",
@@ -30,17 +30,22 @@
       "id": "fog",
       "featured": true,
       "title": "Fog",
+      "hero": {
+        "priority": 2,
+        "theme": "Landscape",
+        "teaser": "The dark foreground hills keep the cloud deck from flattening out and give the light somewhere to press against."
+      },
       "src": {
-        "thumb": "../../assets/photos/thumbs/DSC04161.jpg",
-        "medium": "../../assets/photos/medium/DSC04161.jpg",
-        "large": "../../assets/photos/large/DSC04161.jpg",
-        "avif": "../../assets/photos/large/DSC04161.avif",
-        "webp": "../../assets/photos/large/DSC04161.webp"
+        "thumb": "../../assets/photos/thumbs/fog.jpg",
+        "medium": "../../assets/photos/medium/fog.jpg",
+        "large": "../../assets/photos/large/fog.jpg",
+        "avif": "../../assets/photos/large/fog.avif",
+        "webp": "../../assets/photos/large/fog.webp"
       },
       "meta": {
-        "date": "2025-12-18",
+        "date": "2025-11-24",
         "location": "Windy Hill, California",
-        "notes": "The dark foreground hills keep the cloud deck from flattening out and give the light somewhere to press against."
+        "notes": "The compressed telephoto view stacks the fog layers so the distant ridge disappears into the atmosphere."
       },
       "index": {
         "year": "2025",
@@ -48,20 +53,20 @@
       }
     },
     {
-      "id": "caught",
+      "id": "oops",
       "featured": true,
-      "title": "Caught",
+      "title": "Oops",
       "hero": {
-        "priority": 2,
+        "priority": 3,
         "theme": "Figures",
         "teaser": "The lifted glance and diagonal stair rail turn a passing moment into a deliberate frame."
       },
       "src": {
-        "thumb": "../../assets/photos/thumbs/a7rii_477.jpg",
-        "medium": "../../assets/photos/medium/a7rii_477.jpg",
-        "large": "../../assets/photos/large/a7rii_477.jpg",
-        "avif": "../../assets/photos/large/a7rii_477.avif",
-        "webp": "../../assets/photos/large/a7rii_477.webp"
+        "thumb": "../../assets/photos/thumbs/oops.jpg",
+        "medium": "../../assets/photos/medium/oops.jpg",
+        "large": "../../assets/photos/large/oops.jpg",
+        "avif": "../../assets/photos/large/oops.avif",
+        "webp": "../../assets/photos/large/oops.webp"
       },
       "meta": {
         "date": "2025-11-09",
@@ -74,20 +79,20 @@
       }
     },
     {
-      "id": "ember-m4",
+      "id": "rs6",
       "featured": true,
-      "title": "Ember M4",
+      "title": "RS6",
       "hero": {
-        "priority": 3,
+        "priority": 4,
         "theme": "Automotive",
         "teaser": "Badge, taillight, and plate lock together into a clean detail study without anything extra in the frame."
       },
       "src": {
-        "thumb": "../../assets/photos/thumbs/DSC04084.jpg",
-        "medium": "../../assets/photos/medium/DSC04084.jpg",
-        "large": "../../assets/photos/large/DSC04084.jpg",
-        "avif": "../../assets/photos/large/DSC04084.avif",
-        "webp": "../../assets/photos/large/DSC04084.webp"
+        "thumb": "../../assets/photos/thumbs/rs6.jpg",
+        "medium": "../../assets/photos/medium/rs6.jpg",
+        "large": "../../assets/photos/large/rs6.jpg",
+        "avif": "../../assets/photos/large/rs6.avif",
+        "webp": "../../assets/photos/large/rs6.webp"
       },
       "meta": {
         "date": "2025-12-16",
@@ -100,41 +105,20 @@
       }
     },
     {
-      "id": "hawk",
+      "id": "spooky",
       "featured": true,
-      "title": "Hawk",
-      "src": {
-        "thumb": "../../assets/photos/thumbs/DSC04229.jpg",
-        "medium": "../../assets/photos/medium/DSC04229.jpg",
-        "large": "../../assets/photos/large/DSC04229.jpg",
-        "avif": "../../assets/photos/large/DSC04229.avif",
-        "webp": "../../assets/photos/large/DSC04229.webp"
-      },
-      "meta": {
-        "date": "2025-12-19",
-        "location": "Menlo Park, California",
-        "notes": "The branches stay busy, but the eye and chest markings keep the subject anchored in the middle of the frame."
-      },
-      "index": {
-        "year": "2025",
-        "category": "WILDLIFE"
-      }
-    },
-    {
-      "id": "yield",
-      "featured": true,
-      "title": "Yield",
+      "title": "Spooky",
       "hero": {
-        "priority": 4,
+        "priority": 5,
         "theme": "Night Studies",
         "teaser": "Fog, warning red, and a lone figure turn an ordinary corner into something staged."
       },
       "src": {
-        "thumb": "../../assets/photos/thumbs/IMG_20251211_225546_016.jpg",
-        "medium": "../../assets/photos/medium/IMG_20251211_225546_016.jpg",
-        "large": "../../assets/photos/large/IMG_20251211_225546_016.jpg",
-        "avif": "../../assets/photos/large/IMG_20251211_225546_016.avif",
-        "webp": "../../assets/photos/large/IMG_20251211_225546_016.webp"
+        "thumb": "../../assets/photos/thumbs/spooky.jpg",
+        "medium": "../../assets/photos/medium/spooky.jpg",
+        "large": "../../assets/photos/large/spooky.jpg",
+        "avif": "../../assets/photos/large/spooky.avif",
+        "webp": "../../assets/photos/large/spooky.webp"
       },
       "meta": {
         "date": "2025-12-11",
@@ -147,24 +131,507 @@
       }
     },
     {
-      "id": "forest",
+      "id": "hawk",
       "featured": true,
-      "title": "Forest",
+      "title": "Hawk",
       "src": {
-        "thumb": "../../assets/photos/thumbs/DSC04166.jpg",
-        "medium": "../../assets/photos/medium/DSC04166.jpg",
-        "large": "../../assets/photos/large/DSC04166.jpg",
-        "avif": "../../assets/photos/large/DSC04166.avif",
-        "webp": "../../assets/photos/large/DSC04166.webp"
+        "thumb": "../../assets/photos/thumbs/hawk.jpg",
+        "medium": "../../assets/photos/medium/hawk.jpg",
+        "large": "../../assets/photos/large/hawk.jpg",
+        "avif": "../../assets/photos/large/hawk.avif",
+        "webp": "../../assets/photos/large/hawk.webp"
       },
       "meta": {
-        "date": "2025-12-18",
+        "date": "2025-12-19",
+        "location": "Menlo Park, California",
+        "notes": "The branches stay busy, but the eye and chest markings keep the subject anchored in the middle of the frame."
+      },
+      "index": {
+        "year": "2025",
+        "category": "WILDLIFE"
+      }
+    },
+    {
+      "id": "squirrel",
+      "featured": true,
+      "title": "Squirrel",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/squirrel.jpg",
+        "medium": "../../assets/photos/medium/squirrel.jpg",
+        "large": "../../assets/photos/large/squirrel.jpg",
+        "avif": "../../assets/photos/large/squirrel.avif",
+        "webp": "../../assets/photos/large/squirrel.webp"
+      },
+      "meta": {
+        "date": "2025-09-13",
+        "location": "Field Edge",
+        "notes": "The head-on pose and the soft grass background keep the subject isolated without any distracting edges."
+      },
+      "index": {
+        "year": "2025",
+        "category": "WILDLIFE"
+      }
+    },
+    {
+      "id": "taking-a-break",
+      "featured": true,
+      "title": "Taking a Break",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/taking-a-break.jpg",
+        "medium": "../../assets/photos/medium/taking-a-break.jpg",
+        "large": "../../assets/photos/large/taking-a-break.jpg",
+        "avif": "../../assets/photos/large/taking-a-break.avif",
+        "webp": "../../assets/photos/large/taking-a-break.webp"
+      },
+      "meta": {
+        "date": "2025-12-27",
+        "location": "Fence Line",
+        "notes": "The fence and the blurred background give the subject a perch that feels both staged and natural."
+      },
+      "index": {
+        "year": "2025",
+        "category": "WILDLIFE"
+      }
+    },
+    {
+      "id": "watchdog",
+      "featured": true,
+      "title": "Watchdog",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/watchdog.jpg",
+        "medium": "../../assets/photos/medium/watchdog.jpg",
+        "large": "../../assets/photos/large/watchdog.jpg",
+        "avif": "../../assets/photos/large/watchdog.avif",
+        "webp": "../../assets/photos/large/watchdog.webp"
+      },
+      "meta": {
+        "date": "2025-11-24",
+        "location": "Field Edge",
+        "notes": "The wide frame holds the dog and the open field so the subject feels both contained and free."
+      },
+      "index": {
+        "year": "2025",
+        "category": "WILDLIFE"
+      }
+    },
+    {
+      "id": "portrait",
+      "featured": true,
+      "title": "Portrait",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/portrait.jpg",
+        "medium": "../../assets/photos/medium/portrait.jpg",
+        "large": "../../assets/photos/large/portrait.jpg",
+        "avif": "../../assets/photos/large/portrait.avif",
+        "webp": "../../assets/photos/large/portrait.webp"
+      },
+      "meta": {
+        "date": "2025-11-24",
+        "location": "Tree Line",
+        "notes": "The shallow depth of field keeps the subject sharp while the background melts into soft color."
+      },
+      "index": {
+        "year": "2025",
+        "category": "WILDLIFE"
+      }
+    },
+    {
+      "id": "chairs",
+      "featured": true,
+      "title": "Chairs",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/chairs.jpg",
+        "medium": "../../assets/photos/medium/chairs.jpg",
+        "large": "../../assets/photos/large/chairs.jpg",
+        "avif": "../../assets/photos/large/chairs.avif",
+        "webp": "../../assets/photos/large/chairs.webp"
+      },
+      "meta": {
+        "date": "2025-07-01",
+        "location": "Beachfront",
+        "notes": "The wide frame holds the ocean and the sky so the two chairs feel like the only placed objects in the scene."
+      },
+      "index": {
+        "year": "2025",
+        "category": "LANDSCAPE"
+      }
+    },
+    {
+      "id": "the-fall",
+      "featured": true,
+      "title": "The Fall",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/the-fall.jpg",
+        "medium": "../../assets/photos/medium/the-fall.jpg",
+        "large": "../../assets/photos/large/the-fall.jpg",
+        "avif": "../../assets/photos/large/the-fall.avif",
+        "webp": "../../assets/photos/large/the-fall.webp"
+      },
+      "meta": {
+        "date": "2025-11-21",
         "location": "Windy Hill, California",
         "notes": "Layered evergreen texture gives the haze something to work against all the way through the frame."
       },
       "index": {
         "year": "2025",
         "category": "LANDSCAPE"
+      }
+    },
+    {
+      "id": "endless",
+      "featured": true,
+      "title": "Endless",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/endless.jpg",
+        "medium": "../../assets/photos/medium/endless.jpg",
+        "large": "../../assets/photos/large/endless.jpg",
+        "avif": "../../assets/photos/large/endless.avif",
+        "webp": "../../assets/photos/large/endless.webp"
+      },
+      "meta": {
+        "date": "2025-11-24",
+        "location": "Open Range",
+        "notes": "The rolling hills and the wide frame make the landscape feel like it has no edge."
+      },
+      "index": {
+        "year": "2025",
+        "category": "LANDSCAPE"
+      }
+    },
+    {
+      "id": "bridge",
+      "featured": true,
+      "title": "Bridge",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/bridge.jpg",
+        "medium": "../../assets/photos/medium/bridge.jpg",
+        "large": "../../assets/photos/large/bridge.jpg",
+        "avif": "../../assets/photos/large/bridge.avif",
+        "webp": "../../assets/photos/large/bridge.webp"
+      },
+      "meta": {
+        "date": "2025-11-21",
+        "location": "Highway Overlook",
+        "notes": "The bridge stretches across the frame and the valley below gives the structure a clear sense of scale."
+      },
+      "index": {
+        "year": "2025",
+        "category": "LANDSCAPE"
+      }
+    },
+    {
+      "id": "creek",
+      "featured": true,
+      "title": "Creek",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/creek.jpg",
+        "medium": "../../assets/photos/medium/creek.jpg",
+        "large": "../../assets/photos/large/creek.jpg",
+        "avif": "../../assets/photos/large/creek.avif",
+        "webp": "../../assets/photos/large/creek.webp"
+      },
+      "meta": {
+        "date": "2025-11-21",
+        "location": "Creek Bed",
+        "notes": "The water and the rocks lead the eye into the frame where the trees close in overhead."
+      },
+      "index": {
+        "year": "2025",
+        "category": "LANDSCAPE"
+      }
+    },
+    {
+      "id": "home",
+      "featured": true,
+      "title": "Home",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/home.jpg",
+        "medium": "../../assets/photos/medium/home.jpg",
+        "large": "../../assets/photos/large/home.jpg",
+        "avif": "../../assets/photos/large/home.avif",
+        "webp": "../../assets/photos/large/home.webp"
+      },
+      "meta": {
+        "date": "2025-12-18",
+        "location": "Residential Street",
+        "notes": "The house is framed by the street and the trees so the composition feels like a quiet moment on an ordinary block."
+      },
+      "index": {
+        "year": "2025",
+        "category": "LANDSCAPE"
+      }
+    },
+    {
+      "id": "ice",
+      "featured": true,
+      "title": "Ice",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/ice.jpg",
+        "medium": "../../assets/photos/medium/ice.jpg",
+        "large": "../../assets/photos/large/ice.jpg",
+        "avif": "../../assets/photos/large/ice.avif",
+        "webp": "../../assets/photos/large/ice.webp"
+      },
+      "meta": {
+        "date": "2025-11-24",
+        "location": "Frozen Pond",
+        "notes": "The ice and the snow along the shore give the pond a stillness that the open water would not have."
+      },
+      "index": {
+        "year": "2025",
+        "category": "LANDSCAPE"
+      }
+    },
+    {
+      "id": "moss-wall",
+      "featured": true,
+      "title": "Moss Wall",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/moss-wall.jpg",
+        "medium": "../../assets/photos/medium/moss-wall.jpg",
+        "large": "../../assets/photos/large/moss-wall.jpg",
+        "avif": "../../assets/photos/large/moss-wall.avif",
+        "webp": "../../assets/photos/large/moss-wall.webp"
+      },
+      "meta": {
+        "date": "2025-11-21",
+        "location": "Forest Wall",
+        "notes": "The texture of the moss and the stone gives the wall a depth that reads even without a wide frame."
+      },
+      "index": {
+        "year": "2025",
+        "category": "LANDSCAPE"
+      }
+    },
+    {
+      "id": "waterfall",
+      "featured": true,
+      "title": "Waterfall",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/waterfall.jpg",
+        "medium": "../../assets/photos/medium/waterfall.jpg",
+        "large": "../../assets/photos/large/waterfall.jpg",
+        "avif": "../../assets/photos/large/waterfall.avif",
+        "webp": "../../assets/photos/large/waterfall.webp"
+      },
+      "meta": {
+        "date": "2025-11-21",
+        "location": "Garden Pond",
+        "notes": "The long exposure smooths the water so the cascade reads as a single flowing shape against the rocks."
+      },
+      "index": {
+        "year": "2025",
+        "category": "LANDSCAPE"
+      }
+    },
+    {
+      "id": "looking-for-shells",
+      "featured": true,
+      "title": "Looking for Shells",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/looking-for-shells.jpg",
+        "medium": "../../assets/photos/medium/looking-for-shells.jpg",
+        "large": "../../assets/photos/large/looking-for-shells.jpg",
+        "avif": "../../assets/photos/large/looking-for-shells.avif",
+        "webp": "../../assets/photos/large/looking-for-shells.webp"
+      },
+      "meta": {
+        "date": "2025-11-09",
+        "location": "Rocky Shore",
+        "notes": "The long lens compresses the figures against the tide line and keeps the water from spilling into the frame."
+      },
+      "index": {
+        "year": "2025",
+        "category": "FIGURES"
+      }
+    },
+    {
+      "id": "putt",
+      "featured": true,
+      "title": "Putt",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/putt.jpg",
+        "medium": "../../assets/photos/medium/putt.jpg",
+        "large": "../../assets/photos/large/putt.jpg",
+        "avif": "../../assets/photos/large/putt.avif",
+        "webp": "../../assets/photos/large/putt.webp"
+      },
+      "meta": {
+        "date": "2025-12-19",
+        "location": "Practice Green",
+        "notes": "The green keeps the frame flat and the two figures give the wide shot a clear focal axis."
+      },
+      "index": {
+        "year": "2025",
+        "category": "FIGURES"
+      }
+    },
+    {
+      "id": "stroller",
+      "featured": true,
+      "title": "Stroller",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/stroller.jpg",
+        "medium": "../../assets/photos/medium/stroller.jpg",
+        "large": "../../assets/photos/large/stroller.jpg",
+        "avif": "../../assets/photos/large/stroller.avif",
+        "webp": "../../assets/photos/large/stroller.webp"
+      },
+      "meta": {
+        "date": "2025-12-19",
+        "location": "Waterfront Path",
+        "notes": "The telephoto flattens the path and the water so the stroller becomes the only moving element in the frame."
+      },
+      "index": {
+        "year": "2025",
+        "category": "FIGURES"
+      }
+    },
+    {
+      "id": "drive",
+      "featured": true,
+      "title": "Drive",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/drive.jpg",
+        "medium": "../../assets/photos/medium/drive.jpg",
+        "large": "../../assets/photos/large/drive.jpg",
+        "avif": "../../assets/photos/large/drive.avif",
+        "webp": "../../assets/photos/large/drive.webp"
+      },
+      "meta": {
+        "date": "2025-12-19",
+        "location": "Driving Range",
+        "notes": "The follow-through and the arc of the club keep the motion visible even in a frozen frame."
+      },
+      "index": {
+        "year": "2025",
+        "category": "FIGURES"
+      }
+    },
+    {
+      "id": "attitude",
+      "featured": true,
+      "title": "Attitude",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/attitude.jpg",
+        "medium": "../../assets/photos/medium/attitude.jpg",
+        "large": "../../assets/photos/large/attitude.jpg",
+        "avif": "../../assets/photos/large/attitude.avif",
+        "webp": "../../assets/photos/large/attitude.webp"
+      },
+      "meta": {
+        "date": "2025-05-11",
+        "location": "Street Shoulder",
+        "notes": "The badge and the grille are the only elements in the frame, so the detail reads without any distraction."
+      },
+      "index": {
+        "year": "2025",
+        "category": "AUTOMOTIVE"
+      }
+    },
+    {
+      "id": "lexus",
+      "featured": true,
+      "title": "Lexus",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/lexus.jpg",
+        "medium": "../../assets/photos/medium/lexus.jpg",
+        "large": "../../assets/photos/large/lexus.jpg",
+        "avif": "../../assets/photos/large/lexus.avif",
+        "webp": "../../assets/photos/large/lexus.webp"
+      },
+      "meta": {
+        "date": "2026-03-07",
+        "location": "Street Shoulder",
+        "notes": "The front fascia and the street context give the car a sense of place that a studio shot would not."
+      },
+      "index": {
+        "year": "2026",
+        "category": "AUTOMOTIVE"
+      }
+    },
+    {
+      "id": "union",
+      "featured": true,
+      "title": "Union",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/union.jpg",
+        "medium": "../../assets/photos/medium/union.jpg",
+        "large": "../../assets/photos/large/union.jpg",
+        "avif": "../../assets/photos/large/union.avif",
+        "webp": "../../assets/photos/large/union.webp"
+      },
+      "meta": {
+        "date": "2025-12-11",
+        "location": "Civic Center",
+        "notes": "The dome and the night lighting give the building a presence that the wide frame holds without crowding."
+      },
+      "index": {
+        "year": "2025",
+        "category": "NIGHT_STUDIES"
+      }
+    },
+    {
+      "id": "structure",
+      "featured": true,
+      "title": "Structure",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/structure.jpg",
+        "medium": "../../assets/photos/medium/structure.jpg",
+        "large": "../../assets/photos/large/structure.jpg",
+        "avif": "../../assets/photos/large/structure.avif",
+        "webp": "../../assets/photos/large/structure.webp"
+      },
+      "meta": {
+        "date": "2025-12-11",
+        "location": "Downtown Sidewalk",
+        "notes": "The facade and the ambient lighting turn the building into a study in geometry and shadow."
+      },
+      "index": {
+        "year": "2025",
+        "category": "NIGHT_STUDIES"
+      }
+    },
+    {
+      "id": "station",
+      "featured": true,
+      "title": "Station",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/station.jpg",
+        "medium": "../../assets/photos/medium/station.jpg",
+        "large": "../../assets/photos/large/station.jpg",
+        "avif": "../../assets/photos/large/station.avif",
+        "webp": "../../assets/photos/large/station.webp"
+      },
+      "meta": {
+        "date": "2025-11-24",
+        "location": "Transit Stop",
+        "notes": "The platform lights and the lone figure give the station a sense of waiting that the night frame holds."
+      },
+      "index": {
+        "year": "2025",
+        "category": "NIGHT_STUDIES"
+      }
+    },
+    {
+      "id": "vapor",
+      "featured": true,
+      "title": "Vapor",
+      "src": {
+        "thumb": "../../assets/photos/thumbs/vapor.jpg",
+        "medium": "../../assets/photos/medium/vapor.jpg",
+        "large": "../../assets/photos/large/vapor.jpg",
+        "avif": "../../assets/photos/large/vapor.avif",
+        "webp": "../../assets/photos/large/vapor.webp"
+      },
+      "meta": {
+        "date": "2025-11-21",
+        "location": "Street Corner",
+        "notes": "The steam and the street lights turn an ordinary intersection into something that feels staged."
+      },
+      "index": {
+        "year": "2025",
+        "category": "NIGHT_STUDIES"
       }
     }
   ]

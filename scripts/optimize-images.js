@@ -25,31 +25,40 @@ const PHOTO_EXT_RE = /\.(jpe?g|png)$/i;
 
 const SMALL_WORDS = new Set(['a', 'an', 'and', 'at', 'for', 'in', 'of', 'on', 'or', 'the', 'to']);
 
+const CAMERA_NAME_MAP = {
+  'ILCE-7RM2': 'Sony A7RII'
+};
+
 const PHOTO_CATALOG = [
-  { filename: 'squirrel.jpg', variantBaseName: 'a7rii_335', category: 'WILDLIFE', location: 'Field Edge' },
-  { filename: 'lighthouse.jpg', variantBaseName: 'a7rii_474', category: 'LANDSCAPE', location: 'Peninsula Edge' },
-  { filename: 'ember_m4.jpg', variantBaseName: 'DSC04084', category: 'AUTOMOTIVE', location: 'Mountain Pullout' },
-  { filename: 'union.jpg', variantBaseName: 'IMG_20251211_232447_034', category: 'NIGHT_STUDIES', location: 'Civic Center' },
-  { filename: 'hawk.jpg', variantBaseName: 'DSC04229', category: 'WILDLIFE', location: 'Tree Line' },
-  { filename: 'chairs.jpeg', variantBaseName: 'Hawaii_S25_121', category: 'LANDSCAPE', location: 'Beachfront' },
-  { filename: 'forest.jpg', variantBaseName: 'DSC04166', category: 'LANDSCAPE', location: 'Forest Line' },
-  { filename: 'looking_for_shells.jpg', variantBaseName: 'a7rii_492', category: 'FIGURES', location: 'Rocky Shore' },
-  { filename: 'pond.jpeg', variantBaseName: 'Dream_Pond', category: 'LANDSCAPE', location: 'Garden Pond' },
-  { filename: 'hills.jpg', variantBaseName: 'DSC04139', category: 'LANDSCAPE', location: 'Open Range' },
-  { filename: 'fog.jpg', variantBaseName: 'DSC04161', category: 'LANDSCAPE', location: 'Distant Ridge' },
-  { filename: 'moon.jpg', variantBaseName: 'DSC04599', category: 'NIGHT_STUDIES', location: 'Night Sky' },
-  { filename: 'sitting.jpg', variantBaseName: 'DSC04549', category: 'WILDLIFE', location: 'Fence Line' },
-  { filename: 'in_flight.jpg', variantBaseName: 'DSC04554', category: 'WILDLIFE', location: 'Open Sky' },
-  { filename: 'Caught.jpg', variantBaseName: 'a7rii_477', category: 'FIGURES', location: 'Concrete Stairwell' },
-  { filename: 'stroller.jpg', variantBaseName: 'DSC04205', category: 'FIGURES', location: 'Waterfront Path' },
-  { filename: 'swing.jpg', variantBaseName: 'DSC04179', category: 'FIGURES', location: 'Driving Range' },
-  { filename: 'putt.jpg', variantBaseName: 'DSC04209', category: 'FIGURES', location: 'Practice Green' },
-  { filename: 'nose.jpg', variantBaseName: 'DSC04098', category: 'AUTOMOTIVE', location: 'Street Shoulder' },
-  { filename: 'stare.jpg', variantBaseName: 'DSC04102', category: 'AUTOMOTIVE', location: 'Street Shoulder' },
-  { filename: 'yellow.jpg', variantBaseName: 'IMG_20251211_225252_010', category: 'NIGHT_STUDIES', location: 'Intersection' },
-  { filename: 'night.jpg', variantBaseName: 'IMG_20251211_225510_015', category: 'NIGHT_STUDIES', location: 'Neighborhood Park' },
-  { filename: 'yield.jpg', variantBaseName: 'IMG_20251211_225546_016', category: 'NIGHT_STUDIES', location: 'Street Corner' },
-  { filename: 'lights.jpg', variantBaseName: 'IMG_20251211_225914_024_crop', category: 'NIGHT_STUDIES', location: 'Downtown Sidewalk' }
+  { filename: 'lighthouse.jpg', variantBaseName: 'lighthouse', category: 'LANDSCAPE', location: 'Peninsula Edge' },
+  { filename: 'Attitude.jpg', variantBaseName: 'attitude', category: 'AUTOMOTIVE', location: 'Street Shoulder' },
+  { filename: 'Bridge.jpg', variantBaseName: 'bridge', category: 'LANDSCAPE', location: 'Highway Overlook' },
+  { filename: 'Chairs.jpeg', variantBaseName: 'chairs', category: 'LANDSCAPE', location: 'Beachfront' },
+  { filename: 'Creek.jpg', variantBaseName: 'creek', category: 'LANDSCAPE', location: 'Creek Bed' },
+  { filename: 'Drive.jpg', variantBaseName: 'drive', category: 'FIGURES', location: 'Driving Range' },
+  { filename: 'Endless.jpg', variantBaseName: 'endless', category: 'LANDSCAPE', location: 'Open Range' },
+  { filename: 'Fog.jpg', variantBaseName: 'fog', category: 'LANDSCAPE', location: 'Distant Ridge' },
+  { filename: 'Hawk.jpg', variantBaseName: 'hawk', category: 'WILDLIFE', location: 'Tree Line' },
+  { filename: 'Home.jpg', variantBaseName: 'home', category: 'LANDSCAPE', location: 'Residential Street' },
+  { filename: 'Ice.jpg', variantBaseName: 'ice', category: 'LANDSCAPE', location: 'Frozen Pond' },
+  { filename: 'Lexus.jpg', variantBaseName: 'lexus', category: 'AUTOMOTIVE', location: 'Street Shoulder' },
+  { filename: 'Looking for Shells.jpg', variantBaseName: 'looking-for-shells', category: 'FIGURES', location: 'Rocky Shore' },
+  { filename: 'Moss Wall.jpg', variantBaseName: 'moss-wall', category: 'LANDSCAPE', location: 'Forest Wall' },
+  { filename: 'Oops.jpg', variantBaseName: 'oops', category: 'FIGURES', location: 'Concrete Stairwell' },
+  { filename: 'Portrait.jpg', variantBaseName: 'portrait', category: 'WILDLIFE', location: 'Tree Line' },
+  { filename: 'Putt.jpg', variantBaseName: 'putt', category: 'FIGURES', location: 'Practice Green' },
+  { filename: 'RS6.jpg', variantBaseName: 'rs6', category: 'AUTOMOTIVE', location: 'Street Shoulder' },
+  { filename: 'Spooky.jpg', variantBaseName: 'spooky', category: 'NIGHT_STUDIES', location: 'Street Corner' },
+  { filename: 'Squirrel.jpg', variantBaseName: 'squirrel', category: 'WILDLIFE', location: 'Field Edge' },
+  { filename: 'Station.jpg', variantBaseName: 'station', category: 'NIGHT_STUDIES', location: 'Transit Stop' },
+  { filename: 'Structure.jpg', variantBaseName: 'structure', category: 'NIGHT_STUDIES', location: 'Downtown Sidewalk' },
+  { filename: 'Taking a Break.jpg', variantBaseName: 'taking-a-break', category: 'WILDLIFE', location: 'Fence Line' },
+  { filename: 'The Fall.jpg', variantBaseName: 'the-fall', category: 'LANDSCAPE', location: 'Forest Line' },
+  { filename: 'Union.jpg', variantBaseName: 'union', category: 'NIGHT_STUDIES', location: 'Civic Center' },
+  { filename: 'Vapor.jpg', variantBaseName: 'vapor', category: 'NIGHT_STUDIES', location: 'Street Corner' },
+  { filename: 'Watchdog.jpg', variantBaseName: 'watchdog', category: 'WILDLIFE', location: 'Field Edge' },
+  { filename: 'Waterfall.jpg', variantBaseName: 'waterfall', category: 'LANDSCAPE', location: 'Garden Pond' },
+  { filename: 'Stroller.jpg', variantBaseName: 'stroller', category: 'FIGURES', location: 'Waterfront Path' }
 ];
 
 const VARIANTS = [
@@ -295,7 +304,7 @@ async function extractExif(inputPath) {
     }
 
     const result = {};
-    if (exif.Model) result.camera = exif.Model;
+    if (exif.Model) result.camera = CAMERA_NAME_MAP[exif.Model] || exif.Model;
     if (exif.LensModel) result.lens = exif.LensModel;
     if (exif.FocalLength) result.focalLength = Math.round(exif.FocalLength);
     if (exif.FNumber) result.aperture = parseFloat(exif.FNumber.toFixed(1));

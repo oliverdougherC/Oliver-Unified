@@ -613,23 +613,6 @@ html.skip-page-animation[data-page-id="gallery"] .hero-deferred {
   gap: var(--space-3);
 }
 
-.lightbox-counter {
-  display: inline-flex;
-  align-items: center;
-  min-height: 38px;
-  padding: 0 var(--space-4);
-  border-radius: 999px;
-  background: var(--lb-overlay-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--lb-overlay-border);
-  box-shadow: var(--shadow-sm);
-  color: var(--lb-text);
-  font-size: 0.72rem;
-  font-family: var(--font-mono);
-  letter-spacing: 0.16em;
-}
-
 .lightbox-info-toggle,
 .lightbox-close,
 .lightbox-nav {
@@ -744,7 +727,6 @@ html.skip-page-animation[data-page-id="gallery"] .hero-deferred {
     background: rgba(246, 246, 244, 0.98);
   }
 
-  .lightbox-counter,
   .lightbox-close,
   .lightbox-nav {
     background: rgba(255, 255, 255, 0.96);

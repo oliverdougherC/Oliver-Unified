@@ -68,7 +68,6 @@ function cacheElements() {
     lightbox: document.getElementById('lightbox'),
     lightboxPanel: document.getElementById('lightboxPanel'),
     lightboxMedia: document.getElementById('lightboxMedia'),
-    lightboxCounter: document.getElementById('lightboxCounter'),
     lightboxClose: document.getElementById('lightboxClose'),
     lightboxPrev: document.getElementById('lightboxPrev'),
     lightboxNext: document.getElementById('lightboxNext'),
@@ -773,7 +772,6 @@ function renderLightboxEntry(entry) {
   const elements = gallery.elements;
   if (
     !elements.lightboxImage ||
-    !elements.lightboxCounter ||
     !elements.lightboxEyebrow ||
     !elements.lightboxTitle ||
     !elements.lightboxSubline ||
@@ -809,8 +807,7 @@ function renderLightboxEntry(entry) {
   ]);
   elements.lightboxImage.sizes = '(max-width: 900px) 100vw, calc(100vw - 400px)';
 
-  elements.lightboxCounter.textContent = `${String(gallery.currentIndex + 1).padStart(2, '0')} / ${String(gallery.entries.length).padStart(2, '0')}`;
-  elements.lightboxEyebrow.textContent = entry.featured ? 'Featured frame' : 'Archive frame';
+  elements.lightboxEyebrow.textContent = entry.featured ? String(gallery.currentIndex + 1).padStart(2, '0') : 'Archive frame';
   elements.lightboxTitle.textContent = entry.displayTitle;
   elements.lightboxSubline.textContent = '';
   elements.lightboxNotes.textContent = '';
