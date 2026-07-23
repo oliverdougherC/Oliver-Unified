@@ -296,7 +296,7 @@
     },
     {
       "id": "fog",
-      "filename": "Fog.jpg",
+      "filename": "fog.jpg",
       "title": "Fog",
       "displayTitle": "Fog",
       "description": "A landscape shot of a bed of fog laying on distant hills, with the tree line cutting across the frame.",
@@ -338,7 +338,7 @@
     },
     {
       "id": "hawk",
-      "filename": "Hawk.jpg",
+      "filename": "hawk.jpg",
       "title": "Hawk",
       "displayTitle": "Hawk",
       "description": "A zoomed shot of a hawk sitting on a tree branch, with its piercing gaze directed at the camera.",
@@ -674,7 +674,7 @@
     },
     {
       "id": "putt",
-      "filename": "Putt.jpg",
+      "filename": "putt.jpg",
       "title": "Putt",
       "displayTitle": "Putt",
       "description": "A long shot of two men on a practice green, one putting a golf ball while the other watches.",
@@ -794,7 +794,7 @@
     },
     {
       "id": "squirrel",
-      "filename": "Squirrel.jpg",
+      "filename": "squirrel.jpg",
       "title": "Squirrel",
       "displayTitle": "Squirrel",
       "description": "A head-on shot of a squirrel standing in a grassy field, with its paws together in a curious pose.",
@@ -998,7 +998,7 @@
     },
     {
       "id": "union",
-      "filename": "Union.jpg",
+      "filename": "union.jpg",
       "title": "Union",
       "displayTitle": "Union",
       "description": "A long, night shot of a large civic building with a dome roof, illuminated against the dark sky.",
@@ -1160,7 +1160,7 @@
     },
     {
       "id": "stroller",
-      "filename": "Stroller.jpg",
+      "filename": "stroller.jpg",
       "title": "Stroller",
       "displayTitle": "Stroller",
       "description": "A long, 80 degree shot of a young woman pushing a stroller.",
