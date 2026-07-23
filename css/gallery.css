@@ -790,6 +790,7 @@ html.skip-page-animation[data-page-id="gallery"] .hero-deferred {
 .lightbox-meta-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: var(--space-4);
   padding: var(--space-4) 0;
   border-bottom: 1px solid var(--lb-line);
