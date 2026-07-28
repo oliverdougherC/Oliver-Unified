@@ -203,15 +203,14 @@ html[data-active-utility] .nav-back-btn {
   min-height: 0;
   padding: 1.5rem;
   padding: clamp(1.2rem, 2.5vw, 1.8rem);
-  border-radius: calc(var(--radius-2xl) + 0.5rem);
-  border: 1px solid var(--utilities-border-strong);
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 32px 64px -24px rgba(0, 0, 0, 0.8),
-    var(--utilities-shadow);
+    0 8px 32px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
 
@@ -859,9 +858,10 @@ html[data-active-utility] .nav-back-btn {
   min-height: 5.9rem;
   padding: 0.8rem;
   border-radius: var(--radius-lg);
-  border: 1px dashed rgba(255, 255, 255, 0.28);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
   display: grid;
   align-content: space-between;
   gap: 0.55rem;
@@ -878,10 +878,10 @@ html[data-active-utility] .nav-back-btn {
 .utility-dropzone--minimal:hover,
 .utility-dropzone--minimal:focus-within,
 .utility-dropzone--minimal.drag-active {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04));
-  border-color: rgba(255, 255, 255, 0.56);
-  box-shadow: 0 14px 30px -24px rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.06);
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   transform: translateY(-1px);
 }
 
@@ -1017,14 +1017,17 @@ html[data-active-utility] .nav-back-btn {
   width: 100%;
   min-height: 2.65rem;
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px) saturate(130%);
+  -webkit-backdrop-filter: blur(8px) saturate(130%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--color-text-primary);
   font-size: var(--text-sm);
   padding: 0 2rem 0 0.8rem;
   cursor: pointer;
   appearance: auto;
   text-align: left;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* Ensure dropdown options are readable in Chrome's native popup */
@@ -1037,14 +1040,18 @@ html[data-active-utility] .nav-back-btn {
   width: 100%;
   min-height: 2.9rem;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
-  border: none;
-  color: #000;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
   font-weight: bold;
   font-size: var(--text-sm);
   padding: 0 1rem;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition:
     opacity var(--duration-fast) var(--ease-smooth),
     transform var(--duration-fast) var(--ease-smooth),
@@ -1052,8 +1059,12 @@ html[data-active-utility] .nav-back-btn {
 }
 
 .btn-primary-minimal:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px -18px rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .btn-primary-minimal:disabled {
@@ -1066,14 +1077,19 @@ html[data-active-utility] .nav-back-btn {
   width: 100%;
   min-height: 2.45rem;
   border-radius: var(--radius-full);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px) saturate(130%);
+  -webkit-backdrop-filter: blur(8px) saturate(130%);
   color: rgba(255, 255, 255, 0.78);
   font: inherit;
   font-size: 0.78rem;
   font-weight: var(--weight-medium);
   padding: 0 1rem;
   cursor: pointer;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   transition:
     background var(--duration-fast) var(--ease-smooth),
     border-color var(--duration-fast) var(--ease-smooth),
@@ -1114,13 +1130,16 @@ html[data-active-utility] .nav-back-btn {
   width: 100%;
   min-height: 2.25rem;
   border-radius: var(--radius-full);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px) saturate(130%);
+  -webkit-backdrop-filter: blur(8px) saturate(130%);
   color: var(--color-text-secondary);
   font-size: 0.75rem;
   line-height: 1.15;
   padding: 0.35rem 0.75rem;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition: all var(--duration-fast) var(--ease-smooth);
   white-space: nowrap;
   overflow: hidden;
@@ -3164,18 +3183,15 @@ html[data-active-utility] .nav-back-btn {
   display: inline-block;
   padding: 4px;
   border-radius: 24px;
-  background: linear-gradient(90deg,
-    #ff2a5f, /* Hot Pink */
-    #ff7b00, /* Vibrant Orange */
-    #ffea00, /* Bright Yellow */
-    #00ffcc, /* Cyan/Aqua */
-    #6a00ff, /* Deep Purple */
-    #ff2a5f  /* Back to Hot Pink */
-  );
-  background-size: 200% 100%;
-  animation: wrapper-reveal 3s cubic-bezier(0.2, 0.8, 0.2, 1) both, nebula-shift 15s linear infinite 3s;
-  animation-delay: 1.5s, 4.5s; /* Wait for stars to fade in */
-  box-shadow: 0 0 40px rgba(106, 0, 255, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  animation: wrapper-reveal 3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: 1.5s;
   opacity: 0; /* Start hidden */
 }
 
@@ -3184,9 +3200,9 @@ html[data-active-utility] .nav-back-btn {
   margin: 0;
   padding: 0.2em 0.5em;
   border-radius: 22px;
-  background: rgba(5, 5, 10, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   font-family: var(--font-body);
   font-size: clamp(3rem, 10vw, 6rem);
   font-weight: 300;
@@ -3218,17 +3234,17 @@ html[data-active-utility] .nav-back-btn {
   }
 }
 
-@keyframes nebula-shift {
-  0% { background-position: 0 50%; }
-  100% { background-position: 200% 50%; }
-}
 
 .utilities-buttons {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1.75rem;
+  gap: 1.5rem;
   max-width: 56rem;
+}
+/* Hidden utility buttons — ensure display:none takes precedence */
+.utilities-buttons [hidden] {
+  display: none !important;
 }
 
 .utilities-buttons :is(button, a) {
@@ -3239,18 +3255,21 @@ html[data-active-utility] .nav-back-btn {
   font: inherit;
   font-size: var(--text-base);
   font-weight: var(--weight-normal);
-  padding: 1rem 2rem;
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  padding: 0.85rem 1.75rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   color: #ffffff;
   cursor: pointer;
   text-decoration: none;
   opacity: 0;
   pointer-events: none;
   transform: scale(0.85) translateY(10px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition:
     opacity 1.2s var(--ease-smooth),
     transform 1.2s var(--ease-smooth),
@@ -3281,7 +3300,11 @@ html[data-active-utility] .nav-back-btn {
 
 .utilities-buttons :is(button, a):hover {
   transform: translateY(-4px) scale(1.03);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .utilities-buttons :is(button, a):focus-visible {
@@ -3292,10 +3315,15 @@ html[data-active-utility] .nav-back-btn {
 }
 
 .utilities-buttons :is(button, a):is(:hover, :focus-visible)::before {
-  opacity: 1;
+  opacity: 0.4;
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.38),
     0 0 18px rgba(255, 255, 255, 0.12);
+}
+
+.utilities-buttons :is(button, a):active {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(0.98);
 }
 
 .utilities-buttons :is(button, a)[data-color="lavender"] {

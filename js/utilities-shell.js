@@ -18,8 +18,6 @@
   const VALID_UTILITIES = new Set([
     'image-transform',
     'audio-fourier',
-    'local-assistant',
-    'virtual-machine',
     'stress-test',
   ]);
 
