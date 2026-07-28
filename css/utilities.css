@@ -54,7 +54,7 @@ body {
 }
 
 .nav-home-btn {
-  padding: 0.5rem 0;
+  padding: 0.6rem 1.4rem;
   opacity: 0;
   visibility: visible;
   pointer-events: none;
@@ -3176,6 +3176,7 @@ html[data-active-utility] .nav-back-btn {
 #utilitiesTitleView {
   gap: var(--space-6);
   padding: var(--space-6);
+  transform: translateY(-4rem);
 }
 
 .utilities-title-wrapper {
@@ -3241,6 +3242,7 @@ html[data-active-utility] .nav-back-btn {
   justify-content: center;
   gap: 1.5rem;
   max-width: 56rem;
+  margin-top: var(--space-6);
 }
 /* Hidden utility buttons — ensure display:none takes precedence */
 .utilities-buttons [hidden] {
@@ -3253,9 +3255,9 @@ html[data-active-utility] .nav-back-btn {
   align-items: center;
   justify-content: center;
   font: inherit;
-  font-size: var(--text-base);
+  font-size: 1.15rem;
   font-weight: var(--weight-normal);
-  padding: 0.85rem 1.75rem;
+  padding: 1rem 2.25rem;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.05);
