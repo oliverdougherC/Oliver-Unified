@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery — Oliver Dougherty</title>
+  <meta name="description" content="Photography gallery — Oliver Dougherty.">
+  <link rel="canonical" href="../../pages/gallery/index.html">
+  <link rel="icon" type="image/svg+xml" href="/favicon-happy.svg?v=face-6" id="favicon">
+  <link rel="alternate icon" href="/favicon-happy.ico?v=face-6" id="favicon-fallback">
+  <script>document.addEventListener('visibilitychange',function(){var hidden=document.hidden;var f=document.getElementById('favicon');var i=document.getElementById('favicon-fallback');if(f)f.href=hidden?'/favicon-sad.svg?v=face-6':'/favicon-happy.svg?v=face-6';if(i)i.href=hidden?'/favicon-sad.ico?v=face-6':'/favicon-happy.ico?v=face-6'})</script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&family=JetBrains+Mono:wght@200;400;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../../css/design-system.css">
+  <link rel="stylesheet" href="../../css/mobile.css">
+  <link rel="stylesheet" href="../../css/mobile-gallery.css">
+</head>
+<body class="schematic-mobile mobile-gallery">
+  <header class="mobile-topbar">
+    <a class="mobile-brand" href="../">OD</a>
+    <nav class="mobile-nav" aria-label="Mobile site">
+      <a class="mobile-nav-link" href="../">Home</a>
+      <a class="mobile-nav-link" href="../resume/">Resume</a>
+      <a class="mobile-nav-link mobile-nav-link-active" href="./" aria-current="page">Gallery</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="mobile-gallery-loading" id="mobileGalleryLoading">
+      <div class="mobile-gallery-spinner"></div>
+      <p>Loading…</p>
+    </div>
+    <div class="mobile-gallery-error" id="mobileGalleryError" hidden>
+      <p>Gallery data could not be loaded.</p>
+    </div>
+    <div id="mobileGalleryGrid" class="mobile-gallery-grid"></div>
+  </main>
+
+  <div id="mobileLightbox" class="mobile-lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo viewer">
+    <button class="mobile-lightbox-close" id="mobileLightboxClose" aria-label="Close">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    <div class="mobile-lightbox-media" id="mobileLightboxMedia">
+      <picture>
+        <source id="mobileLightboxSourceAvif" type="image/avif">
+        <source id="mobileLightboxSourceWebp" type="image/webp">
+        <img id="mobileLightboxImage" src="" alt="">
+      </picture>
+    </div>
+  </div>
+
+  <footer class="mobile-footer">
+    <p>&copy; <span data-current-year>2026</span> Oliver Dougherty</p>
+    <a href="../../index.html?full=1">Open full site</a>
+  </footer>
+
+  <script src="../../js/year.js" defer></script>
+  <script src="../../js/mobile-gallery.js" defer></script>
+</body>
+</html>
