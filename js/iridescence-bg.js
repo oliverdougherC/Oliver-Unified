@@ -50,6 +50,7 @@
   let canvas, gl, program;
   let animFrameId = null;
   let startTime = performance.now();
+  let frameCount = 0;
 
   function createShader(gl, type, source) {
     const shader = gl.createShader(type);
@@ -91,17 +92,25 @@
     const timeLoc = gl.getUniformLocation(program, 'uTime');
     gl.uniform1f(timeLoc, elapsed);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    frameCount += 1;
+    canvas.dataset.iridescenceFrameCount = String(frameCount);
     animFrameId = requestAnimationFrame(update);
   }
 
   function init() {
     canvas = document.createElement('canvas');
+    canvas.id = 'iridescence-bg';
     canvas.style.cssText =
       'position:fixed;top:0;left:0;z-index:0;width:100vw;height:100vh;pointer-events:none;';
     document.body.insertBefore(canvas, document.body.firstChild);
 
     gl = canvas.getContext('webgl', { alpha: false, antialias: false });
     if (!gl) return;
+
+    // Test-probe markers: background activity, animation mode, and frame progress.
+    canvas.dataset.iridescenceActive = '1';
+    const motionQuery = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+    canvas.dataset.iridescenceMode = motionQuery && motionQuery.matches ? 'reduced-motion' : 'twinkle';
 
     const vs = createShader(gl, gl.VERTEX_SHADER, vertexSource);
     const fs = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
@@ -143,6 +152,8 @@
     if (prefersReduced) {
       gl.uniform1f(gl.getUniformLocation(program, 'uTime'), 0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+      frameCount += 1;
+      canvas.dataset.iridescenceFrameCount = String(frameCount);
       return;
     }
 

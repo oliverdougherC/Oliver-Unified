@@ -373,8 +373,7 @@ export class AudioFourierController {
     background.width = width;
     background.height = height;
     const context = this.getContext(background);
-    context.fillStyle = '#000000';
-    context.fillRect(0, 0, width, height);
+    context.clearRect(0, 0, width, height);
     return true;
   }
 
@@ -410,8 +409,7 @@ export class AudioFourierController {
     canvas.width = sourceCanvas.width;
     canvas.height = sourceCanvas.height;
     const context = this.getContext(canvas);
-    context.fillStyle = '#000000';
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.clearRect(0, 0, canvas.width, canvas.height);
     return canvas;
   }
 
@@ -1275,14 +1273,10 @@ export class AudioFourierController {
       canvas === this.componentCanvas ? this.componentBackgroundCanvas :
       null;
 
+    context.clearRect(0, 0, canvas.width, canvas.height);
     if (background) {
       context.drawImage(background, 0, 0);
-      return;
     }
-
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = '#000000';
-    context.fillRect(0, 0, canvas.width, canvas.height);
   }
 
   private drawCenteredLabel(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, label: string) {

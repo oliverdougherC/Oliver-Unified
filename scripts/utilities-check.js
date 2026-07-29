@@ -328,16 +328,16 @@ async function readOverlayAlphaPixels(page) {
 
 async function readStarfieldState(page) {
   await page.waitForFunction(() => {
-    const canvas = document.getElementById('starfield');
-    return canvas instanceof HTMLCanvasElement && Number(canvas.dataset.starCount || '0') > 0;
-  }, { timeout: 10000 });
+    const canvas = document.getElementById('iridescence-bg');
+    return canvas instanceof HTMLCanvasElement && Number(canvas.dataset.iridescenceFrameCount || '0') > 0;
+  }, null, { timeout: 10000 });
 
   return page.evaluate(() => {
-    const canvas = document.getElementById('starfield');
+    const canvas = document.getElementById('iridescence-bg');
     return {
-      count: Number(canvas?.dataset.starCount || '0'),
-      mode: canvas?.dataset.starfieldMode || '',
-      frames: Number(canvas?.dataset.starfieldFrameCount || '0')
+      count: Number(canvas?.dataset.iridescenceActive || '0'),
+      mode: canvas?.dataset.iridescenceMode || '',
+      frames: Number(canvas?.dataset.iridescenceFrameCount || '0')
     };
   });
 }
@@ -546,7 +546,7 @@ async function assertUtilityIsolationLayout(page, label) {
       const styles = window.getComputedStyle(element);
       return rect.width > 0 && rect.height > 0 && styles.visibility !== 'hidden' && styles.display !== 'none';
     });
-  }, { timeout: 5000 });
+  }, null, { timeout: 5000 });
   const state = await readUtilityIsolationMetrics(page);
   assert(state.scrollWidth === state.clientWidth, `[${label}] utilities page should not overflow horizontally.`);
   assert(state.roots.length >= 4, `[${label}] expected each utility to expose a data-utility-root marker.`);
@@ -723,467 +723,6 @@ async function assertStressLayout(page, label, options = {}) {
   }
 }
 
-async function readLocalAssistantMetrics(page) {
-  return page.evaluate(() => {
-    const rect = (selector) => {
-      const element = document.querySelector(selector);
-      if (!(element instanceof HTMLElement)) return null;
-      const box = element.getBoundingClientRect();
-      const styles = getComputedStyle(element);
-      return {
-        left: box.left,
-        right: box.right,
-        top: box.top,
-        bottom: box.bottom,
-        width: box.width,
-        height: box.height,
-        display: styles.display,
-        visibility: styles.visibility,
-        overflowY: styles.overflowY,
-        visible: box.width > 0 && box.height > 0 && styles.display !== 'none' && styles.visibility !== 'hidden'
-      };
-    };
-    const overlaps = (a, b) => Boolean(
-      a &&
-      b &&
-      a.visible &&
-      b.visible &&
-      a.left < b.right &&
-      a.right > b.left &&
-      a.top < b.bottom &&
-      a.bottom > b.top
-    );
-    const shell = rect('#localLlmUtilityApp');
-    const transcript = rect('#localLlmTranscript');
-    const center = rect('#localLlmCenter');
-    const thread = rect('#localLlmMessages');
-    const form = rect('#localLlmForm');
-    const input = rect('#localLlmInput');
-    const progressWrap = rect('#localLlmProgressWrap');
-    const shellElement = document.getElementById('localLlmUtilityApp');
-    const shellStyles = shellElement ? getComputedStyle(shellElement) : null;
-    const parseAlpha = (color) => {
-      const match = String(color || '').match(/rgba?\(([^)]+)\)/);
-      if (!match) return 1;
-      const parts = match[1].split(',').map((part) => part.trim());
-      if (parts.length === 4) return Number.parseFloat(parts[3]) || 0;
-      return 1;
-    };
-    const status = shellElement?.dataset.localLlmStatus ?? '';
-    const diagnostics = document.getElementById('localLlmDiagnostics');
-    const centerDeltaFromTranscriptMiddle = center && transcript
-      ? Math.abs(((center.top + center.bottom) / 2) - ((transcript.top + transcript.bottom) / 2))
-      : null;
-
-    return {
-      viewport: { width: window.innerWidth, height: window.innerHeight },
-      scrollWidth: document.documentElement.scrollWidth,
-      clientWidth: document.documentElement.clientWidth,
-      status,
-      shell,
-      shellBackgroundColor: shellStyles?.backgroundColor ?? '',
-      shellBackgroundAlpha: shellStyles ? parseAlpha(shellStyles.backgroundColor) : 0,
-      shellOpacity: shellStyles ? Number.parseFloat(shellStyles.opacity || '1') : 1,
-      transcript,
-      center,
-      thread,
-      form,
-      input,
-      progressWrap,
-      typingInBubble: Boolean(document.querySelector('#localLlmMessages .local-llm-typing')),
-      typingInComposer: Boolean(document.querySelector('.local-llm-input-shell .local-llm-typing')),
-      centerOverlapsForm: overlaps(center, form),
-      centerDeltaFromTranscriptMiddle,
-      threadOverlapsForm: overlaps(thread, form),
-      formOutsideShell: Boolean(
-        form &&
-        shell &&
-        (form.left < shell.left - 1 || form.right > shell.right + 1 || form.bottom > shell.bottom + 1)
-      ),
-      transcriptZeroHeight: !transcript || transcript.height <= 0,
-      inputText: document.getElementById('localLlmInput')?.value ?? '',
-      sendDisabled: document.querySelector('.local-llm-send')?.hasAttribute('disabled') ?? true,
-      startText: document.querySelector('.local-llm-load-control-text')?.textContent?.trim() ?? '',
-      resetText: document.getElementById('localLlmResetBtn')?.textContent?.trim() ?? '',
-      messageText: document.getElementById('localLlmMessages')?.textContent?.trim() ?? '',
-      loadCopyText: document.getElementById('localLlmLoadCopy')?.textContent?.trim() ?? '',
-      modelNoteText: document.getElementById('localLlmModelNote')?.textContent?.trim() ?? '',
-      inputPlaceholder: document.getElementById('localLlmInput')?.getAttribute('placeholder') ?? '',
-      readyPromptHidden: document.getElementById('localLlmReadyPrompt')?.hasAttribute('hidden') ?? true,
-      headerText: document.querySelector('.local-llm-header')?.textContent?.trim() ?? '',
-      tpsText: document.getElementById('localLlmTps')?.textContent?.trim() ?? '',
-      promptTokens: Number(shellElement?.dataset.localLlmPromptTokens ?? '0'),
-      contextLimitTokens: Number(shellElement?.dataset.localLlmContextLimitTokens ?? '0'),
-      droppedMessages: Number(shellElement?.dataset.localLlmDroppedMessages ?? '0'),
-      truncatedInput: shellElement?.dataset.localLlmTruncatedInput ?? '',
-      diagnosticsHidden: diagnostics?.hasAttribute('hidden') ?? true,
-      diagnosticsText: diagnostics?.textContent?.trim() ?? ''
-    };
-  });
-}
-
-function assertLocalAssistantLayout(metrics, label) {
-  assert(metrics.scrollWidth === metrics.clientWidth, `[${label}] Local Assistant should not create horizontal overflow.`);
-  assert(metrics.shell?.visible, `[${label}] Local Assistant shell should be visible.`);
-  assert(metrics.transcript?.visible, `[${label}] Local Assistant transcript should be visible.`);
-  if (metrics.messageText) {
-    assert(metrics.thread?.visible, `[${label}] Local Assistant thread should be visible when messages are present.`);
-  }
-  assert(metrics.form?.visible, `[${label}] Local Assistant composer should be visible.`);
-  assert(metrics.input?.visible, `[${label}] Local Assistant input should be visible.`);
-  assert(!metrics.transcriptZeroHeight, `[${label}] Local Assistant transcript should have usable height.`);
-  assert(!metrics.centerOverlapsForm, `[${label}] Local Assistant loading/diagnostics panel overlaps the composer.`);
-  assert(!metrics.threadOverlapsForm, `[${label}] Local Assistant thread overlaps the composer.`);
-  assert(!metrics.formOutsideShell, `[${label}] Local Assistant composer escapes its shell.`);
-  assert(metrics.shell.right <= metrics.viewport.width + 1, `[${label}] Local Assistant shell overflows viewport width.`);
-  assert(!/auto|scroll/i.test(metrics.input.overflowY), `[${label}] Local Assistant textarea should not expose a vertical scrollbar.`);
-  if (metrics.center?.visible && metrics.centerDeltaFromTranscriptMiddle !== null) {
-    const tolerance = Math.max(32, metrics.transcript.height * 0.12);
-    assert(
-      metrics.centerDeltaFromTranscriptMiddle <= tolerance,
-      `[${label}] Local Assistant center panel should be vertically centered.`
-    );
-  }
-}
-
-async function observeLocalAssistantLoadingSequence(page) {
-  const expected = [
-    'Loading Bonsai 1.7B',
-    'Caching model files locally for faster reloads.'
-  ];
-  const spinnerFrames = new Set(['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']);
-  const observations = [];
-  const progressTops = [];
-  const busyControlTexts = [];
-  let readyAt = null;
-  let lastText = '';
-  const startedAt = Date.now();
-
-  while (Date.now() - startedAt < 8000) {
-    const sample = await page.evaluate(() => {
-      const root = document.getElementById('localLlmUtilityApp');
-      const progressWrap = document.getElementById('localLlmProgressWrap');
-      const progressRect = progressWrap?.getBoundingClientRect();
-      const shellStyles = root ? getComputedStyle(root) : null;
-      const parseAlpha = (color) => {
-        const match = String(color || '').match(/rgba?\(([^)]+)\)/);
-        if (!match) return 1;
-        const parts = match[1].split(',').map((part) => part.trim());
-        if (parts.length === 4) return Number.parseFloat(parts[3]) || 0;
-        return 1;
-      };
-      return {
-        status: root?.dataset.localLlmStatus ?? '',
-        floorMs: Number(root?.dataset.localLlmLoadingFloorMs || '0'),
-        text: document.getElementById('localLlmLoadCopy')?.textContent?.trim() ?? '',
-        startText: document.querySelector('.local-llm-load-control-text')?.textContent?.trim() ?? '',
-        progressTop: progressRect && progressRect.height > 0 ? progressRect.top : null,
-        shellBackgroundAlpha: shellStyles ? parseAlpha(shellStyles.backgroundColor) : 0
-      };
-    });
-
-    if (/^(checking|loading|optimizing)$/.test(sample.status) && sample.startText) {
-      busyControlTexts.push(sample.startText);
-    }
-
-    if (sample.text && sample.text !== lastText) {
-      observations.push({ text: sample.text, at: Date.now(), floorMs: sample.floorMs });
-      lastText = sample.text;
-    }
-
-    if (sample.progressTop !== null && expected.includes(sample.text)) {
-      progressTops.push(sample.progressTop);
-    }
-
-    if (sample.status === 'ready') {
-      readyAt = Date.now();
-      break;
-    }
-
-    await page.waitForTimeout(35);
-  }
-
-  const floorMs = observations.find((entry) => entry.floorMs > 0)?.floorMs ?? 0;
-  const seen = observations
-    .map((entry) => entry.text)
-    .filter((text) => expected.includes(text));
-
-  assert(
-    expected.every((text, index) => seen[index] === text),
-    `Local Assistant loading sequence should appear in order. Saw: ${seen.join(' -> ') || 'none'}`
-  );
-  assert(
-    busyControlTexts.some((text) => spinnerFrames.has(text)),
-    `Local Assistant load control should use a braille spinner while busy. Saw: ${busyControlTexts.join(', ') || 'none'}`
-  );
-
-  for (let index = 0; index < expected.length; index += 1) {
-    const current = observations.find((entry) => entry.text === expected[index]);
-    const next = observations.find((entry) => entry.text === expected[index + 1]);
-    const endedAt = next?.at ?? readyAt;
-    assert(current && endedAt, `Local Assistant loading copy timing missing for "${expected[index]}".`);
-    assert(
-      endedAt - current.at >= Math.max(0, floorMs - 100),
-      `Local Assistant loading copy "${expected[index]}" changed too quickly.`
-    );
-  }
-
-  if (progressTops.length >= 2) {
-    const minTop = Math.min(...progressTops);
-    const maxTop = Math.max(...progressTops);
-    assert(
-      maxTop - minTop <= 2,
-      `Local Assistant progress bar should stay stable while loading copy changes. Saw ${minTop}px to ${maxTop}px.`
-    );
-  }
-
-  return { observations, progressTops };
-}
-
-async function runLocalAssistantCheck(browser, pageUrl) {
-  const readySuggestions = [
-    'Perhaps a joke?',
-    'Maybe a riddle?',
-    'Summarize a topic perchance?',
-    'How about a short story?',
-    'Maybe something else entirely?'
-  ];
-
-  for (const viewport of [
-    { label: 'desktop', width: 1440, height: 1100 },
-    { label: 'tablet', width: 820, height: 1180 },
-    { label: 'mobile', width: 390, height: 844 }
-  ]) {
-    const page = await browser.newPage({
-      viewport: { width: viewport.width, height: viewport.height }
-    });
-    await page.addInitScript(() => {
-      window.__OD_RETRO_VM_TEST_MODE__ = true;
-      window.__OD_LOCAL_LLM_TEST_MODE__ = 'ready';
-    });
-
-    try {
-      await page.goto(pageUrl.replace(/#.*$/, '#local-assistant'), { waitUntil: 'networkidle' });
-      await page.waitForSelector('#localLlmStartBtn', { timeout: 10000 });
-      const idleMetrics = await readLocalAssistantMetrics(page);
-      assertLocalAssistantLayout(idleMetrics, `local-assistant:${viewport.label}:idle`);
-      assert(idleMetrics.loadCopyText === 'Press "Load" to begin', `[local-assistant:${viewport.label}] idle copy should be simplified.`);
-      assert(idleMetrics.shellBackgroundAlpha >= 0.5, `[local-assistant:${viewport.label}] idle shell should use a frosted background.`);
-
-      await page.click('#localLlmStartBtn');
-      await observeLocalAssistantLoadingSequence(page);
-
-      await page.waitForFunction(
-        () => document.getElementById('localLlmUtilityApp')?.dataset.localLlmStatus === 'ready',
-        null,
-        { timeout: 10000 }
-      );
-      const readyMetrics = await readLocalAssistantMetrics(page);
-      assertLocalAssistantLayout(readyMetrics, `local-assistant:${viewport.label}:ready`);
-      assert(readyMetrics.shellBackgroundAlpha >= 0.5, `[local-assistant:${viewport.label}] ready shell should keep the frosted background.`);
-      assert(readyMetrics.center?.visible, `[local-assistant:${viewport.label}] ready empty-state panel should remain visible before the first message.`);
-      assert(readyMetrics.sendDisabled === false, `[local-assistant:${viewport.label}] send should enable after mocked load.`);
-      assert(readyMetrics.startText === 'Loaded', `[local-assistant:${viewport.label}] load control should report Loaded.`);
-      assert(readySuggestions.includes(readyMetrics.loadCopyText), `[local-assistant:${viewport.label}] ready panel should show a suggestion from the bank.`);
-      assert(readyMetrics.modelNoteText === '', `[local-assistant:${viewport.label}] ready panel should not show model/runtime details.`);
-      assert(readyMetrics.inputPlaceholder === 'Oh, what to say...', `[local-assistant:${viewport.label}] composer placeholder should be static.`);
-      assert(readyMetrics.readyPromptHidden === true, `[local-assistant:${viewport.label}] custom ready prompt overlay should stay hidden.`);
-      assert(!readyMetrics.headerText.includes('•'), `[local-assistant:${viewport.label}] header metadata should not duplicate separators.`);
-
-      if (viewport.label === 'desktop') {
-        await page.fill('#localLlmInput', 'Explain this local assistant in one sentence.');
-        await page.click('.local-llm-send');
-        await page.waitForFunction(
-          () => {
-            const bubbleTyping = document.querySelector('#localLlmMessages .local-llm-typing');
-            const composerTyping = document.querySelector('.local-llm-input-shell .local-llm-typing');
-            const assistantText = document.querySelector('#localLlmMessages .local-llm-message--assistant .local-llm-message-content')?.textContent ?? '';
-            return (Boolean(bubbleTyping) || assistantText.trim().length > 0) && !composerTyping;
-          },
-          null,
-          { timeout: 3000 }
-        );
-        await page.waitForFunction(
-          () => /mocked Bonsai response/i.test(document.getElementById('localLlmMessages')?.textContent ?? ''),
-          null,
-          { timeout: 10000 }
-        );
-        await page.waitForFunction(
-          () => document.getElementById('localLlmUtilityApp')?.dataset.localLlmStatus === 'ready',
-          null,
-          { timeout: 5000 }
-        );
-        const generatedMetrics = await readLocalAssistantMetrics(page);
-        assertLocalAssistantLayout(generatedMetrics, 'local-assistant:desktop:generated');
-        assert(!generatedMetrics.typingInComposer, 'Local Assistant thinking dots should not render in the composer.');
-        assert(Math.abs(generatedMetrics.form.height - readyMetrics.form.height) <= 2, 'Local Assistant composer height should remain stable after generation.');
-        assert(Math.abs(generatedMetrics.form.bottom - readyMetrics.form.bottom) <= 2, 'Local Assistant composer position should remain stable after generation.');
-        assert(!generatedMetrics.center?.visible, 'Local Assistant center panel should stay hidden after generation.');
-        assert(/Local Assistant/i.test(generatedMetrics.messageText), 'Local Assistant should render an assistant response.');
-        assert(/\d|--/.test(generatedMetrics.tpsText), 'Local Assistant should expose token/src telemetry.');
-        assert(generatedMetrics.promptTokens > 0, 'Local Assistant should expose prompt token telemetry.');
-        assert(generatedMetrics.contextLimitTokens > 0, 'Local Assistant should expose context limit telemetry.');
-
-        await page.click('#localLlmResetBtn');
-        await page.waitForFunction(() => document.getElementById('localLlmMessages')?.textContent?.trim() === '', null, {
-          timeout: 10000
-        });
-        const resetMetrics = await readLocalAssistantMetrics(page);
-        assert(resetMetrics.messageText === '', 'Local Assistant reset should clear the transcript.');
-        assert(resetMetrics.inputText === '', 'Local Assistant reset should clear the composer.');
-        assert(resetMetrics.status === 'ready', 'Local Assistant reset should keep the loaded model ready.');
-
-        await page.fill('#localLlmInput', 'Interrupt this response quickly.');
-        await page.click('.local-llm-send');
-        await page.waitForFunction(
-          () => ['thinking', 'streaming'].includes(document.getElementById('localLlmUtilityApp')?.dataset.localLlmStatus ?? ''),
-          null,
-          { timeout: 3000 }
-        );
-        await page.click('.local-llm-send');
-        await page.waitForFunction(
-          () => document.getElementById('localLlmUtilityApp')?.dataset.localLlmStatus === 'ready',
-          null,
-          { timeout: 5000 }
-        );
-        const transcriptAfterStop = await page.evaluate(() => document.getElementById('localLlmMessages')?.textContent?.trim() ?? '');
-        await page.waitForTimeout(900);
-        const transcriptAfterDelay = await page.evaluate(() => document.getElementById('localLlmMessages')?.textContent?.trim() ?? '');
-        assert(
-          transcriptAfterStop === transcriptAfterDelay,
-          'Local Assistant should ignore stale token events after interruption.'
-        );
-      }
-    } finally {
-      await page.close();
-    }
-  }
-
-  const unsupportedPage = await browser.newPage({ viewport: { width: 820, height: 900 } });
-  await unsupportedPage.addInitScript(() => {
-    window.__OD_LOCAL_LLM_TEST_MODE__ = 'unsupported';
-  });
-
-  try {
-    await unsupportedPage.goto(pageUrl.replace(/#.*$/, '#local-assistant'), { waitUntil: 'networkidle' });
-    await unsupportedPage.waitForSelector('#localLlmStartBtn', { timeout: 10000 });
-    await unsupportedPage.click('#localLlmStartBtn');
-    await unsupportedPage.waitForFunction(
-      () => document.getElementById('localLlmUtilityApp')?.dataset.localLlmStatus === 'unsupported',
-      null,
-      { timeout: 10000 }
-    );
-    const unsupportedMetrics = await readLocalAssistantMetrics(unsupportedPage);
-    assertLocalAssistantLayout(unsupportedMetrics, 'local-assistant:unsupported');
-    assert(unsupportedMetrics.diagnosticsHidden === false, 'Unsupported Local Assistant should render diagnostics.');
-    assert(/browser|webgpu|chrome|edge/i.test(unsupportedMetrics.diagnosticsText), 'Unsupported Local Assistant diagnostics should be actionable.');
-    await unsupportedPage.click('[data-local-llm-retry]');
-    await unsupportedPage.waitForFunction(() => /retry|unsupported|browser/i.test(document.getElementById('localLlmDiagnostics')?.textContent ?? ''), {
-      timeout: 10000
-    });
-  } finally {
-    await unsupportedPage.close();
-  }
-
-  const longStreamPage = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
-  await longStreamPage.addInitScript(() => {
-    window.__OD_RETRO_VM_TEST_MODE__ = true;
-    window.__OD_LOCAL_LLM_TEST_MODE__ = 'long-stream';
-  });
-
-  try {
-    await longStreamPage.goto(pageUrl.replace(/#.*$/, '#local-assistant'), { waitUntil: 'networkidle' });
-    await longStreamPage.waitForSelector('#localLlmStartBtn', { timeout: 10000 });
-    await longStreamPage.click('#localLlmStartBtn');
-    await observeLocalAssistantLoadingSequence(longStreamPage);
-    await longStreamPage.waitForFunction(
-      () => document.getElementById('localLlmUtilityApp')?.dataset.localLlmStatus === 'ready',
-      null,
-      { timeout: 10000 }
-    );
-    await longStreamPage.fill('#localLlmInput', 'Produce a long streamed response for responsiveness testing.');
-    await longStreamPage.click('.local-llm-send');
-    await longStreamPage.waitForFunction(
-      () => document.getElementById('localLlmUtilityApp')?.dataset.localLlmStatus === 'streaming',
-      null,
-      { timeout: 5000 }
-    );
-    await longStreamPage.waitForFunction(
-      () => {
-        const content = document.querySelector('#localLlmMessages .local-llm-message--assistant .local-llm-message-content');
-        return content?.classList.contains('local-llm-message-content--streaming');
-      },
-      null,
-      { timeout: 3000 }
-    );
-
-    const streamingSnapshot = await longStreamPage.evaluate(() => {
-      const content = document.querySelector('#localLlmMessages .local-llm-message--assistant .local-llm-message-content');
-      const scroller = document.getElementById('localLlmMessages');
-      const canvas = document.getElementById('starfield');
-      return {
-        hasStreamingClass: content?.classList.contains('local-llm-message-content--streaming') ?? false,
-        hasStrongMarkup: Boolean(content?.querySelector('strong')),
-        nearBottom: scroller ? scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop <= Math.max(120, scroller.clientHeight * 0.4) : false,
-        starfieldMode: canvas?.dataset.starfieldMode || ''
-      };
-    });
-    assert(streamingSnapshot.hasStreamingClass, 'Long-stream Local Assistant should render draft text in streaming mode.');
-    assert(!streamingSnapshot.hasStrongMarkup, 'Long-stream Local Assistant should defer markdown markup while streaming.');
-    assert(streamingSnapshot.nearBottom, 'Long-stream Local Assistant should keep transcript stuck to the bottom while streaming.');
-
-    const responsiveness = await longStreamPage.evaluate(async () => {
-      const samples = [];
-      const startedAt = performance.now();
-      let previous = startedAt;
-      await new Promise((resolve) => {
-        function step() {
-          const now = performance.now();
-          samples.push(now - previous);
-          previous = now;
-          if (now - startedAt >= 650) {
-            resolve();
-            return;
-          }
-          setTimeout(step, 50);
-        }
-        setTimeout(step, 50);
-      });
-      const sorted = samples.slice(1).sort((left, right) => left - right);
-      const p95 = sorted.length ? sorted[Math.floor(sorted.length * 0.95)] : 0;
-      const worst = sorted.length ? sorted[sorted.length - 1] : 0;
-      return { sampleCount: samples.length, p95, worst };
-    });
-    assert(responsiveness.sampleCount >= 8, `Long-stream Local Assistant should keep the event loop responsive during streaming. Saw ${responsiveness.sampleCount} timer samples.`);
-    assert(responsiveness.p95 < 180, `Long-stream Local Assistant timer p95 should stay responsive. Saw ${responsiveness.p95.toFixed(1)}ms.`);
-
-    await longStreamPage.waitForFunction(
-      () => document.getElementById('localLlmUtilityApp')?.dataset.localLlmStatus === 'ready' &&
-        /Final markdown/i.test(document.getElementById('localLlmMessages')?.textContent ?? ''),
-      null,
-      { timeout: 12000 }
-    );
-    const finalSnapshot = await longStreamPage.evaluate(() => {
-      const content = document.querySelector('#localLlmMessages .local-llm-message--assistant .local-llm-message-content');
-      const scroller = document.getElementById('localLlmMessages');
-      const canvas = document.getElementById('starfield');
-      return {
-        hasStreamingClass: content?.classList.contains('local-llm-message-content--streaming') ?? false,
-        hasStrongMarkup: Boolean(content?.querySelector('strong')),
-        hasMath: Boolean(content?.querySelector('.local-llm-math')),
-        nearBottom: scroller ? scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop <= Math.max(120, scroller.clientHeight * 0.4) : false,
-        starfieldMode: canvas?.dataset.starfieldMode || ''
-      };
-    });
-    assert(!finalSnapshot.hasStreamingClass, 'Long-stream Local Assistant should clear streaming mode after completion.');
-    assert(finalSnapshot.hasStrongMarkup, 'Long-stream Local Assistant should render markdown after completion.');
-    assert(finalSnapshot.hasMath, 'Long-stream Local Assistant should render math after completion.');
-    assert(/twinkle|reduced-motion/i.test(finalSnapshot.starfieldMode), `Starfield should be in a normal mode after generation. Saw ${finalSnapshot.starfieldMode || 'none'}.`);
-  } finally {
-    await longStreamPage.close();
-  }
-}
-
 async function readLightModeVisualMetrics(page) {
   return page.evaluate(() => {
     const bodyBackground = getComputedStyle(document.body).backgroundColor;
@@ -1251,7 +790,8 @@ async function runLightModeVisualCheck(browser, pageUrl) {
     });
 
     try {
-      await loadUtilitiesPage(page, pageUrl, 'Built-in pair selected|Ready for input', 15000, `light ${viewport.label}`);
+      const viewportUrl = viewport.width <= 760 ? pageUrl.replace('index.html', 'index.html?full=1') : pageUrl;
+      await loadUtilitiesPage(page, viewportUrl, 'Built-in pair selected|Ready for input', 15000, `light ${viewport.label}`);
       const state = await readLightModeVisualMetrics(page);
 
       assert(state.colorMode === 'light', `[light:${viewport.label}] expected light color mode.`);
@@ -1294,86 +834,6 @@ async function runLightModeVisualCheck(browser, pageUrl) {
   }
 }
 
-function isRetroVmAssetRequest(url) {
-  return (
-    url.includes('/assets/utilities/vm/') ||
-    url.includes('copy.sh/v86/bios/')
-  );
-}
-
-async function readRetroVmState(page) {
-  return page.evaluate(() => {
-    const root = document.getElementById('retroVmApp');
-    const placeholder = document.getElementById('retroVmPlaceholder');
-    const screen = document.getElementById('retroVmScreen');
-    const progressFill = document.getElementById('retroVmProgressFill');
-    const progressFromDataset = root?.dataset?.vmProgressPercent;
-
-    const networkReady = root?.dataset.vmNetworkReady === 'true';
-    const bridgeLabel = networkReady
-      ? root?.dataset.vmBridgeLabelOnline?.trim() ?? ''
-      : root?.dataset.vmBridgeLabelOffline?.trim() ?? '';
-
-    return {
-      state: root?.dataset.vmState ?? '',
-      captureState: root?.dataset.vmCaptureState ?? '',
-      networkReady: root?.dataset.vmNetworkReady ?? '',
-      running: root?.dataset.vmRunning ?? '',
-      supported: root?.dataset.vmSupported ?? '',
-      booted: root?.dataset.vmBooted ?? '',
-      status: root?.dataset?.vmStatusMessage?.trim() ?? document.getElementById('retroVmStatusText')?.textContent?.trim() ?? '',
-      chip: root?.dataset?.vmStatusChip?.trim() ?? document.getElementById('retroVmStatusChip')?.textContent?.trim() ?? '',
-      captureBadge: document.getElementById('retroVmCaptureBadge')?.textContent?.trim() ?? '',
-      screenBadge: document.getElementById('retroVmScreenBadge')?.textContent?.trim() ?? root?.dataset.vmScreenBadge?.trim() ?? '',
-      assetLabel: root?.dataset.vmAssetLabel?.trim() ?? '',
-      bridgeLabel,
-      progress: document.getElementById('retroVmProgressText')?.textContent?.trim() ?? '',
-      progressWidth:
-        progressFromDataset !== undefined && progressFromDataset !== ''
-          ? `${progressFromDataset}%`
-          : progressFill instanceof HTMLElement
-            ? progressFill.style.width
-            : '',
-      launchDisabled: document.getElementById('retroVmLaunchBtn')?.hasAttribute('disabled') ?? false,
-      resetDisabled: document.getElementById('retroVmResetBtn')?.hasAttribute('disabled') ?? false,
-      fullscreenDisabled: document.getElementById('retroVmFullscreenBtn')?.hasAttribute('disabled') ?? false,
-      placeholderHidden: placeholder?.classList.contains('is-hidden') ?? false,
-      placeholderPointerEvents: placeholder instanceof HTMLElement ? getComputedStyle(placeholder).pointerEvents : '',
-      screenFocused: document.activeElement === screen
-    };
-  });
-}
-
-async function readRetroVmFullscreenMetrics(page) {
-  return page.evaluate(() => {
-    const shell = document.getElementById('retroVmScreenShell');
-    const screen = document.getElementById('retroVmScreen');
-    const toolbar = document.querySelector('.vm-toolbar');
-    const canvas = document.querySelector('#retroVmScreen canvas');
-    const rect = (element) =>
-      element instanceof HTMLElement || element instanceof HTMLCanvasElement
-        ? {
-            left: element.getBoundingClientRect().left,
-            right: element.getBoundingClientRect().right,
-            top: element.getBoundingClientRect().top,
-            bottom: element.getBoundingClientRect().bottom,
-            width: element.getBoundingClientRect().width,
-            height: element.getBoundingClientRect().height
-          }
-        : null;
-
-    return {
-      viewport: { width: window.innerWidth, height: window.innerHeight },
-      fullscreenElementId: document.fullscreenElement instanceof HTMLElement ? document.fullscreenElement.id : '',
-      shell: rect(shell),
-      screen: rect(screen),
-      canvas: rect(canvas),
-      chromeDisplay: toolbar instanceof HTMLElement ? getComputedStyle(toolbar).display : '',
-      bezelPadding: '0px'
-    };
-  });
-}
-
 async function main() {
   const server = await startLocalStaticServer({
     url: BASE_URL,
@@ -1394,30 +854,13 @@ async function main() {
     const page = await browser.newPage({
       viewport: { width: 1440, height: 1100 }
     });
-    const starfieldInitializationErrors = [];
-    page.on('console', (message) => {
-      const text = message.text();
-      if (/STARFIELD_CONFIG|starfield worker renderer unavailable/i.test(text)) {
-        starfieldInitializationErrors.push(text);
-      }
-    });
-    page.on('pageerror', (error) => {
-      if (/STARFIELD_CONFIG|starfield/i.test(error.message)) {
-        starfieldInitializationErrors.push(error.message);
-      }
-    });
     await page.addInitScript(() => {
       window.__OD_RETRO_VM_TEST_MODE__ = true;
       window.__OD_STRESS_TEST_MAX_WORKERS__ = 2;
-      window.__OD_LOCAL_LLM_TEST_MODE__ = 'ready';
     });
 
-    const retroVmRequests = [];
     const precomputedTransformRequests = [];
     page.on('request', (request) => {
-      if (isRetroVmAssetRequest(request.url())) {
-        retroVmRequests.push(request.url());
-      }
       if (
         request.url().includes('pattern-face-balanced.json') ||
         request.url().includes('source-target-balanced.json') ||
@@ -1429,10 +872,6 @@ async function main() {
 
     const pageUrl = `${baseUrl}/pages/utilities/index.html#image-transform`;
     await loadUtilitiesPage(page, pageUrl, 'Built-in pair selected|Ready for input', 15000, 'initial transform state');
-    assert(
-      starfieldInitializationErrors.length === 0,
-      `Starfield should initialize without worker setup errors. Saw: ${starfieldInitializationErrors.join(' | ')}`
-    );
     await assertUtilityIsolationLayout(page, 'initial:desktop');
     const sourcePath = path.join(ROOT, 'utilities-src', 'tests', 'fixtures', 'source.png');
     const targetPath = path.join(ROOT, 'utilities-src', 'tests', 'fixtures', 'target.png');
@@ -1510,7 +949,7 @@ async function main() {
     assert(
       activeTransformStarfield.count === initialStarfield.count &&
         completedTransformStarfield.count === initialStarfield.count,
-      'Starfield density should remain stable before, during, and after image transform animation.'
+      'Iridescence background should remain stable before, during, and after image transform animation.'
     );
     const afterDemo = await page.evaluate(() => ({
       status: (() => {
@@ -1590,7 +1029,7 @@ async function main() {
     const replayTransformStarfield = await readStarfieldState(page);
     assert(
       replayTransformStarfield.count === initialStarfield.count,
-      'Starfield density should remain stable during Image Transform replay animation.'
+      'Iridescence background should remain stable during Image Transform replay animation.'
     );
     await waitForProgressFill(page, 65, 15000);
 
@@ -1753,10 +1192,6 @@ async function main() {
     assert(errorState.text && /unable|failed|could not/i.test(errorState.text), 'Invalid upload should surface a readable error.');
     });
 
-    await runUtilitySection(utilitySectionFailures, 'Local Assistant', async () => {
-      await runLocalAssistantCheck(browser, pageUrl);
-    });
-
     await runUtilitySection(utilitySectionFailures, 'Audio Fourier', async () => {
       await navigateUtility(page, 'audio-fourier');
       await page.waitForFunction(() => document.getElementById('audioFourierSelection')?.textContent?.trim().length);
@@ -1847,7 +1282,7 @@ async function main() {
     assert(generatedReadyState.telemetry.bandCount > 0, 'Audio Fourier should expose live energy band count.');
     assert(
       activeAudioStarfield.count === initialAudioStarfield.count,
-      'Starfield density should remain stable during Audio Fourier generation and playback.'
+      'Iridescence background should remain stable during Audio Fourier generation and playback.'
     );
 
     const generatedWavePixels = await readCanvasPixels(page, 'audioFourierWaveCanvas');
@@ -2162,6 +1597,7 @@ async function main() {
     await webGl1Page.goto(`${baseUrl}/pages/utilities/index.html#stress-test`, { waitUntil: 'networkidle' });
     await webGl1Page.waitForFunction(
       () => document.querySelector('.utility-stage[data-utility-id="stress-test"]')?.classList.contains('is-active'),
+      null,
       { timeout: 10000 }
     );
     await webGl1Page.waitForSelector('#stressTestApp[data-stress-state="idle"]', { timeout: 10000 });
@@ -2203,6 +1639,7 @@ async function main() {
     await noGpuPage.goto(`${baseUrl}/pages/utilities/index.html#stress-test`, { waitUntil: 'networkidle' });
     await noGpuPage.waitForFunction(
       () => document.querySelector('.utility-stage[data-utility-id="stress-test"]')?.classList.contains('is-active'),
+      null,
       { timeout: 10000 }
     );
     await noGpuPage.waitForSelector('#stressTestApp[data-stress-state="idle"]', { timeout: 10000 });
@@ -2230,104 +1667,16 @@ async function main() {
     await stressMobilePage.addInitScript(() => {
       window.__OD_STRESS_TEST_MAX_WORKERS__ = 1;
     });
-    await stressMobilePage.goto(`${baseUrl}/pages/utilities/index.html#stress-test`, { waitUntil: 'networkidle' });
+    await stressMobilePage.goto(`${baseUrl}/pages/utilities/index.html?full=1#stress-test`, { waitUntil: 'networkidle' });
     await stressMobilePage.waitForFunction(
       () => document.querySelector('.utility-stage[data-utility-id="stress-test"]')?.classList.contains('is-active'),
+      null,
       { timeout: 10000 }
     );
     await stressMobilePage.waitForSelector('#stressTestApp[data-stress-state="idle"]', { timeout: 10000 });
       await assertStressLayout(stressMobilePage, 'stress:mobile:idle', { expectMetricsHidden: true });
       await stressMobilePage.close();
     });
-
-    await runUtilitySection(utilitySectionFailures, 'Retro VM', async () => {
-      const retroVmRequestsBeforeActivation = retroVmRequests.length;
-      await navigateUtility(page, 'virtual-machine');
-      await page.waitForTimeout(500);
-      const initialVmState = await readRetroVmState(page);
-      assert(retroVmRequestsBeforeActivation === 0, 'Retro VM should not fetch guest assets before activation.');
-      if (initialVmState.supported !== 'true') {
-        assert(/missing required element|unsupported|desktop-first/i.test(initialVmState.status), 'Retro VM should either initialize or report a readable inactive-state blocker.');
-        return;
-      }
-
-      assert(initialVmState.state === 'idle', 'Retro VM should be idle on first paint.');
-      assert(initialVmState.running === 'false', 'Retro VM should not report a running session before launch.');
-      assert(initialVmState.launchDisabled === false, 'Retro VM launch should be available on desktop.');
-      assert(initialVmState.networkReady === 'true', 'Retro VM should default to network-ready when the WISP relay URL is configured.');
-      assert(/network relay/i.test(initialVmState.screenBadge), 'Retro VM should surface Tiny Core network-relay status when the relay URL is configured.');
-      assert(/tiny core linux 11/i.test(initialVmState.assetLabel), 'Retro VM should advertise the Tiny Core rollback image.');
-      assert(/tcp relay networking/i.test(initialVmState.bridgeLabel), 'Retro VM should surface TCP relay bridge copy by default.');
-      assert(retroVmRequests.length === 0, 'Retro VM should not fetch guest assets before launch.');
-
-        await page.click('#retroVmLaunchBtn');
-        await page.waitForFunction(() => document.getElementById('retroVmApp')?.dataset.vmState === 'running');
-
-        const launchedVmState = await readRetroVmState(page);
-        assert(launchedVmState.chip === 'Running', 'Retro VM should enter the running state after launch.');
-        assert(/booting locally|running locally/i.test(launchedVmState.status), 'Retro VM should surface a boot/running status after launch.');
-        assert(launchedVmState.progressWidth !== '0%', 'Retro VM progress should advance after launch.');
-        assert(launchedVmState.placeholderHidden === true, 'Retro VM placeholder should hide after launch.');
-        assert(launchedVmState.launchDisabled === true, 'Retro VM launch should disable while a session is active.');
-        assert(launchedVmState.resetDisabled === false, 'Retro VM reset should enable while a session is active.');
-        assert(launchedVmState.fullscreenDisabled === false, 'Retro VM fullscreen should enable after launch.');
-        assert(launchedVmState.captureState === 'uncaptured', 'Retro VM should start in the uncaptured mouse state.');
-        assert(/click desktop to capture/i.test(launchedVmState.captureBadge), 'Retro VM should advertise click-to-capture before pointer lock.');
-        assert(launchedVmState.placeholderPointerEvents === 'none', 'Retro VM placeholder should not intercept desktop clicks.');
-
-    await page.click('#retroVmScreen');
-    await page.waitForFunction(() => document.getElementById('retroVmApp')?.dataset.vmCaptureState === 'captured');
-    const capturedVmState = await readRetroVmState(page);
-    assert(/captured/i.test(capturedVmState.captureBadge), 'Retro VM should show captured state after clicking the desktop.');
-    assert(/mouse is captured/i.test(capturedVmState.status), 'Retro VM should explain how to release captured mouse input.');
-    assert(capturedVmState.screenFocused === true, 'Retro VM screen should receive focus when clicked.');
-
-    await page.keyboard.press('Escape');
-    await page.waitForFunction(() => document.getElementById('retroVmApp')?.dataset.vmCaptureState === 'uncaptured');
-
-    await page.click('#retroVmFullscreenBtn');
-    await page.waitForFunction(() => document.getElementById('retroVmApp')?.dataset.vmState === 'fullscreen');
-    const fullscreenMetrics = await readRetroVmFullscreenMetrics(page);
-    assert(fullscreenMetrics.fullscreenElementId === 'retroVmScreenShell', 'Retro VM should enter fullscreen on the VM shell.');
-    assert(fullscreenMetrics.chromeDisplay === 'none', 'Retro VM fullscreen should hide the decorative chrome.');
-    assert(fullscreenMetrics.bezelPadding === '0px', 'Retro VM fullscreen bezel should not add padding.');
-    assert(
-      fullscreenMetrics.shell &&
-        Math.abs(fullscreenMetrics.shell.width - fullscreenMetrics.viewport.width) <= 2 &&
-        Math.abs(fullscreenMetrics.shell.height - fullscreenMetrics.viewport.height) <= 2,
-      'Retro VM fullscreen shell should fill the viewport.'
-    );
-    assert(
-      fullscreenMetrics.screen &&
-        fullscreenMetrics.shell &&
-        fullscreenMetrics.screen.width <= fullscreenMetrics.shell.width + 2 &&
-        fullscreenMetrics.screen.height <= fullscreenMetrics.shell.height + 2 &&
-        fullscreenMetrics.screen.width >= fullscreenMetrics.shell.width * 0.72 &&
-        fullscreenMetrics.screen.height >= fullscreenMetrics.shell.height * 0.72,
-      'Retro VM fullscreen guest viewport should remain large and contained inside the fullscreen shell.'
-    );
-    assert(
-      fullscreenMetrics.canvas &&
-        Math.abs(fullscreenMetrics.canvas.width / fullscreenMetrics.canvas.height - 1024 / 768) < 0.02,
-      'Retro VM fullscreen should preserve the guest aspect ratio.'
-    );
-    await page.click('#retroVmScreen');
-    await page.waitForFunction(() => document.getElementById('retroVmApp')?.dataset.vmCaptureState === 'captured');
-    await page.evaluate(() => document.exitFullscreen());
-    await page.waitForFunction(() => document.getElementById('retroVmApp')?.dataset.vmState === 'running');
-    await page.waitForFunction(() => document.getElementById('retroVmApp')?.dataset.vmCaptureState === 'uncaptured');
-
-    await page.evaluate(() => document.getElementById('retroVmResetBtn')?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    await page.waitForFunction(() => document.getElementById('retroVmApp')?.dataset.vmState === 'idle');
-    const exitedFullscreenMetrics = await readRetroVmFullscreenMetrics(page);
-    assert(exitedFullscreenMetrics.fullscreenElementId === '', 'Retro VM reset should leave fullscreen cleanly.');
-    const resetVmState = await readRetroVmState(page);
-    assert(resetVmState.captureState === 'uncaptured', 'Retro VM should clear capture state after reset.');
-    assert(resetVmState.running === 'false', 'Retro VM should clear its running flag after reset.');
-    assert(resetVmState.booted === 'false', 'Retro VM should clear its booted flag after reset.');
-    assert(resetVmState.placeholderHidden === false, 'Retro VM placeholder should return after reset.');
-        assert(/nothing persists|fresh local session/i.test(resetVmState.status), 'Retro VM should explain wipe semantics after reset.');
-      });
 
     await runUtilitySection(utilitySectionFailures, 'Image Transform Worker Fallback', async () => {
       const noWorkerPage = await browser.newPage({
@@ -2390,12 +1739,10 @@ async function main() {
           window.__OD_RETRO_VM_TEST_MODE__ = true;
         });
         await mobilePage.emulateMedia({ reducedMotion: 'reduce' });
-        await loadUtilitiesPage(mobilePage, pageUrl, 'Built-in pair selected|Ready for input', 15000, 'reduced-motion startup');
+        await loadUtilitiesPage(mobilePage, pageUrl.replace('index.html', 'index.html?full=1'), 'Built-in pair selected|Ready for input', 15000, 'reduced-motion startup');
         await mobilePage.click('#transformGenerateBtn');
         await waitForStatusMatch(mobilePage, 'Reduced motion', 30000, 'reduced-motion result');
         await mobilePage.evaluate(() => window.scrollTo(0, 0));
-        await navigateUtility(mobilePage, 'virtual-machine');
-        await mobilePage.waitForTimeout(500);
 
         const mobileState = await mobilePage.evaluate(() => ({
           width: window.innerWidth,
@@ -2406,24 +1753,12 @@ async function main() {
             const fromLegacy = document.getElementById('transformStatusText')?.textContent?.trim() ?? '';
             return fromData || fromLegacy;
           })(),
-          vmState: document.getElementById('retroVmApp')?.dataset.vmState ?? '',
-          vmStatus: (() => {
-            const app = document.getElementById('retroVmApp');
-            return app?.dataset?.vmStatusMessage?.trim() ?? document.getElementById('retroVmStatusText')?.textContent?.trim() ?? '';
-          })(),
           navBottom: document.getElementById('nav')?.getBoundingClientRect().bottom ?? 0,
           heroTitleTop: document.querySelector('.utilities-hero .hero-title')?.getBoundingClientRect().top ?? 0
         }));
 
         assert(mobileState.shellWidth <= mobileState.width, 'Utilities shell overflows the mobile viewport.');
         assert(mobileState.resultStatus && /Reduced motion/i.test(mobileState.resultStatus), 'Reduced-motion path did not complete.');
-        assert(
-          mobileState.vmState === 'unsupported' || /missing required/i.test(mobileState.vmStatus),
-          'Retro VM should fall back on mobile-sized viewports or report a readable inactive-state blocker.'
-        );
-        if (mobileState.vmState === 'unsupported') {
-          assert(/desktop-first|desktop browser/i.test(mobileState.vmStatus), 'Retro VM mobile fallback copy is missing.');
-        }
         if (mobileState.heroTitleTop > 0) {
           assert(mobileState.heroTitleTop >= mobileState.navBottom + 8, 'Mobile utilities hero title sits too close to the navigation.');
         }

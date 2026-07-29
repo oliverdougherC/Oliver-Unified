@@ -9,7 +9,7 @@
    ======================================== */
 
 .liquid-glass {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(16, 13, 26, 0.5);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -21,7 +21,7 @@
 }
 
 .liquid-glass:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(16, 13, 26, 0.65);
   border-color: rgba(255, 255, 255, 0.25);
   box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.4),
@@ -29,7 +29,7 @@
 }
 
 .liquid-glass:active {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(16, 13, 26, 0.75);
   transform: scale(0.98);
 }
 
@@ -39,7 +39,7 @@
    ======================================== */
 
 .liquid-glass-panel {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(16, 13, 26, 0.45);
   backdrop-filter: blur(16px) saturate(150%);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.1);
