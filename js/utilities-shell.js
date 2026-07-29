@@ -30,7 +30,7 @@
   const cleanupTasks = [];
   const pendingTimers = new Set();
 
-  const FLAIR_COLORS = ['#FF6700', '#2BA84A', '#004BA8'];
+  const FLAIR_COLORS = ['#8099cc'];
   const flairByUtilityId = new Map();
 
   function resolveFlairColor(utilityId) {

@@ -204,18 +204,20 @@ html[data-active-utility] .nav-back-btn {
   padding: 1.5rem;
   padding: clamp(1.2rem, 2.5vw, 1.8rem);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .utility-shell,
+  .utility-layout--image-transform,
+  .utility-layout--audio,
   .canvas-panel,
   .canvas-panel-minimal,
   .utilities-title-wrapper,
@@ -827,21 +829,23 @@ html[data-active-utility] .nav-back-btn {
   box-shadow: 0 0 15px rgba(200,181,224,0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-.utility-layout--image-transform {
+.utility-layout--image-transform,
+.utility-layout--audio {
   position: absolute;
-  inset: clamp(0.8rem, 1.6vw, 1.15rem);
+  inset: 0;
   grid-template-columns: minmax(12.5rem, 14.5rem) minmax(0, 1fr);
   gap: clamp(0.8rem, 1.4vw, 1.15rem);
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
 }
+
 
 .utility-rail--minimal {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   min-width: 0;
-  background: rgba(0, 0, 0, 0.36);
-  border-radius: calc(var(--radius-2xl) - 0.4rem);
-  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 0.95rem;
 }
 
@@ -1364,7 +1368,6 @@ html[data-active-utility] .nav-back-btn {
 .utility-shell--audio {
   position: relative;
   margin-top: 0;
-  box-shadow: 0 0 15px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --audio-accent: #ffffff;
   --audio-gold: #ffffff;
   --audio-highlight: #ffffff;
@@ -1377,6 +1380,12 @@ html[data-active-utility] .nav-back-btn {
   --audio-active-chip-border: rgba(255, 255, 255, 0.5);
   --audio-active-chip-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
   --audio-progress-glow: 0 0 14px rgba(255, 255, 255, 0.35);
+}
+  /* Shell padding is zeroed for utilities with absolute-positioned layouts
+     so the layout fills the border box and overflow:hidden clips corners cleanly. */
+#utilitiesApp,
+#audioFourierApp {
+  padding: 0;
 }
 
 .utility-shell--audio [hidden] {
@@ -1429,7 +1438,7 @@ html[data-active-utility] .nav-back-btn {
   padding: 0.72rem 0.8rem;
   border-radius: var(--radius-lg);
   border: 1px solid rgba(255, 255, 255, 0.09);
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .utility-shell--audio .audio-metric-title {
@@ -1498,12 +1507,6 @@ html[data-active-utility] .nav-back-btn {
   flex: 1;
 }
 
-.utility-layout--audio {
-  position: absolute;
-  inset: clamp(0.8rem, 1.6vw, 1.15rem);
-  grid-template-columns: minmax(12.5rem, 14.5rem) minmax(0, 1fr);
-  gap: clamp(0.8rem, 1.4vw, 1.15rem);
-}
 
 .utility-shell--audio .utility-rail--minimal {
   overflow: hidden;
@@ -1760,7 +1763,7 @@ html[data-active-utility] .nav-back-btn {
   min-height: 0;
   border: 1px solid var(--utilities-border-soft);
   border-radius: var(--radius-2xl);
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(255, 255, 255, 0.05);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
@@ -1790,7 +1793,7 @@ html[data-active-utility] .nav-back-btn {
   color: var(--color-text-primary);
   border: 1px solid var(--utilities-border-soft);
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(255, 255, 255, 0.05);
   cursor: pointer;
   transition:
     transform var(--duration-fast) var(--ease-smooth),
@@ -1850,7 +1853,7 @@ html[data-active-utility] .nav-back-btn {
   padding: 0.6rem 0.65rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
-  background: rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .stress-metrics dt {
@@ -2874,12 +2877,12 @@ html[data-active-utility] .nav-back-btn {
 
   #utilitiesApp.utility-shell,
   #audioFourierApp.utility-shell {
-    padding: 1rem;
+    padding: 0;
   }
 
   #utilitiesApp .utility-layout--image-transform,
   #audioFourierApp .utility-layout--audio {
-    inset: 0.8rem;
+    inset: 0;
   }
 
   #utilitiesApp .utility-rail--minimal,
